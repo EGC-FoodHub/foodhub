@@ -22,26 +22,26 @@ class FakenodoService(BaseService):
     def get_fakenodo_url(self):
 
         FLASK_ENV = os.getenv("FLASK_ENV", "development")
-        ZENODO_API_URL = ""
+        FAKENODO_API_URL = ""
 
         if FLASK_ENV == "development":
-            ZENODO_API_URL = os.getenv("ZENODO_API_URL", "https://sandbox.fakenodo.org/api/deposit/depositions")
+            FAKENODO_API_URL = os.getenv("FAKENODO_API_URL", "http://localhost:5000/fakenodo/dummy")
         elif FLASK_ENV == "production":
-            ZENODO_API_URL = os.getenv("ZENODO_API_URL", "https://fakenodo.org/api/deposit/depositions")
+            FAKENODO_API_URL = os.getenv("FAKENODO_API_URL", "http://localhost:5000/fakenodo/dummy")
         else:
-            ZENODO_API_URL = os.getenv("ZENODO_API_URL", "https://sandbox.fakenodo.org/api/deposit/depositions")
+            FAKENODO_API_URL = os.getenv("FAKENODO_API_URL", "http://localhost:5000/fakenodo/dummy")
 
-        return ZENODO_API_URL
+        return FAKENODO_API_URL
 
     def get_fakenodo_access_token(self):
-        return os.getenv("ZENODO_ACCESS_TOKEN")
+        return os.getenv("FAKENODO_ACCESS_TOKEN")
 
     def __init__(self):
         super().__init__(FakenodoRepository())
-        self.ZENODO_ACCESS_TOKEN = self.get_fakenodo_access_token()
-        self.ZENODO_API_URL = self.get_fakenodo_url()
+        self.FAKENODO_ACCESS_TOKEN = self.get_fakenodo_access_token()
+        self.FAKENODO_API_URL = self.get_fakenodo_url()
         self.headers = {"Content-Type": "application/json"}
-        self.params = {"access_token": self.ZENODO_ACCESS_TOKEN}
+        self.params = {"access_token": self.FAKENODO_ACCESS_TOKEN}
 
     def test_connection(self) -> bool:
         """
@@ -50,7 +50,7 @@ class FakenodoService(BaseService):
         Returns:
             bool: True if the connection is successful, False otherwise.
         """
-        response = requests.get(self.ZENODO_API_URL, params=self.params, headers=self.headers)
+        response = requests.get(self.FAKENODO_API_URL, params=self.params, headers=self.headers)
         return response.status_code == 200
 
     def test_full_connection(self) -> Response:
@@ -82,7 +82,7 @@ class FakenodoService(BaseService):
             }
         }
 
-        response = requests.post(self.ZENODO_API_URL, json=data, params=self.params, headers=self.headers)
+        response = requests.post(self.FAKENODO_API_URL, json=data, params=self.params, headers=self.headers)
 
         if response.status_code != 201:
             return jsonify(
@@ -92,12 +92,12 @@ class FakenodoService(BaseService):
                 }
             )
 
-        deposition_id = response.json()["id"]
+        deposition_id = response.json()["id"] 
 
         # Step 2: Upload an empty file to the deposition
         data = {"name": "test_file.txt"}
         files = {"file": open(file_path, "rb")}
-        publish_url = f"{self.ZENODO_API_URL}/{deposition_id}/files"
+        publish_url = f"{self.FAKENODO_API_URL}/{deposition_id}/files"
         response = requests.post(publish_url, params=self.params, data=data, files=files)
         files["file"].close()  # Close the file after uploading
 
@@ -113,7 +113,7 @@ class FakenodoService(BaseService):
             success = False
 
         # Step 3: Delete the deposition
-        response = requests.delete(f"{self.ZENODO_API_URL}/{deposition_id}", params=self.params)
+        response = requests.delete(f"{self.FAKENODO_API_URL}/{deposition_id}", params=self.params)
 
         if os.path.exists(file_path):
             os.remove(file_path)
@@ -127,7 +127,7 @@ class FakenodoService(BaseService):
         Returns:
             dict: The response in JSON format with the depositions.
         """
-        response = requests.get(self.ZENODO_API_URL, params=self.params, headers=self.headers)
+        response = requests.get(self.FAKENODO_API_URL, params=self.params, headers=self.headers)
         if response.status_code != 200:
             raise Exception("Failed to get depositions")
         return response.json()
@@ -172,7 +172,7 @@ class FakenodoService(BaseService):
 
         data = {"metadata": metadata}
 
-        response = requests.post(self.ZENODO_API_URL, params=self.params, json=data, headers=self.headers)
+        response = requests.post(self.FAKENODO_API_URL, params=self.params, json=data, headers=self.headers)
         if response.status_code != 201:
             error_message = f"Failed to create deposition. Error details: {response.json()}"
             raise Exception(error_message)
@@ -196,7 +196,7 @@ class FakenodoService(BaseService):
         file_path = os.path.join(uploads_folder_name(), f"user_{str(user_id)}", f"dataset_{dataset.id}/", uvl_filename)
         files = {"file": open(file_path, "rb")}
 
-        publish_url = f"{self.ZENODO_API_URL}/{deposition_id}/files"
+        publish_url = f"{self.FAKENODO_API_URL}/{deposition_id}/files"
         response = requests.post(publish_url, params=self.params, data=data, files=files)
         if response.status_code != 201:
             error_message = f"Failed to upload files. Error details: {response.json()}"
@@ -213,7 +213,7 @@ class FakenodoService(BaseService):
         Returns:
             dict: The response in JSON format with the details of the published deposition.
         """
-        publish_url = f"{self.ZENODO_API_URL}/{deposition_id}/actions/publish"
+        publish_url = f"{self.FAKENODO_API_URL}/{deposition_id}/actions/publish"
         response = requests.post(publish_url, params=self.params, headers=self.headers)
         if response.status_code != 202:
             raise Exception("Failed to publish deposition")
@@ -229,7 +229,7 @@ class FakenodoService(BaseService):
         Returns:
             dict: The response in JSON format with the details of the deposition.
         """
-        deposition_url = f"{self.ZENODO_API_URL}/{deposition_id}"
+        deposition_url = f"{self.FAKENODO_API_URL}/{deposition_id}"
         response = requests.get(deposition_url, params=self.params, headers=self.headers)
         if response.status_code != 200:
             raise Exception("Failed to get deposition")
