@@ -1,5 +1,5 @@
 from app import db
 
 
-class Zenodo(db.Model):
+class Fakenodo(db.Model):
     id = db.Column(db.Integer, primary_key=True)

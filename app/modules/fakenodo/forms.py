@@ -2,5 +2,5 @@ from flask_wtf import FlaskForm
 from wtforms import SubmitField
 
 
-class ZenodoForm(FlaskForm):
-    submit = SubmitField("Save zenodo")
+class ZFakenodoForm(FlaskForm):
+    submit = SubmitField("Save fakenodo")

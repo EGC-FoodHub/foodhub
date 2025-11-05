@@ -8,7 +8,7 @@ from flask_login import current_user
 
 from app.modules.dataset.models import DataSet
 from app.modules.featuremodel.models import FeatureModel
-from app.modules.zenodo.repositories import ZenodoRepository
+from app.modules.fakenodo.repositories import FakenodoRepository
 from core.configuration.configuration import uploads_folder_name
 from core.services.BaseService import BaseService
 
@@ -17,35 +17,35 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 
-class ZenodoService(BaseService):
+class FakenodoService(BaseService):
 
-    def get_zenodo_url(self):
+    def get_fakenodo_url(self):
 
         FLASK_ENV = os.getenv("FLASK_ENV", "development")
         ZENODO_API_URL = ""
 
         if FLASK_ENV == "development":
-            ZENODO_API_URL = os.getenv("ZENODO_API_URL", "https://sandbox.zenodo.org/api/deposit/depositions")
+            ZENODO_API_URL = os.getenv("ZENODO_API_URL", "https://sandbox.fakenodo.org/api/deposit/depositions")
         elif FLASK_ENV == "production":
-            ZENODO_API_URL = os.getenv("ZENODO_API_URL", "https://zenodo.org/api/deposit/depositions")
+            ZENODO_API_URL = os.getenv("ZENODO_API_URL", "https://fakenodo.org/api/deposit/depositions")
         else:
-            ZENODO_API_URL = os.getenv("ZENODO_API_URL", "https://sandbox.zenodo.org/api/deposit/depositions")
+            ZENODO_API_URL = os.getenv("ZENODO_API_URL", "https://sandbox.fakenodo.org/api/deposit/depositions")
 
         return ZENODO_API_URL
 
-    def get_zenodo_access_token(self):
+    def get_fakenodo_access_token(self):
         return os.getenv("ZENODO_ACCESS_TOKEN")
 
     def __init__(self):
-        super().__init__(ZenodoRepository())
-        self.ZENODO_ACCESS_TOKEN = self.get_zenodo_access_token()
-        self.ZENODO_API_URL = self.get_zenodo_url()
+        super().__init__(FakenodoRepository())
+        self.ZENODO_ACCESS_TOKEN = self.get_fakenodo_access_token()
+        self.ZENODO_API_URL = self.get_fakenodo_url()
         self.headers = {"Content-Type": "application/json"}
         self.params = {"access_token": self.ZENODO_ACCESS_TOKEN}
 
     def test_connection(self) -> bool:
         """
-        Test the connection with Zenodo.
+        Test the connection with Fakenodo.
 
         Returns:
             bool: True if the connection is successful, False otherwise.
@@ -55,7 +55,7 @@ class ZenodoService(BaseService):
 
     def test_full_connection(self) -> Response:
         """
-        Test the connection with Zenodo by creating a deposition, uploading an empty test file, and deleting the
+        Test the connection with Fakenodo by creating a deposition, uploading an empty test file, and deleting the
         deposition.
 
         Returns:
@@ -72,12 +72,12 @@ class ZenodoService(BaseService):
 
         messages = []  # List to store messages
 
-        # Step 1: Create a deposition on Zenodo
+        # Step 1: Create a deposition on Fakenodo
         data = {
             "metadata": {
                 "title": "Test Deposition",
                 "upload_type": "dataset",
-                "description": "This is a test deposition created via Zenodo API",
+                "description": "This is a test deposition created via Fakenodo API",
                 "creators": [{"name": "John Doe"}],
             }
         }
@@ -88,7 +88,7 @@ class ZenodoService(BaseService):
             return jsonify(
                 {
                     "success": False,
-                    "messages": f"Failed to create test deposition on Zenodo. Response code: {response.status_code}",
+                    "messages": f"Failed to create test deposition on Fakenodo. Response code: {response.status_code}",
                 }
             )
 
@@ -109,7 +109,7 @@ class ZenodoService(BaseService):
         logger.info(f"Response Content: {response.content}")
 
         if response.status_code != 201:
-            messages.append(f"Failed to upload test file to Zenodo. Response code: {response.status_code}")
+            messages.append(f"Failed to upload test file to Fakenodo. Response code: {response.status_code}")
             success = False
 
         # Step 3: Delete the deposition
@@ -122,7 +122,7 @@ class ZenodoService(BaseService):
 
     def get_all_depositions(self) -> dict:
         """
-        Get all depositions from Zenodo.
+        Get all depositions from Fakenodo.
 
         Returns:
             dict: The response in JSON format with the depositions.
@@ -134,7 +134,7 @@ class ZenodoService(BaseService):
 
     def create_new_deposition(self, dataset: DataSet) -> dict:
         """
-        Create a new deposition in Zenodo.
+        Create a new deposition in Fakenodo.
 
         Args:
             dataset (DataSet): The DataSet object containing the metadata of the deposition.
@@ -143,7 +143,7 @@ class ZenodoService(BaseService):
             dict: The response in JSON format with the details of the created deposition.
         """
 
-        logger.info("Dataset sending to Zenodo...")
+        logger.info("Dataset sending to Fakenodo...")
         logger.info(f"Publication type...{dataset.ds_meta_data.publication_type.value}")
 
         metadata = {
@@ -180,10 +180,10 @@ class ZenodoService(BaseService):
 
     def upload_file(self, dataset: DataSet, deposition_id: int, feature_model: FeatureModel, user=None) -> dict:
         """
-        Upload a file to a deposition in Zenodo.
+        Upload a file to a deposition in Fakenodo.
 
         Args:
-            deposition_id (int): The ID of the deposition in Zenodo.
+            deposition_id (int): The ID of the deposition in Fakenodo.
             feature_model (FeatureModel): The FeatureModel object representing the feature model.
             user (FeatureModel): The User object representing the file owner.
 
@@ -205,10 +205,10 @@ class ZenodoService(BaseService):
 
     def publish_deposition(self, deposition_id: int) -> dict:
         """
-        Publish a deposition in Zenodo.
+        Publish a deposition in Fakenodo.
 
         Args:
-            deposition_id (int): The ID of the deposition in Zenodo.
+            deposition_id (int): The ID of the deposition in Fakenodo.
 
         Returns:
             dict: The response in JSON format with the details of the published deposition.
@@ -221,10 +221,10 @@ class ZenodoService(BaseService):
 
     def get_deposition(self, deposition_id: int) -> dict:
         """
-        Get a deposition from Zenodo.
+        Get a deposition from Fakenodo.
 
         Args:
-            deposition_id (int): The ID of the deposition in Zenodo.
+            deposition_id (int): The ID of the deposition in Fakenodo.
 
         Returns:
             dict: The response in JSON format with the details of the deposition.
@@ -237,10 +237,10 @@ class ZenodoService(BaseService):
 
     def get_doi(self, deposition_id: int) -> str:
         """
-        Get the DOI of a deposition from Zenodo.
+        Get the DOI of a deposition from Fakenodo.
 
         Args:
-            deposition_id (int): The ID of the deposition in Zenodo.
+            deposition_id (int): The ID of the deposition in Fakenodo.
 
         Returns:
             str: The DOI of the deposition.

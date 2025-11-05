@@ -1,7 +1,7 @@
-from app.modules.zenodo.models import Zenodo
+from app.modules.fakenodo.models import Fakenodo
 from core.repositories.BaseRepository import BaseRepository
 
 
-class ZenodoRepository(BaseRepository):
+class FakenodoRepository(BaseRepository):
     def __init__(self):
-        super().__init__(Zenodo)
+        super().__init__(Fakenodo)
