@@ -1,6 +1,6 @@
 import logging
 import os
-
+import uuid
 import requests
 from dotenv import load_dotenv
 from flask import Response, jsonify
@@ -18,6 +18,10 @@ load_dotenv()
 
 
 class FakenodoService(BaseService):
+
+    def generate_doi(self, version=1):
+        return f"fakenodo.{uuid.uuid4()}.v{version}"
+
 
     def get_fakenodo_url(self):
 
