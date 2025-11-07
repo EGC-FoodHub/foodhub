@@ -61,7 +61,7 @@ def records():
         record_dict[record_id] = record
         return jsonify(record), 201
 
-@fakenodo_bp.route("/fakenodo/records/<id>", methods=["POST,GET"])
+@fakenodo_bp.route("/fakenodo/records/<id>", methods=["PUT,GET"])
 def records_data(id):
     record = record_dict.get(id)
     if not record:
@@ -81,7 +81,6 @@ def records:
     if not record:
         return jsonify({"error": "Record not found"}), 404
 
-    # Simula creación de nueva versión
     new_version = record["version"] + 1
     new_doi = generate_doi(new_version)
 
@@ -98,7 +97,7 @@ def records:
     record_dict[new_record["id"]] = new_record
     return jsonify(new_record), 201
 
-@fakenodo_bp.route("/fakenodo/records/<id>/files", methods=["POST,GET"])
+@fakenodo_bp.route("/fakenodo/records/<id>/files", methods=["POST"])
 def records:
      record = record_dict.get(record_id)
     if not record:
