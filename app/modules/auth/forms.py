@@ -16,3 +16,8 @@ class LoginForm(FlaskForm):
     password = PasswordField("Password", validators=[DataRequired()])
     remember_me = BooleanField("Remember me")
     submit = SubmitField("Login")
+
+
+class TwoFactoAuthForm(FlaskForm):
+    code = StringField("2FA Code", validators=[DataRequired(), Length(max=6)])
+    submit = SubmitField("Enviar")
