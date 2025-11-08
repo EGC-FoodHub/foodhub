@@ -1,4 +1,5 @@
 import os
+from app import db 
 
 class FoodHandler:
     """
@@ -55,6 +56,11 @@ class FoodHandler:
                         total_recipes += 1
                         total_ingredients += data.get("ingredient_count", 0)
                         all_recipes.append(data)
+
+        # Actualizar métricas en el dataset
+        dataset.total_recipes = total_recipes
+        dataset.total_ingredients = total_ingredients
+        db.session.commit()
 
         return {
             "total_recipes": total_recipes,

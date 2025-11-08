@@ -315,12 +315,20 @@ class DatasetVersion(db.Model):
         }
 
 # ==========================================================
-#   FOOD Dataset y versiones
+# FOOD Dataset y versiones (actualizado)
 # ==========================================================
-from app.modules.dataset.handlers.food_handler import FoodHandler
+# app/modules/dataset/models.py
+from datetime import datetime, timedelta
+from sqlalchemy import func
+from app import db
+from .handlers.food_handler import FoodHandler  # Importación relativa
 
 class FoodDataset(BaseDataset):
     __mapper_args__ = {"polymorphic_identity": "food"}
+
+    # Campos específicos para trending
+    total_recipes = db.Column(db.Integer, default=0)
+    total_ingredients = db.Column(db.Integer, default=0)
 
     @classmethod
     def kind(cls) -> str:
@@ -345,107 +353,139 @@ class FoodDataset(BaseDataset):
         summary = handler.summarize_dataset(self)
         return summary["total_recipes"]
 
+    def update_food_metrics(self):
+        """Actualiza las métricas de comida y las guarda"""
+        handler = FoodHandler()
+        summary = handler.summarize_dataset(self)
+        
+        # Actualizar en el dataset principal
+        self.total_recipes = summary["total_recipes"]
+        self.total_ingredients = summary["total_ingredients"]
+        
+        # Actualizar en la versión actual si existe
+        current_version = self.get_latest_version()
+        if current_version and hasattr(current_version, 'total_recipes') and hasattr(current_version, 'total_ingredients'):
+            current_version.total_recipes = summary["total_recipes"]
+            current_version.total_ingredients = summary["total_ingredients"]
+        
+        db.session.commit()
+        return summary
 
+    def get_popularity_metrics(self, timeframe_days=7):
+        """Obtiene métricas de popularidad para trending"""
+        # Importar aquí para evitar circular imports
+        from . import DSDownloadRecord, DSViewRecord
+        
+        since_date = datetime.utcnow() - timedelta(days=timeframe_days)
+        
+        recent_downloads = db.session.query(func.count(DSDownloadRecord.id)).filter(
+            DSDownloadRecord.dataset_id == self.id,
+            DSDownloadRecord.download_date >= since_date
+        ).scalar()
+        
+        recent_views = db.session.query(func.count(DSViewRecord.id)).filter(
+            DSViewRecord.dataset_id == self.id,
+            DSViewRecord.view_date >= since_date
+        ).scalar()
+        
+        return {
+            "recent_downloads": recent_downloads or 0,
+            "recent_views": recent_views or 0,
+            "total_recipes": self.total_recipes or 0,
+            "total_ingredients": self.total_ingredients or 0,
+            "popularity_score": (recent_downloads or 0) * 2 + (recent_views or 0) + (self.total_recipes or 0)
+        }
 
+    # Métodos extendidos para trending
+    def to_dict(self):
+        """Extiende el to_dict base con métricas de comida"""
+        data = super().to_dict()
+        data.update({
+            "total_recipes": self.total_recipes or 0,
+            "total_ingredients": self.total_ingredients or 0,
+            "popularity_metrics": self.get_popularity_metrics()
+        })
+        return data
+
+    def create_food_version(self, changelog="", created_by=None):
+        """Crea una nueva versión del dataset de comida"""
+        # Obtener la versión actual para el número
+        current_versions = self.versions.filter(DatasetVersion.version_type == 'food').all()
+        next_version = len(current_versions) + 1
+        
+        # Crear snapshot de archivos
+        files_snapshot = {}
+        for fm in self.feature_models:
+            for file in fm.files:
+                files_snapshot[file.name] = {
+                    'checksum': getattr(file, 'checksum', ''),
+                    'size': getattr(file, 'size', 0),
+                    'id': file.id
+                }
+        
+        # Crear nueva versión
+        new_version = FoodDatasetVersion(
+            dataset_id=self.id,
+            version_number=str(next_version),
+            title=self.ds_meta_data.title,
+            description=self.ds_meta_data.description,
+            files_snapshot=files_snapshot,
+            changelog=changelog,
+            created_by_id=created_by.id if created_by else None,
+            total_recipes=self.total_recipes,
+            total_ingredients=self.total_ingredients
+        )
+        
+        db.session.add(new_version)
+        db.session.commit()
+        
+        return new_version
+    
 class FoodDatasetVersion(DatasetVersion):
     """Versión extendida para datasets FOOD con métricas específicas"""
-    __tablename__ = "food_dataset_version"
-
-    id = db.Column(db.Integer, db.ForeignKey("dataset_version.id"), primary_key=True)
-
-    # Métricas agregadas
+    __tablename__ = 'food_dataset_version'
+    
+    id = db.Column(db.Integer, db.ForeignKey('dataset_version.id'), primary_key=True)
+    
+    # Métricas específicas de comida
     total_ingredients = db.Column(db.Integer)
     total_recipes = db.Column(db.Integer)
-
+    
     __mapper_args__ = {
-        "polymorphic_identity": "food"
+        'polymorphic_identity': 'food'
     }
-
+    
     def compare_with(self, other_version):
         """Comparación extendida entre versiones de FOOD"""
         base_comparison = super().compare_with(other_version)
-
+        
         if not isinstance(other_version, FoodDatasetVersion):
             return base_comparison
-
+        
         food_changes = {}
-
+        
         if self.total_ingredients != other_version.total_ingredients:
             food_changes["ingredients"] = {
                 "old": other_version.total_ingredients,
                 "new": self.total_ingredients,
                 "diff": (self.total_ingredients or 0) - (other_version.total_ingredients or 0)
             }
-
+        
         if self.total_recipes != other_version.total_recipes:
             food_changes["recipes"] = {
                 "old": other_version.total_recipes,
                 "new": self.total_recipes,
                 "diff": (self.total_recipes or 0) - (other_version.total_recipes or 0)
             }
-
+        
         base_comparison["food_metrics"] = food_changes
         return base_comparison
-
+    
     def to_dict(self):
+        """Serializar a diccionario incluyendo métricas de comida"""
         data = super().to_dict()
         data.update({
             "total_ingredients": self.total_ingredients or 0,
             "total_recipes": self.total_recipes or 0
         })
         return data
-    
-
-# ---------------------------
-# Métricas/Registros/DOI mapping
-# ---------------------------
-class DSDownloadRecord(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
-    dataset_id = db.Column(db.Integer, db.ForeignKey("data_set.id"))
-    download_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    download_cookie = db.Column(db.String(36), nullable=False)  # UUID4
-
-    def __repr__(self):
-        return (
-            f"<Download id={self.id} dataset_id={self.dataset_id} "
-            f"date={self.download_date} cookie={self.download_cookie}>"
-        )
-
-
-class DSViewRecord(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
-    dataset_id = db.Column(db.Integer, db.ForeignKey("data_set.id"))
-    view_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    view_cookie = db.Column(db.String(36), nullable=False)  # UUID4
-
-    def __repr__(self):
-        return f"<View id={self.id} dataset_id={self.dataset_id} date={self.view_date} cookie={self.view_cookie}>"
-
-
-class DOIMapping(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    dataset_doi_old = db.Column(db.String(120))
-    dataset_doi_new = db.Column(db.String(120))
-
-
-# ---------------------------
-# Registro de tipos (útil para factorías en servicios/rutas)
-# ---------------------------
-DATASET_KIND_TO_CLASS = {
-    "base": BaseDataset,
-    # "uvl": UVLDataset,
-    # "gpx": GPXDataset,
-    "food": FoodDataset,
-}
-
-# Alias retrocompatible
-class DataSet(BaseDataset):
-    __mapper_args__ = {
-        "polymorphic_identity": "base",  # mismo que BaseDataset
-        "concrete": False                # no crea nueva tabla
-    }
-
-    # Nota: no se redefine __tablename__, así que sigue apuntando a "data_set"
-    pass
