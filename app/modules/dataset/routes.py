@@ -106,6 +106,30 @@ def create_dataset():
     return render_template("dataset/upload_dataset.html", form=form)
 
 
+@dataset_bp.route("/dataset/edit/<int:dataset_id>", methods=["GET", "POST"])
+@login_required
+def edit_doi_dataset(dataset_id):
+    dataset = dataset_service.get_or_404(dataset_id)
+
+    # form = DataSetForm(obj=dataset.ds_meta_data)
+    form = DataSetForm()
+
+    if request.method == "POST":
+        result, errors = dataset_service.edit_doi_dataset(dataset, form)
+        return dataset_service.handle_service_response(
+            result, errors, "dataset.list_dataset", "Dataset updated", "dataset/edit_dataset.html", form
+        )
+    else:
+        form.title.data = dataset.ds_meta_data.title
+        form.desc.data = dataset.ds_meta_data.description
+        form.publication_type.data = dataset.ds_meta_data.publication_type
+        form.publication_doi.data = dataset.ds_meta_data.publication_doi
+        form.tags.data = dataset.ds_meta_data.tags
+        form.desc.data = dataset.ds_meta_data.description
+
+    return render_template("dataset/edit_dataset.html", form=form, dataset=dataset)
+
+
 @dataset_bp.route("/dataset/list", methods=["GET", "POST"])
 @login_required
 def list_dataset():

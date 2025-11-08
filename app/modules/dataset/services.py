@@ -140,6 +140,13 @@ class DataSetService(BaseService):
         domain = os.getenv("DOMAIN", "localhost")
         return f"http://{domain}/doi/{dataset.ds_meta_data.dataset_doi}"
 
+    def edit_doi_dataset(self, dataset, form):
+        updated_instance = self.dsmetadata_repository.update(dataset.id, **form.data, description=form.desc.data)
+
+        self.repository.session.commit()
+
+        return updated_instance, None
+
 
 class AuthorService(BaseService):
     def __init__(self):
