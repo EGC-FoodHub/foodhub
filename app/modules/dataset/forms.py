@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import FieldList, FormField, SelectField, StringField, SubmitField, TextAreaField
 from wtforms.validators import URL, DataRequired, Optional
 
-from app.modules.dataset.models import PublicationType
+from app.modules.dataset.models import PublicationType, FoodType
 
 
 class AuthorForm(FlaskForm):
@@ -28,7 +28,7 @@ class FeatureModelForm(FlaskForm):
     desc = TextAreaField("Description", validators=[Optional()])
     publication_type = SelectField(
         "Publication type",
-        choices=[(pt.value, pt.name.replace("_", " ").title()) for pt in PublicationType],
+        choices=[(pt.value, pt.name.replace("_", " ").title()) for pt in FoodType],
         validators=[Optional()],
     )
     publication_doi = StringField("Publication DOI", validators=[Optional(), URL()])
@@ -58,8 +58,8 @@ class DataSetForm(FlaskForm):
     title = StringField("Title", validators=[DataRequired()])
     desc = TextAreaField("Description", validators=[DataRequired()])
     publication_type = SelectField(
-        "Publication type",
-        choices=[(pt.value, pt.name.replace("_", " ").title()) for pt in PublicationType],
+        "Food type",
+        choices=[(pt.value, pt.name.replace("_", " ").title()) for pt in FoodType],
         validators=[DataRequired()],
     )
     publication_doi = StringField("Publication DOI", validators=[Optional(), URL()])
@@ -72,7 +72,7 @@ class DataSetForm(FlaskForm):
 
     def get_dsmetadata(self):
 
-        publication_type_converted = self.convert_publication_type(self.publication_type.data)
+        publication_type_converted = self.convert_food_type(self.publication_type.data)
 
         return {
             "title": self.title.data,
@@ -83,11 +83,18 @@ class DataSetForm(FlaskForm):
             "tags": self.tags.data,
         }
 
-    def convert_publication_type(self, value):
-        for pt in PublicationType:
-            if pt.value == value:
-                return pt.name
+    # def convert_publication_type(self, value):
+    #     for pt in PublicationType:
+    #         if pt.value == value:
+    #             return pt.name
+    #     return "NONE"
+    
+    def convert_food_type(self, value):
+        for ft in FoodType:
+            if ft.value == value:
+                return ft.name
         return "NONE"
+
 
     def get_authors(self):
         return [author.get_author() for author in self.authors]

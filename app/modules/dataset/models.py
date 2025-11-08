@@ -29,6 +29,49 @@ class PublicationType(Enum):
     OTHER = "other"
 
 
+class FoodType(Enum):
+    NONE = "none"
+    VEGAN = "vegan"
+    VEGETARIAN = "vegetarian"
+    GLUTEN_FREE = "gluten_free"
+    DAIRY_FREE = "dairy_free"
+    LACTOSE_FREE = "lactose_free"
+    LOW_CALORIE = "low_calorie"
+    LOW_CARB = "low_carb"
+    KETO = "keto"
+    PALEO = "paleo"
+    MEDITERRANEAN = "mediterranean"
+    ASIAN = "asian"
+    MEXICAN = "mexican"
+    ITALIAN = "italian"
+    DAIRY = "dairy"
+    PROTEIN_RICH = "protein_rich"
+    HIGH_FIBER = "high_fiber"
+    SUGAR_FREE = "sugar_free"
+    ORGANIC = "organic"
+    RAW = "raw"
+    WHOLE_FOODS = "whole_foods"
+    COMFORT_FOOD = "comfort_food"
+    STREET_FOOD = "street_food"
+    FINE_DINING = "fine_dining"
+    FAST_FOOD = "fast_food"
+    HOMEMADE = "homemade"
+    SEAFOOD = "seafood"
+    MEAT = "meat"
+    POULTRY = "poultry"
+    DESSERT = "dessert"
+    BEVERAGE = "beverage"
+    SNACK = "snack"
+    BREAKFAST = "breakfast"
+    LUNCH = "lunch"
+    DINNER = "dinner"
+    APPETIZER = "appetizer"
+    SOUP = "soup"
+    SALAD = "salad"
+    OTHER = "other"
+
+
+
 class Author(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
