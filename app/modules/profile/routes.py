@@ -83,4 +83,3 @@ def user_profile(user_id):
         pagination=user_datasets_pagination,
         total_datasets=total_datasets_count,
     )
-
