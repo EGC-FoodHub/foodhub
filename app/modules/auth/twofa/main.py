@@ -32,7 +32,5 @@ def generate_qr(encripted_key: str, username: str):
     img = qrcode.make(uri)
     buf = io.BytesIO()
     img.save(buf,format="PNG")
-    qrname = f'{username}_qrcode.png'
     img_base64 = base64.b64encode(buf.getvalue()).decode("ascii")
     return img_base64
-

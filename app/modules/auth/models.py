@@ -13,7 +13,7 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(256), unique=True, nullable=False)
     password = db.Column(db.String(256), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
-    twofa_key = db.Column(db.String(256), nullable = True, default = None)
+    twofa_key = db.Column(db.String(256), nullable=True, default=None)
 
     data_sets = db.relationship("DataSet", backref="user", lazy=True)
     profile = db.relationship("UserProfile", backref="user", uselist=False)
