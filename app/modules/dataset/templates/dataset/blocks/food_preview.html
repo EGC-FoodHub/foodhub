@@ -1,0 +1,27 @@
+<div class="card shadow-sm rounded-2xl p-4 bg-white">
+  <h3 class="text-lg font-semibold text-gray-800 mb-3">🍲 Food Dataset</h3>
+
+  {% set handler = namespace(data=None) %}
+  {% set handler.data = dataset.calculate_total_recipes() %}
+  
+  <ul class="text-sm text-gray-700 space-y-1">
+    <li><strong>Total de recetas:</strong> {{ dataset.calculate_total_recipes() }}</li>
+    <li><strong>Total de ingredientes:</strong> {{ dataset.calculate_total_ingredients() }}</li>
+    <li><strong>Tamaño total:</strong> {{ dataset.get_file_total_size_for_human() }}</li>
+  </ul>
+
+  <hr class="my-3 border-gray-200" />
+
+  {% for fm in dataset.feature_models %}
+    {% for file in fm.files %}
+      {% if file.name.lower().endswith('.food') %}
+        <details class="mb-2">
+          <summary class="font-medium text-gray-800 cursor-pointer">
+            📖 {{ file.name }}
+          </summary>
+          <pre class="bg-gray-50 text-sm p-2 rounded mt-1">{{ file.read_content() }}</pre>
+        </details>
+      {% endif %}
+    {% endfor %}
+  {% endfor %}
+</div>

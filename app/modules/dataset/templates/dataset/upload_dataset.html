@@ -232,7 +232,7 @@
                         url: "/dataset/file/upload",
                         paramName: 'file',
                         maxFilesize: 10,
-                        acceptedFiles: '.uvl',
+                        acceptedFiles: '.uvl,.food',
                         init: function () {
 
                             let fileList = document.getElementById('file-list');
@@ -241,15 +241,15 @@
 
                             this.on('addedfile', function (file) {
 
-                                let ext = file.name.split('.').pop();
-                                if (ext !== 'uvl') {
-                                    this.removeFile(file);
+                                // let ext = file.name.split('.').pop();
+                                // if (ext !== 'uvl') {
+                                //     this.removeFile(file);
 
-                                    let alert = document.createElement('p');
-                                    alert.textContent = 'Invalid file extension: ' + file.name;
-                                    alerts.appendChild(alert);
-                                    alerts.style.display = 'block';
-                                }
+                                //     let alert = document.createElement('p');
+                                //     alert.textContent = 'Invalid file extension: ' + file.name;
+                                //     alerts.appendChild(alert);
+                                //     alerts.style.display = 'block';
+                                // }
 
                             });
 

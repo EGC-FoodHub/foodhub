@@ -119,20 +119,28 @@ def list_dataset():
 @dataset_bp.route("/dataset/file/upload", methods=["POST"])
 @login_required
 def upload():
-    file = request.files["file"]
+    file = request.files.get("file")
+    if not file:
+        return jsonify({"message": "No file provided"}), 400
+
+    filename = file.filename.lower()
+    allowed_extensions = [".uvl", ".food"]
+    
+    # Validación de extensión
+    if not any(filename.endswith(ext) for ext in allowed_extensions):
+        return jsonify({"message": "File type not allowed"}), 400
+
     temp_folder = current_user.temp_folder()
 
-    if not file or not file.filename.endswith(".uvl"):
-        return jsonify({"message": "No valid file"}), 400
-
-    # create temp folder
+    # Crear carpeta temporal si no existe
     if not os.path.exists(temp_folder):
         os.makedirs(temp_folder)
 
+    # Generar ruta final
     file_path = os.path.join(temp_folder, file.filename)
 
+    # Evitar sobreescritura: generar nombre único si ya existe
     if os.path.exists(file_path):
-        # Generate unique filename (by recursion)
         base_name, extension = os.path.splitext(file.filename)
         i = 1
         while os.path.exists(os.path.join(temp_folder, f"{base_name} ({i}){extension}")):
@@ -147,15 +155,19 @@ def upload():
     except Exception as e:
         return jsonify({"message": str(e)}), 500
 
+    # Mensaje de confirmación según tipo
+    file_type = "UVL" if filename.endswith(".uvl") else "Food" if filename.endswith(".food") else "Unknown"
+
     return (
         jsonify(
             {
-                "message": "UVL uploaded and validated successfully",
+                "message": f"{file_type} file uploaded and validated successfully",
                 "filename": new_filename,
             }
         ),
         200,
     )
+
 
 
 @dataset_bp.route("/dataset/file/delete", methods=["POST"])
