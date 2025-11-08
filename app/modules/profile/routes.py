@@ -70,11 +70,7 @@ def user_profile(user_id):
         .paginate(page=page, per_page=per_page, error_out=False)
     )
 
-    total_datasets_count = (
-        db.session.query(DataSet)
-        .filter(DataSet.user_id == user.id)
-        .count()
-    )
+    total_datasets_count = db.session.query(DataSet).filter(DataSet.user_id == user.id).count()
 
     return render_template(
         "profile/summary.html",
