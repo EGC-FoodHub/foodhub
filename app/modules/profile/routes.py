@@ -7,7 +7,7 @@ from app.modules.dataset.models import DataSet
 from app.modules.profile import profile_bp
 from app.modules.profile.forms import UserProfileForm
 from app.modules.profile.services import UserProfileService
-from app.modules.auth.models import User 
+from app.modules.auth.models import User
 
 
 @profile_bp.route("/profile/edit", methods=["GET", "POST"])
@@ -54,6 +54,7 @@ def my_profile():
         pagination=user_datasets_pagination,
         total_datasets=total_datasets_count,
     )
+
 
 @profile_bp.route("/profile/<int:user_id>")
 def user_profile(user_id):
