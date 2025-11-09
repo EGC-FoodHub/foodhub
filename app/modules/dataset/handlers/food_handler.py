@@ -1,5 +1,6 @@
 import os
 
+
 class FoodHandler:
     """
     Analizador para archivos .food (recetas en texto plano).
@@ -11,12 +12,7 @@ class FoodHandler:
         if not file_path.lower().endswith(".food") or not os.path.exists(file_path):
             return {}
 
-        recipe = {
-            "name": None,
-            "author": None,
-            "ingredients": [],
-            "steps": []
-        }
+        recipe = {"name": None, "author": None, "ingredients": [], "steps": []}
 
         try:
             with open(file_path, "r", encoding="utf-8") as f:
@@ -56,8 +52,4 @@ class FoodHandler:
                         total_ingredients += data.get("ingredient_count", 0)
                         all_recipes.append(data)
 
-        return {
-            "total_recipes": total_recipes,
-            "total_ingredients": total_ingredients,
-            "recipes": all_recipes
-        }
+        return {"total_recipes": total_recipes, "total_ingredients": total_ingredients, "recipes": all_recipes}
