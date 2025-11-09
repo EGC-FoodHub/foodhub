@@ -20,7 +20,7 @@ from flask import (
 from flask_login import current_user, login_required
 
 from app.modules.dataset import dataset_bp
-from app.modules.dataset.forms import DataSetForm
+from app.modules.dataset.forms import DataSetForm, AuthorForm
 from app.modules.dataset.models import DSDownloadRecord
 from app.modules.dataset.services import (
     AuthorService,
@@ -105,6 +105,36 @@ def create_dataset():
 
     return render_template("dataset/upload_dataset.html", form=form)
 
+@dataset_bp.route("/dataset/save_as_draft", methods=["GET", "POST"])
+@login_required
+def create_dataset_as_draft():
+    form = DataSetForm()
+    if request.method == "POST":
+
+        dataset = None
+        
+        form.title.data = form.title.data if form.title.data else ""
+        form.desc.data = form.desc.data if form.desc.data else ""
+        form.feature_models.entries = []
+       
+        try:
+            logger.info("Creating dataset...")
+            dataset = dataset_service.create_from_form(form=form, current_user=current_user)
+            logger.info(f"Created dataset: {dataset}")
+            dataset_service.move_feature_models(dataset)
+        except Exception as exc:
+            logger.exception(f"Exception while create dataset data in local {exc}")
+            return jsonify({"Exception while create dataset data in local: ": str(exc)}), 400
+
+        # Delete temp folder
+        file_path = current_user.temp_folder()
+        if os.path.exists(file_path) and os.path.isdir(file_path):
+            shutil.rmtree(file_path)
+
+        msg = "Everything works!"
+        return jsonify({"message": msg}), 200
+
+    return render_template("dataset/upload_dataset.html", form=form)
 
 @dataset_bp.route("/dataset/edit/<int:dataset_id>", methods=["GET", "POST"])
 @login_required
@@ -122,11 +152,19 @@ def edit_doi_dataset(dataset_id):
     else:
         form.title.data = dataset.ds_meta_data.title
         form.desc.data = dataset.ds_meta_data.description
-        form.publication_type.data = dataset.ds_meta_data.publication_type
+        form.publication_type.data = dataset.ds_meta_data.publication_type.value
         form.publication_doi.data = dataset.ds_meta_data.publication_doi
         form.tags.data = dataset.ds_meta_data.tags
         form.desc.data = dataset.ds_meta_data.description
-
+        
+        form.authors.entries = []
+        for author in dataset.ds_meta_data.authors:
+            subform = AuthorForm()
+            subform.name.data = author.name
+            subform.affiliation.data = author.affiliation
+            subform.orcid.data = author.orcid
+            form.authors.append_entry(subform.data)
+    
     return render_template("dataset/edit_dataset.html", form=form, dataset=dataset)
 
 

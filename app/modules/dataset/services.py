@@ -106,7 +106,7 @@ class DataSetService(BaseService):
                 dsmetadata.authors.append(author)
 
             dataset = self.create(commit=False, user_id=current_user.id, ds_meta_data_id=dsmetadata.id)
-
+        
             for feature_model in form.feature_models:
                 uvl_filename = feature_model.uvl_filename.data
                 fmmetadata = self.fmmetadata_repository.create(commit=False, **feature_model.get_fmmetadata())
@@ -126,6 +126,7 @@ class DataSetService(BaseService):
                     commit=False, name=uvl_filename, checksum=checksum, size=size, feature_model_id=fm.id
                 )
                 fm.files.append(file)
+            
             self.repository.session.commit()
         except Exception as exc:
             logger.info(f"Exception creating dataset from form...: {exc}")
@@ -141,7 +142,24 @@ class DataSetService(BaseService):
         return f"http://{domain}/doi/{dataset.ds_meta_data.dataset_doi}"
 
     def edit_doi_dataset(self, dataset, form):
-        updated_instance = self.dsmetadata_repository.update(dataset.id, **form.data, description=form.desc.data)
+        current_user = AuthenticationService().get_authenticated_user()
+
+        main_author = {
+            "name": f"{current_user.profile.surname}, {current_user.profile.name}",
+            "affiliation": current_user.profile.affiliation,
+            "orcid": current_user.profile.orcid,
+        }
+
+        dsmetadata = dataset.ds_meta_data
+
+        new_authors = []
+        for author_data in [main_author] + form.get_authors():
+            author = self.author_repository.create(commit=False, ds_meta_data_id=dsmetadata.id, **author_data)
+            new_authors.append(author)
+            dsmetadata.authors = new_authors
+
+
+        updated_instance = self.update_dsmetadata(dsmetadata.id, **form.get_dsmetadata())
 
         self.repository.session.commit()
 

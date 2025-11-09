@@ -36,7 +36,7 @@
     <div class="row">
 
         <div class="col-xl-6 col-lg-12 col-md-12 col-sm-12">
-            <form method="POST" action="{{ url_for('dataset.edit_doi_dataset', dataset_id=dataset.id) }}" class="needs-validation">
+            <form method="POST" action="{{ url_for('dataset.edit_doi_dataset', dataset_id=dataset.id) }}" class="needs-validation" novalidate>
                 <div id="basic_info_form">
 
                     {{ form.hidden_tag() }}
@@ -128,33 +128,15 @@
 
                             <div class="row" style="padding-left: 2rem">
 
-                                <div class="col-lg-6 col-12 mb-3">
-                                    <label class="form-label">Author name</label>
-                                    <input class="form-control"
-                                        disabled
-                                        value="{{ current_user.profile.surname }}, {{ current_user.profile.name }}">
-                                </div>
-
-                                <div class="col-lg-6 col-12 mb-3">
-                                    <label class="form-label">Author affiliation</label>
-                                    <input class="form-control"
-                                        disabled value="{{ current_user.profile.affiliation }}">
-                                </div>
-
-                                <div class="col-lg-6 col-12 mb-3">
-                                    <label class="form-label">Author ORCID</label>
-                                    <input class="form-control"
-                                        disabled value="{{ current_user.profile.orcid }}">
-                                </div>
-
                                 <div class="col-12">
 
                                     <div class="mb-3">
 
                                         <div id="authors">
                                             {% for subform in form.authors %}
-                                            <div class="row author" {% if not loop.first %}
-                                                style="border:2px dotted #ccc;border-radius:10px;padding:10px;margin:10px 0; background-color: white"
+                                            <div class="row author" 
+                                                {% if not loop.first %}
+                                                    style="border:2px dotted #ccc;border-radius:10px;padding:10px; background-color: white"
                                                 {% endif %}
                                             >
                                                 <div class="col-lg-6 col-12 mb-3">
@@ -180,14 +162,19 @@
                                                         <span style="color: red;">{{ error }}</span>
                                                     {% endfor %}
                                                 </div>
+
+                                                {% if not loop.first %}
+                                                <div class="col-12 mb-2">
+                                                    <button type="button" class="btn btn-danger btn-sm remove-author-btn">
+                                                        Remove author
+                                                    </button>
+                                                </div>
+                                                {% endif %}
                                             </div>
                                             {% endfor %}
                                         </div>
-                                        <button type="button" class="btn btn-secondary" id="add_author">Add author
-                                        </button>
-
+                                        <button type="button" class="btn btn-secondary" id="add_author">Add author</button>
                                     </div>
-
                                 </div>
 
 
@@ -212,10 +199,6 @@
 
                 </div>
                 <div class="row form-group">
-
-                    <div class="col-12 mt-3">
-                        {{ form.submit(class="btn btn-primary") }}
-                    </div>
                 
                     <div class="col-12 mt-3">
                         <button id="save_as_draft_button" class="btn btn-primary mt-2">
@@ -544,4 +527,15 @@
 {% block scripts %}
     <script src="{{ url_for('zenodo.scripts') }}"></script>
     <script src="{{ url_for('dataset.scripts') }}"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.remove-author-btn').forEach(btn => {
+                btn.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    this.closest('.author').remove();
+                });
+            });
+        });
+    </script>
 {% endblock %}
