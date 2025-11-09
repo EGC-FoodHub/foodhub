@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1>📈 Trending Datasets</h1>
+            <p class="lead">Discover the most popular food datasets in our community</p>
+        </div>
+    </div>
+
+    <!-- Trending por Descargas Semanales -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">🔥 Top Trending This Week</h3>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for item in trending.weekly_downloads %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div class="flex-grow-1">
+                                <h5 class="mb-1">
+                                    <a href="{{ item.url }}" class="text-decoration-none">
+                                        {{ item.title }}
+                                    </a>
+                                </h5>
+                                <p class="mb-1 text-muted">
+                                    By {{ item.main_author }}
+                                    {% if item.community %}
+                                    <span class="badge bg-secondary ms-2">{{ item.community }}</span>
+                                    {% endif %}
+                                </p>
+                                <small class="text-muted">
+                                    {{ item.total_recipes }} recipes • {{ item.total_ingredients }} ingredients
+                                </small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-success fs-6">{{ item.metric_value }} downloads</span>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="list-group-item text-center text-muted py-4">
+                            <p class="mb-0">No trending data available this week.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Otras secciones de trending -->
+    <div class="row">
+        <!-- Trending Mensual -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">📅 Trending This Month</h4>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for item in trending.monthly_downloads %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">
+                                    <a href="{{ item.url }}" class="text-decoration-none">
+                                        {{ item.title }}
+                                    </a>
+                                </h6>
+                                <span class="badge bg-success">{{ item.metric_value }}</span>
+                            </div>
+                            <small class="text-muted">By {{ item.main_author }}</small>
+                        </div>
+                        {% else %}
+                        <div class="list-group-item text-center text-muted">
+                            <small>No monthly trending data</small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Más Vistos -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">👀 Most Viewed This Week</h4>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for item in trending.weekly_views %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">
+                                    <a href="{{ item.url }}" class="text-decoration-none">
+                                        {{ item.title }}
+                                    </a>
+                                </h6>
+                                <span class="badge bg-warning text-dark">{{ item.metric_value }}</span>
+                            </div>
+                            <small class="text-muted">By {{ item.main_author }}</small>
+                        </div>
+                        {% else %}
+                        <div class="list-group-item text-center text-muted">
+                            <small>No view data available</small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Datasets con más contenido -->
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">📚 Most Recipes</h4>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for item in trending.most_recipes %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">
+                                    <a href="{{ item.url }}" class="text-decoration-none">
+                                        {{ item.title }}
+                                    </a>
+                                </h6>
+                                <span class="badge bg-success">{{ item.metric_value }} recipes</span>
+                            </div>
+                            <small class="text-muted">By {{ item.main_author }}</small>
+                        </div>
+                        {% else %}
+                        <div class="list-group-item text-center text-muted">
+                            <small>No recipe data available</small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-secondary text-white">
+                    <h4 class="mb-0">🥗 Richest in Ingredients</h4>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for item in trending.rich_ingredients %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">
+                                    <a href="{{ item.url }}" class="text-decoration-none">
+                                        {{ item.title }}
+                                    </a>
+                                </h6>
+                                <span class="badge bg-secondary">{{ item.metric_value }} ingredients</span>
+                            </div>
+                            <small class="text-muted">By {{ item.main_author }}</small>
+                        </div>
+                        {% else %}
+                        <div class="list-group-item text-center text-muted">
+                            <small>No ingredient data available</small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

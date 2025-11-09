@@ -26,6 +26,8 @@ from app import db
 from app.modules.dataset import dataset_bp
 from app.modules.dataset.forms import DataSetForm
 from app.modules.dataset.models import DSDownloadRecord
+from app.modules.dataset.food_trending_service import FoodTrendingService
+from app.modules.dataset.trending_formatter import TrendingFormatter
 from app.modules.dataset.services import (
     AuthorService,
     DataSetService,
@@ -573,3 +575,111 @@ def api_trending_monthly():
         })
     
     return jsonify({"trending_monthly": trending_data})
+
+
+
+# RUTAS NUEVAS Y MEJORADAS - Añadir después de tus rutas existentes
+
+@dataset_bp.route("/trending")
+def trending_datasets():
+    """Página principal de trending datasets - VERSIÓN MEJORADA"""
+    try:
+        # Obtener datos formateados
+        weekly_downloads = FoodTrendingService.get_trending_by_downloads(timeframe='week', limit=10)
+        monthly_downloads = FoodTrendingService.get_trending_by_downloads(timeframe='month', limit=10)
+        weekly_views = FoodTrendingService.get_trending_by_views(timeframe='week', limit=10)
+        most_recipes = FoodTrendingService.get_most_recipes_datasets(limit=10)
+        rich_ingredients = FoodTrendingService.get_richest_ingredient_datasets(limit=10)
+        
+        # Formatear para la vista
+        formatted_data = {
+            'weekly_downloads': TrendingFormatter.format_trending_list(weekly_downloads, 'downloads'),
+            'monthly_downloads': TrendingFormatter.format_trending_list(monthly_downloads, 'downloads'),
+            'weekly_views': TrendingFormatter.format_trending_list(weekly_views, 'views'),
+            'most_recipes': TrendingFormatter.format_trending_list(most_recipes, 'recipes'),
+            'rich_ingredients': TrendingFormatter.format_trending_list(rich_ingredients, 'ingredients')
+        }
+        
+        return render_template(
+            "dataset/trending.html",
+            trending=formatted_data,
+            title="Trending Datasets"
+        )
+    except Exception as e:
+        print(f"Error loading trending page: {e}")
+        return render_template("error.html", 
+                             message="Error loading trending datasets. Please try again later."), 500
+
+@dataset_bp.route("/api/trending/<timeframe>")
+def api_trending(timeframe):
+    """API endpoint único para trending - VERSIÓN MEJORADA"""
+    try:
+        limit = min(int(request.args.get('limit', 10)), 50)  # Máximo 50 items
+        
+        if timeframe == 'weekly':
+            trending_data = FoodTrendingService.get_trending_by_downloads(timeframe='week', limit=limit)
+            metric_type = 'downloads'
+        elif timeframe == 'monthly':
+            trending_data = FoodTrendingService.get_trending_by_downloads(timeframe='month', limit=limit)
+            metric_type = 'downloads'
+        elif timeframe == 'views':
+            trending_data = FoodTrendingService.get_trending_by_views(timeframe='week', limit=limit)
+            metric_type = 'views'
+        else:
+            return jsonify({"error": "Invalid timeframe. Use 'weekly', 'monthly', or 'views'"}), 400
+        
+        response_data = TrendingFormatter.format_api_response(trending_data, metric_type)
+        return jsonify(response_data)
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@dataset_bp.route("/api/trending/recipes/most")
+def api_most_recipes():
+    """API endpoint para datasets con más recetas"""
+    try:
+        limit = min(int(request.args.get('limit', 10)), 50)
+        datasets = FoodTrendingService.get_most_recipes_datasets(limit=limit)
+        
+        response_data = TrendingFormatter.format_api_response(datasets, 'recipes')
+        return jsonify(response_data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@dataset_bp.route("/api/trending/ingredients/rich")
+def api_rich_ingredients():
+    """API endpoint para datasets con más ingredientes"""
+    try:
+        limit = min(int(request.args.get('limit', 10)), 50)
+        datasets = FoodTrendingService.get_richest_ingredient_datasets(limit=limit)
+        
+        response_data = TrendingFormatter.format_api_response(datasets, 'ingredients')
+        return jsonify(response_data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Ruta para el widget de trending en homepage
+@dataset_bp.route("/api/homepage/trending")
+def api_homepage_trending():
+    """API específica para el widget de trending en homepage"""
+    try:
+        trending_data = FoodTrendingService.get_trending_for_homepage()
+        
+        formatted_response = {
+            'weekly_downloads': TrendingFormatter.format_trending_list(
+                trending_data['weekly_downloads'], 'downloads'
+            ),
+            'weekly_views': TrendingFormatter.format_trending_list(
+                trending_data['weekly_views'], 'views'
+            ),
+            'most_recipes': TrendingFormatter.format_trending_list(
+                trending_data['most_recipes'], 'recipes'
+            ),
+            'rich_ingredients': TrendingFormatter.format_trending_list(
+                trending_data['rich_ingredients'], 'ingredients'
+            )
+        }
+        
+        return jsonify(formatted_response)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

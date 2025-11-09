@@ -441,6 +441,42 @@ class FoodDataset(BaseDataset):
         
         return new_version
     
+
+    
+    def get_trending_metrics(self, timeframe_days=7):
+        """Obtiene métricas de trending para este dataset específico"""
+        since_date = datetime.utcnow() - timedelta(days=timeframe_days)
+        
+        recent_downloads = db.session.query(func.count(DSDownloadRecord.id)).filter(
+            DSDownloadRecord.dataset_id == self.id,
+            DSDownloadRecord.download_date >= since_date
+        ).scalar() or 0
+        
+        recent_views = db.session.query(func.count(DSViewRecord.id)).filter(
+            DSViewRecord.dataset_id == self.id,
+            DSViewRecord.view_date >= since_date
+        ).scalar() or 0
+        
+        return {
+            'recent_downloads': recent_downloads,
+            'recent_views': recent_views,
+            'total_recipes': self.total_recipes or 0,
+            'total_ingredients': self.total_ingredients or 0,
+            'popularity_score': (recent_downloads * 3) + (recent_views * 1) + ((self.total_recipes or 0) * 2)
+        }
+    
+    def to_trending_dict(self):
+        """Serialización específica para trending"""
+        base_data = self.to_dict()
+        trending_metrics = self.get_trending_metrics()
+        
+        base_data.update({
+            'trending_metrics': trending_metrics,
+            'trending_rank': None  # Se puede calcular después
+        })
+        
+        return base_data
+    
 class FoodDatasetVersion(DatasetVersion):
     """Versión extendida para datasets FOOD con métricas específicas"""
     __tablename__ = 'food_dataset_version'
