@@ -322,6 +322,7 @@ class DatasetVersion(db.Model):
 #   FOOD Dataset y versiones
 # ==========================================================
 
+
 class FoodDataset(BaseDataset):
     __mapper_args__ = {"polymorphic_identity": "food"}
 
@@ -336,17 +337,47 @@ class FoodDataset(BaseDataset):
     def specific_template(self) -> str | None:
         return "dataset/blocks/food_preview.html"
 
-    def calculate_total_ingredients(self):
-        """Cuenta todos los ingredientes de todos los archivos .food"""
+    def calculate_total_foods(self):
+        """Cuenta todos los alimentos de todos los archivos .food"""
         handler = FoodHandler()
         summary = handler.summarize_dataset(self)
-        return summary["total_ingredients"]
+        return summary["total_foods"]
 
-    def calculate_total_recipes(self):
-        """Cuenta el número total de recetas"""
+    def calculate_total_calories(self):
+        """Calcula el total de calorías de todos los alimentos"""
         handler = FoodHandler()
         summary = handler.summarize_dataset(self)
-        return summary["total_recipes"]
+        return summary["total_calories"]
+
+    def calculate_average_calories(self):
+        """Calcula el promedio de calorías por alimento"""
+        handler = FoodHandler()
+        summary = handler.summarize_dataset(self)
+        return summary["average_calories"]
+
+    def get_type_distribution(self):
+        """Obtiene la distribución de alimentos por tipo"""
+        handler = FoodHandler()
+        summary = handler.summarize_dataset(self)
+        return summary["type_distribution"]
+
+    def get_nutritional_averages(self):
+        """Obtiene los promedios nutricionales de todos los alimentos"""
+        handler = FoodHandler()
+        summary = handler.summarize_dataset(self)
+        return summary["nutritional_averages"]
+
+    def get_all_foods(self):
+        """Obtiene la lista completa de todos los alimentos"""
+        handler = FoodHandler()
+        summary = handler.summarize_dataset(self)
+        return summary["foods"]
+
+    def get_food_names(self):
+        """Obtiene una lista con los nombres de todos los alimentos"""
+        handler = FoodHandler()
+        summary = handler.summarize_dataset(self)
+        return [food["name"] for food in summary["foods"]]
 
 
 class FoodDatasetVersion(DatasetVersion):
