@@ -1,0 +1,29 @@
+{% extends "base_template.html" %}
+{% block content %}
+<div class="metrics-container">
+  <h2 class="metrics-title">My metrics</h2>
+
+  <div class="metric-item">
+    <i class="fas fa-cloud-upload-alt metric-icon"></i>
+    <p class="metric-label">
+      Uploaded datasets: <span class="metric-value">{{ metrics.uploaded_datasets }}</span>
+    </p>
+  </div>
+
+  <div class="metric-item">
+    <i class="fas fa-download metric-icon"></i>
+    <p class="metric-label">
+      Downloads: <span class="metric-value">{{ metrics.downloads }}</span>
+    </p>
+  </div>
+
+  <div class="metric-item">
+    <i class="fas fa-sync-alt metric-icon"></i>
+    <p class="metric-label">
+      Synchronizations: <span class="metric-value">{{ metrics.synchronizations }}</span>
+    </p>
+  </div>
+</div>
+
+<script src="https://kit.fontawesome.com/a2d9c2c9c3.js" crossorigin="anonymous"></script>
+{% endblock %}

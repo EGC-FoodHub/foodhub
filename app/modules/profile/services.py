@@ -1,4 +1,7 @@
+from sqlalchemy.exc import SQLAlchemyError
 from app.modules.profile.repositories import UserProfileRepository
+from app.modules.profile.models import UserProfile
+from app import db
 from core.services.BaseService import BaseService
 
 
@@ -12,3 +15,22 @@ class UserProfileService(BaseService):
             return updated_instance, None
 
         return None, form.errors
+
+    def get_user_metrics(self, user_id: int):
+        try:
+            profile = UserProfile.query.filter_by(user_id=user_id).first()
+
+            if not profile:
+                return None, "User profile not found."
+
+            metrics = {
+                "uploaded_datasets": profile.uploaded_datasets_count,
+                "downloads": profile.downloaded_datasets_count,
+                "synchronizations": profile.synchronized_datasets_count,
+            }
+
+            return metrics, None
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return None, str(e)

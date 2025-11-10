@@ -1,4 +1,4 @@
-from flask import redirect, render_template, request, url_for
+from flask import redirect, render_template, request, url_for, jsonify
 from flask_login import current_user, login_required
 
 from app import db
@@ -53,3 +53,25 @@ def my_profile():
         pagination=user_datasets_pagination,
         total_datasets=total_datasets_count,
     )
+
+@profile_bp.route("/profile/metrics")
+@login_required
+def dashboard_metrics():
+    profile = current_user.profile
+    service = UserProfileService()
+    metrics, errors = service.get_user_metrics(profile.user_id)
+
+    if errors or not metrics:
+        metrics = {
+            "uploaded_datasets": 0,
+            "downloads": 0,
+            "synchronizations": 0,
+        }
+
+    return render_template(
+        "profile/dashboard.html",
+        user_profile=profile,
+        user=current_user,
+        metrics=metrics
+    )
+
