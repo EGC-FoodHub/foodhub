@@ -19,6 +19,9 @@ class User(db.Model, UserMixin):
     data_sets = db.relationship("DataSet", back_populates="user", lazy=True)
     profile = db.relationship("UserProfile", backref="user", uselist=False)
 
+    is_email_verified = db.Column(db.Boolean, default=False)
+    email_verification_token = db.Column(db.String(120), nullable=True)
+
     def __init__(self, **kwargs):
         super(User, self).__init__(**kwargs)
         if "password" in kwargs:

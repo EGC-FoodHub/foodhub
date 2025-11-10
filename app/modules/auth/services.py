@@ -9,7 +9,10 @@ from app.modules.profile.models import UserProfile
 from app.modules.profile.repositories import UserProfileRepository
 from core.configuration.configuration import uploads_folder_name
 from core.services.BaseService import BaseService
+from app.modules.auth.utils.email_token import generate_verification_token, confirm_verification_token
 
+class EmailVerificationError(Exception):
+    """Raised when email verification fails."""
 
 class AuthenticationService(BaseService):
     def __init__(self):
@@ -17,6 +20,23 @@ class AuthenticationService(BaseService):
         self.user_profile_repository = UserProfileRepository()
 
     def login(self, email, password, remember=True):
+        user = self.repository.get_by_email(email)
+        if user is None:
+            return False
+
+        if not user.check_password(password):
+            return False
+
+        if not user.is_email_verified:
+            from flask import flash
+            flash("Please verify your email before logging in.", "warning")
+            return False
+
+        login_user(user, remember=remember)
+        return True
+
+
+    def check_password(self, email, password, remember=True):
         user = self.repository.get_by_email(email)
         if user is not None and user.check_password(password):
             login_user(user, remember=remember)
@@ -62,9 +82,25 @@ class AuthenticationService(BaseService):
             }
 
             user = self.create(commit=False, **user_data)
+
+            token = generate_verification_token(email)
+            user.email_verification_token = token
+
             profile_data["user_id"] = user.id
             self.user_profile_repository.create(**profile_data)
             self.repository.session.commit()
+
+            # # Send email
+            # verification_url = url_for("auth.verify_email", token=token, _external=True)
+            # msg = Message(
+            #     subject="Verify Your Email",
+            #     sender=("Your App Name", "no-reply@yourapp.com"),
+            #     recipients=[email],
+            #     body=f"Hi {name}, please click the link to verify your email: {verification_url}"
+            # )
+            # mail.send(msg)
+
+
         except Exception as exc:
             self.repository.session.rollback()
             raise exc
@@ -103,3 +139,23 @@ class AuthenticationService(BaseService):
                 # self.update(current_user.id, twofa_key=encripted_key)
                 return True
         return False
+
+
+
+    def verify_email(self, token: str):
+        email = confirm_verification_token(token)
+        if not email:
+            raise EmailVerificationError("Invalid or expired verification token.")
+
+        user = self.repository.get_by_email(email)
+        if not user:
+            raise EmailVerificationError("User not found for the given token.")
+
+        if user.is_email_verified:
+            raise EmailVerificationError("Email already verified.")
+
+        user.is_email_verified = True
+        user.email_verification_token = None
+        self.repository.session.commit()
+
+        return user

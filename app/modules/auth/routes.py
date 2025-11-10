@@ -1,4 +1,4 @@
-from flask import redirect, render_template, request, session, url_for
+from flask import redirect, render_template, request, url_for, flash, session
 from flask_login import current_user, login_user, logout_user
 
 from app.modules.auth import auth_bp
@@ -27,8 +27,7 @@ def show_signup_form():
             return render_template("auth/signup_form.html", form=form, error=f"Error creating user: {exc}")
 
         # Log user
-        login_user(user, remember=True)
-        return redirect(url_for("public.index"))
+        return render_template("auth/verify_email.html",email=user.email)
 
     return render_template("auth/signup_form.html", form=form)
 
@@ -78,4 +77,10 @@ def enable_2fa():
 
         return render_template("auth/tfa_verification.html", form=form, qrcode=qr)
 
+    return redirect(url_for("auth.login"))
+
+
+@auth_bp.route("/verify/<token>")
+def verify_email(token):
+    authentication_service.verify_email(token)
     return redirect(url_for("auth.login"))
