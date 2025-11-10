@@ -110,6 +110,13 @@ chico sundermann">
                         </a>
                     </li>
 
+                    <li class="sidebar-item {{ 'active' if request.endpoint == 'profile.dashboard' else '' }}">
+                        <a class="sidebar-link" href="{{ url_for('profile.dashboard_metrics') }}">
+                            <i class="align-middle" data-feather="bar-chart-2"></i> <span 
+                                class="align-middle">My metrics</span>
+                        </a>
+                    </li>
+
                     <li class="sidebar-header">
                         Options
                     </li>
