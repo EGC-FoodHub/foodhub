@@ -4,6 +4,7 @@ from flask_login import current_user, login_user
 
 from app.modules.auth.models import User
 from app.modules.auth.repositories import UserRepository
+from app.modules.auth.twofa import generate_key, generate_qr, verify
 from app.modules.profile.models import UserProfile
 from app.modules.profile.repositories import UserProfileRepository
 from core.configuration.configuration import uploads_folder_name
@@ -19,6 +20,18 @@ class AuthenticationService(BaseService):
         user = self.repository.get_by_email(email)
         if user is not None and user.check_password(password):
             login_user(user, remember=remember)
+            return True
+        return False
+
+    def check_password(self, email, password, remember=True):
+        user = self.repository.get_by_email(email)
+        if user is not None and user.check_password(password):
+            return True
+        return False
+
+    def check_2FA_is_enabled(self, email):
+        user: User | None = self.repository.get_by_email(email)
+        if user is not None and user.twofa_key is not None:
             return True
         return False
 
@@ -76,3 +89,17 @@ class AuthenticationService(BaseService):
 
     def temp_folder_by_user(self, user: User) -> str:
         return os.path.join(uploads_folder_name(), "temp", str(user.id))
+
+    def generate_key_qr(self):
+        if current_user.is_authenticated:
+            key = generate_key()
+            return key, generate_qr(key, current_user.profile.name)
+        return None
+
+    def confirm_and_add_2fa(self, encripted_key: str, code: str):
+        if current_user.is_authenticated:
+            comprobation = verify(encripted_key, code)
+            if comprobation:
+                # self.update(current_user.id, twofa_key=encripted_key)
+                return True
+        return False
