@@ -1,29 +1,76 @@
 {% extends "base_template.html" %}
 {% block content %}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<style>
+  .metrics-container {
+    max-width: 350px;
+    margin: 40px auto 0 auto;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    padding: 2.5rem 2rem 2rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .metrics-title {
+    font-size: 2.3rem;
+    font-weight: 700;
+    color: #222;
+    margin-bottom: 1.7rem;
+    letter-spacing: 1px;
+    text-align: center;
+  }
+  .metric-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 2.2rem;
+  }
+  .metric-block:last-child {
+    margin-bottom: 0;
+  }
+  .metric-icon {
+    font-size: 4.5rem;
+    margin-bottom: 0.5rem;
+    color: #111;
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.07));
+  }
+  .metric-label {
+    font-size: 1.15rem;
+    color: #222;
+    margin: 0.2rem 0 0.1rem 0;
+    text-align: center;
+    font-weight: 500;
+  }
+  .metric-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1cc6c6;
+    margin-top: 0.1rem;
+    letter-spacing: 1px;
+    text-align: center;
+    display: inline-block;
+  }
+</style>
 <div class="metrics-container">
   <h2 class="metrics-title">My metrics</h2>
-
-  <div class="metric-item">
-    <i class="fas fa-cloud-upload-alt metric-icon"></i>
-    <p class="metric-label">
-      Uploaded datasets: <span class="metric-value">{{ metrics.uploaded_datasets }}</span>
-    </p>
+  <div class="metric-block">
+    <i class="fa-solid fa-cloud-arrow-up metric-icon"></i>
+    <span class="metric-label">Uploaded datasets:</span>
+    <span class="metric-value">{{ metrics.uploaded_datasets }}</span>
   </div>
-
-  <div class="metric-item">
-    <i class="fas fa-download metric-icon"></i>
-    <p class="metric-label">
-      Downloads: <span class="metric-value">{{ metrics.downloads }}</span>
-    </p>
+  <div class="metric-block">
+    <i class="fa-solid fa-download metric-icon"></i>
+    <span class="metric-label">Downloads:</span>
+    <span class="metric-value">{{ metrics.downloads }}</span>
   </div>
-
-  <div class="metric-item">
-    <i class="fas fa-sync-alt metric-icon"></i>
-    <p class="metric-label">
-      Synchronizations: <span class="metric-value">{{ metrics.synchronizations }}</span>
-    </p>
+  <div class="metric-block">
+    <i class="fa-solid fa-arrows-rotate metric-icon"></i>
+    <span class="metric-label">Synchronizations:</span>
+    <span class="metric-value">{{ metrics.synchronizations }}</span>
   </div>
 </div>
 
-<script src="https://kit.fontawesome.com/a2d9c2c9c3.js" crossorigin="anonymous"></script>
 {% endblock %}
