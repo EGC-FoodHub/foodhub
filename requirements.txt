@@ -89,6 +89,7 @@ pyflakes==3.4.0
 Pygments==2.19.2
 PyMySQL==1.1.1
 pyOpenSSL==25.1.0
+pyotp==2.9.0
 pyparsing==3.2.3
 PySocks==1.7.1
 pytest==8.4.1
@@ -101,9 +102,11 @@ python-socketio==5.13.0
 pytz==2025.2
 PyYAML==6.0.2
 pyzmq==27.0.0
+qrcode==8.2
 redis==6.2.0
 referencing==0.36.2
 requests==2.32.4
+resend==2.19.0
 rpds-py==0.26.0
 rq==2.4.1
 selenium==4.34.2

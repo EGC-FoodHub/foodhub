@@ -26,3 +26,7 @@ class RecoverPasswordForm(FlaskForm):
 class SendEmailForm(FlaskForm):
     email = StringField("Email", validators=[DataRequired(), Email()])
     submit = SubmitField("Submit")
+
+class TwoFactoAuthForm(FlaskForm):
+    code = StringField("2FA Code", validators=[DataRequired(), Length(max=6)])
+    submit = SubmitField("Enviar")

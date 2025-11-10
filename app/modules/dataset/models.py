@@ -379,6 +379,70 @@ class FoodDataset(BaseDataset):
         return [food["name"] for food in summary["foods"]]
 
 
+class UVLDataset(BaseDataset):
+    __mapper_args__ = {"polymorphic_identity": "uvl"}
+
+    @classmethod
+    def kind(cls) -> str:
+        return "uvl"
+
+    def validate_upload(self, file_path: str) -> bool:
+        return file_path.lower().endswith(".uvl")
+
+    def specific_template(self) -> str | None:
+        return "dataset/blocks/uvl_tree.html"
+
+    def calculate_total_features(self):
+        """Calcular total de features en todos los modelos UVL"""
+        # TODO: Implementar según lógica UVL existente
+        return 0
+
+    def calculate_total_constraints(self):
+        """Calcular total de constraints en todos los modelos UVL"""
+        # TODO: Implementar según lógica UVL existente
+        return 0
+
+
+class UVLDatasetVersion(DatasetVersion):
+    """Versión extendida para datasets UVL con métricas específicas"""
+
+    __tablename__ = "uvl_dataset_version"
+
+    id = db.Column(db.Integer, db.ForeignKey("dataset_version.id"), primary_key=True)
+
+    total_features = db.Column(db.Integer)
+    total_constraints = db.Column(db.Integer)
+    model_count = db.Column(db.Integer)
+
+    __mapper_args__ = {"polymorphic_identity": "uvl"}
+
+    def compare_with(self, other_version):
+        """Comparación extendida para UVL"""
+        base_comparison = super().compare_with(other_version)
+
+        if not isinstance(other_version, UVLDatasetVersion):
+            return base_comparison
+
+        uvl_changes = {}
+
+        if self.total_features != other_version.total_features:
+            uvl_changes["features"] = {
+                "old": other_version.total_features,
+                "new": self.total_features,
+                "diff": self.total_features - other_version.total_features,
+            }
+
+        if self.total_constraints != other_version.total_constraints:
+            uvl_changes["constraints"] = {
+                "old": other_version.total_constraints,
+                "new": self.total_constraints,
+                "diff": self.total_constraints - other_version.total_constraints,
+            }
+
+        base_comparison["uvl_metrics"] = uvl_changes
+        return base_comparison
+
+
 class FoodDatasetVersion(DatasetVersion):
     """Versión extendida para datasets FOOD con métricas específicas"""
 
@@ -463,8 +527,7 @@ class DOIMapping(db.Model):
 # ---------------------------
 DATASET_KIND_TO_CLASS = {
     "base": BaseDataset,
-    # "uvl": UVLDataset,
-    # "gpx": GPXDataset,
+    "uvl": UVLDataset,
     "food": FoodDataset,
 }
 
@@ -477,4 +540,3 @@ class DataSet(BaseDataset):
     }
 
     # Nota: no se redefine __tablename__, así que sigue apuntando a "data_set"
-    pass

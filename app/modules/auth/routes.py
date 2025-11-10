@@ -1,8 +1,12 @@
-from flask import redirect, render_template, request, url_for
-from flask_login import current_user, login_user, logout_user
+from flask import redirect, render_template, request, session, url_for
+from flask_login import current_user, logout_user
 
 from app.modules.auth import auth_bp
+<<<<<<< HEAD
 from app.modules.auth.forms import LoginForm, SignupForm, RecoverPasswordForm, SendEmailForm
+=======
+from app.modules.auth.forms import LoginForm, SignupForm, TwoFactoAuthForm
+>>>>>>> trunk-1
 from app.modules.auth.services import AuthenticationService
 from app.modules.profile.services import UserProfileService
 
@@ -27,8 +31,7 @@ def show_signup_form():
             return render_template("auth/signup_form.html", form=form, error=f"Error creating user: {exc}")
 
         # Log user
-        login_user(user, remember=True)
-        return redirect(url_for("public.index"))
+        return render_template("auth/verify_email.html", email=user.email)
 
     return render_template("auth/signup_form.html", form=form)
 
@@ -40,7 +43,10 @@ def login():
 
     form = LoginForm()
     if request.method == "POST" and form.validate_on_submit():
-        if authentication_service.login(form.email.data, form.password.data):
+        if authentication_service.check_password(form.email.data, form.password.data):
+            if authentication_service.check_2FA_is_enabled(form.email.data):
+                return render_template("auth/tfa_verification.html")
+            authentication_service.login(form.email.data, form.password.data)
             return redirect(url_for("public.index"))
 
         return render_template("auth/login_form.html", form=form, error="Invalid credentials")
@@ -94,3 +100,31 @@ def change_password():
             return render_template("auth/recover_password_form.html",form=form, error="something went wrong")
 
     return render_template("auth/recover_password_form.html", form=form)
+@auth_bp.route("/enable_2fa", methods=["GET", "POST"])
+def enable_2fa():
+    if current_user.is_authenticated and current_user.twofa_key is None:
+        if "temp_key" not in session:
+            key, qr = authentication_service.generate_key_qr()
+            session["temp_key"] = key
+            session["temp_qr"] = qr
+
+        key = session["temp_key"]
+        qr = session["temp_qr"]
+
+        form = TwoFactoAuthForm()
+        if request.method == "POST" and form.validate_on_submit():
+            if authentication_service.confirm_and_add_2fa(key, form.code.data):
+                session.pop("temp_qr")
+                session.pop("temp_key")
+                return redirect(url_for("public.index"))
+            return render_template("auth/tfa_verification.html", form=form, error="Incorrect 2FA code", qrcode=qr)
+
+        return render_template("auth/tfa_verification.html", form=form, qrcode=qr)
+
+    return redirect(url_for("auth.login"))
+
+
+@auth_bp.route("/verify/<token>")
+def verify_email(token):
+    authentication_service.verify_email(token)
+    return redirect(url_for("auth.login"))
