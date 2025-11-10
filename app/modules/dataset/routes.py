@@ -7,20 +7,11 @@ import uuid
 from datetime import datetime, timezone
 from zipfile import ZipFile
 
-from flask import (
-    abort,
-    jsonify,
-    make_response,
-    redirect,
-    render_template,
-    request,
-    send_from_directory,
-    url_for,
-)
+from flask import abort, jsonify, make_response, redirect, render_template, request, send_from_directory, url_for
 from flask_login import current_user, login_required
 from sqlalchemy.exc import SQLAlchemyError
-import app
 
+import app
 from app.modules.dataset import dataset_bp
 from app.modules.dataset.forms import DataSetForm
 from app.modules.dataset.models import DSDownloadRecord
@@ -57,12 +48,8 @@ def create_dataset():
             return jsonify({"message": form.errors}), 400
 
         try:
-            logger.info(
-                "Creating dataset..."
-            )
-            dataset = dataset_service.create_from_form(
-                form=form, current_user=current_user
-            )
+            logger.info("Creating dataset...")
+            dataset = dataset_service.create_from_form(form=form, current_user=current_user)
             logger.info(f"Created dataset: {dataset}")
             dataset_service.move_feature_models(dataset)
         except Exception as exc:
@@ -89,18 +76,14 @@ def create_dataset():
             try:
                 # iterate for each feature model (one feature model = one request to Zenodo)
                 for feature_model in dataset.feature_models:
-                    zenodo_service.upload_file(
-                        dataset, deposition_id, feature_model
-                    )
+                    zenodo_service.upload_file(dataset, deposition_id, feature_model)
 
                 # publish deposition
                 zenodo_service.publish_deposition(deposition_id)
 
                 # update DOI
                 deposition_doi = zenodo_service.get_doi(deposition_id)
-                dataset_service.update_dsmetadata(
-                    dataset.ds_meta_data_id, dataset_doi=deposition_doi
-                )
+                dataset_service.update_dsmetadata(dataset.ds_meta_data_id, dataset_doi=deposition_doi)
             except Exception as e:
                 msg = f"it has not been possible upload feature models in Zenodo and update the DOI: {e}"
                 return jsonify({"message": msg}), 200
@@ -145,9 +128,7 @@ def upload():
         # Generate unique filename (by recursion)
         base_name, extension = os.path.splitext(file.filename)
         i = 1
-        while os.path.exists(
-            os.path.join(temp_folder, f"{base_name} ({i}){extension}")
-        ):
+        while os.path.exists(os.path.join(temp_folder, f"{base_name} ({i}){extension}")):
             i += 1
         new_filename = f"{base_name} ({i}){extension}"
         file_path = os.path.join(temp_folder, new_filename)
@@ -242,24 +223,18 @@ def download_dataset(dataset_id):
             download_cookie=user_cookie,
         )
 
-        logger.info(
-            "Created new DSDownloadRecord for dataset=%s cookie=%s",
-            dataset_id,
-            user_cookie
-        )
+        logger.info("Created new DSDownloadRecord for dataset=%s cookie=%s", dataset_id, user_cookie)
 
         # If the user is authenticated, increment their downloaded datasets counter
         try:
             if current_user.is_authenticated and getattr(current_user, "profile", None):
                 profile = current_user.profile
-                profile.downloaded_datasets_count = (
-                    profile.downloaded_datasets_count or 0
-                ) + 1
+                profile.downloaded_datasets_count = (profile.downloaded_datasets_count or 0) + 1
                 profile.save()
                 logger.info(
                     "Incremented downloaded_datasets_count for user_id=%s to %s",
                     current_user.id,
-                    profile.downloaded_datasets_count
+                    profile.downloaded_datasets_count,
                 )
         except SQLAlchemyError:
             logger.exception("Failed to update user's downloaded_datasets_count")
@@ -268,7 +243,7 @@ def download_dataset(dataset_id):
             "Existing DSDownloadRecord found for dataset=%s cookie=%s user_id=%s",
             dataset_id,
             user_cookie,
-            existing_record.user_id
+            existing_record.user_id,
         )
         # If record exists but was anonymous and user is authenticated, attach it to the user and increment
         try:
@@ -280,14 +255,12 @@ def download_dataset(dataset_id):
                 existing_record.user_id = current_user.id
                 app.db.session.commit()
                 profile = current_user.profile
-                profile.downloaded_datasets_count = (
-                    profile.downloaded_datasets_count or 0
-                ) + 1
+                profile.downloaded_datasets_count = (profile.downloaded_datasets_count or 0) + 1
                 profile.save()
                 logger.info(
                     "Attached anonymous DSDownloadRecord to user_id=%s and incremented counter to %s",
                     current_user.id,
-                    profile.downloaded_datasets_count
+                    profile.downloaded_datasets_count,
                 )
         except SQLAlchemyError:
             logger.exception("Failed while attaching anonymous download record or updating counter")

@@ -26,10 +26,12 @@ class UserProfileService(BaseService):
 
             # Contar datasets subidos por el usuario
             from app.modules.dataset.models import DataSet
+
             uploaded_datasets_count = DataSet.query.filter_by(user_id=user_id).count()
 
             # Contar datasets sincronizados (con DOI) por el usuario
             from app.modules.dataset.models import DataSet, DSMetaData
+
             synchronized_datasets_count = (
                 DataSet.query.join(DSMetaData)
                 .filter(DataSet.user_id == user_id, DSMetaData.dataset_doi.isnot(None))
@@ -38,6 +40,7 @@ class UserProfileService(BaseService):
 
             # Contar descargas hechas por el usuario autenticado
             from app.modules.dataset.models import DSDownloadRecord
+
             downloads_count = DSDownloadRecord.query.filter_by(user_id=user_id).count()
 
             metrics = {
