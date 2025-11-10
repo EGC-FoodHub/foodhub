@@ -1,14 +1,15 @@
 import logging
 import os
 import uuid
+
 import requests
 from dotenv import load_dotenv
 from flask import Response, jsonify
 from flask_login import current_user
 
 from app.modules.dataset.models import DataSet
-from app.modules.featuremodel.models import FeatureModel
 from app.modules.fakenodo.repositories import FakenodoRepository
+from app.modules.featuremodel.models import FeatureModel
 from core.configuration.configuration import uploads_folder_name
 from core.services.BaseService import BaseService
 
@@ -19,9 +20,8 @@ load_dotenv()
 
 class FakenodoService(BaseService):
 
-    def generate_doi(version=1):
+    def generate_doi(self, version=1):
         return f"fakenodo.{uuid.uuid4()}.v{version}"
-
 
     def get_fakenodo_url(self):
 
@@ -96,7 +96,7 @@ class FakenodoService(BaseService):
                 }
             )
 
-        deposition_id = response.json()["id"] 
+        deposition_id = response.json()["id"]
 
         # Step 2: Upload an empty file to the deposition
         data = {"name": "test_file.txt"}
