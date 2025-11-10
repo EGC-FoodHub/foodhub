@@ -36,9 +36,13 @@ class UserProfileService(BaseService):
                 .count()
             )
 
+            # Contar descargas hechas por el usuario autenticado
+            from app.modules.dataset.models import DSDownloadRecord
+            downloads_count = DSDownloadRecord.query.filter_by(user_id=user_id).count()
+
             metrics = {
                 "uploaded_datasets": uploaded_datasets_count,
-                "downloads": profile.downloaded_datasets_count,
+                "downloads": downloads_count,
                 "synchronizations": synchronized_datasets_count,
             }
 
