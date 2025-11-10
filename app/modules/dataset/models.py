@@ -371,8 +371,8 @@ class FoodDataset(BaseDataset):
         handler = FoodHandler()
         summary = handler.summarize_dataset(self)
         return summary["foods"]
-    
-        def get_food_names(self):
+
+    def get_food_names(self):
         """Obtiene una lista con los nombres de todos los alimentos"""
         handler = FoodHandler()
         summary = handler.summarize_dataset(self)
