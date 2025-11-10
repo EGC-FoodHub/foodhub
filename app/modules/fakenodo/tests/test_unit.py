@@ -1,7 +1,7 @@
 import pytest
 import json
 from app import create_app
-from flask import Response
+
 
 @pytest.fixture(scope="module")
 def test_client():
@@ -14,10 +14,10 @@ def test_client():
             yield testing_client
 
 
-
 """
 Test positivos
 """
+
 
 def test_create_record(test_client):
     data = {
@@ -92,16 +92,17 @@ def test_add_files_to_record(test_client):
 def test_publish_record(test_client):
     all_records = test_client.get("/fakenodo/records").get_json()
     record_id = all_records[0]["id"]
-
     response = test_client.post(f"/fakenodo/records/{record_id}/publish")
     assert response.status_code == 201
     published = response.get_json()
     assert published["published"] is True
     assert published["version"] > 1
 
+
 """
 Test negativos
 """
+
 
 def test_get_nonexistent_record(test_client):
     response = test_client.get("/fakenodo/records/invalid123")

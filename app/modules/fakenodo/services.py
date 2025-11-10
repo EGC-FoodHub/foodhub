@@ -95,7 +95,7 @@ class FakenodoService(BaseService):
                 }
             )
 
-        deposition_id = response.json()["id"] 
+        deposition_id = response.json()["id"]
 
         # Step 2: Upload an empty file to the deposition
         data = {"name": "test_file.txt"}
