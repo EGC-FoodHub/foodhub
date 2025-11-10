@@ -125,7 +125,7 @@ def upload():
 
     filename = file.filename.lower()
     allowed_extensions = [".uvl", ".food"]
-    
+
     # Validación de extensión
     if not any(filename.endswith(ext) for ext in allowed_extensions):
         return jsonify({"message": "File type not allowed"}), 400
@@ -167,7 +167,6 @@ def upload():
         ),
         200,
     )
-
 
 
 @dataset_bp.route("/dataset/file/delete", methods=["POST"])
