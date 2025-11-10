@@ -10,6 +10,7 @@ from app.modules.profile.repositories import UserProfileRepository
 from core.configuration.configuration import uploads_folder_name
 from core.services.BaseService import BaseService
 from app.modules.auth.utils.email_token import generate_verification_token, confirm_verification_token
+from app.modules.auth.utils.email_helper import send_email_verification
 
 class EmailVerificationError(Exception):
     """Raised when email verification fails."""
@@ -90,15 +91,7 @@ class AuthenticationService(BaseService):
             self.user_profile_repository.create(**profile_data)
             self.repository.session.commit()
 
-            # # Send email
-            # verification_url = url_for("auth.verify_email", token=token, _external=True)
-            # msg = Message(
-            #     subject="Verify Your Email",
-            #     sender=("Your App Name", "no-reply@yourapp.com"),
-            #     recipients=[email],
-            #     body=f"Hi {name}, please click the link to verify your email: {verification_url}"
-            # )
-            # mail.send(msg)
+            send_email_verification(user)
 
 
         except Exception as exc:
