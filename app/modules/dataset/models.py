@@ -4,9 +4,8 @@ from enum import Enum
 from flask import request
 from sqlalchemy import Enum as SQLAlchemyEnum
 
-from app.modules.dataset.handlers.food_handler import FoodHandler
-
 from app import db
+from app.modules.dataset.handlers.food_handler import FoodHandler
 
 
 class PublicationType(Enum):
