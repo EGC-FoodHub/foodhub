@@ -197,6 +197,7 @@ var currentId = 0;
 
 
                     if (checked_orcid && checked_name) {
+                        console.log('Sending: ' + formUploadData);
                         fetch('/dataset/upload', {
                             method: 'POST',
                             body: formUploadData
