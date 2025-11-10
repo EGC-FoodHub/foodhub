@@ -7,18 +7,11 @@ import uuid
 from datetime import datetime, timezone
 from zipfile import ZipFile
 
-from flask import (
-    abort,
-    jsonify,
-    make_response,
-    redirect,
-    render_template,
-    request,
-    send_from_directory,
-    url_for,
-)
+from flask import abort, jsonify, make_response, redirect, render_template, request, send_from_directory, url_for
 from flask_login import current_user, login_required
+from sqlalchemy.exc import SQLAlchemyError
 
+import app
 from app.modules.dataset import dataset_bp
 from app.modules.dataset.forms import AuthorForm, DataSetForm
 from app.modules.dataset.models import DSDownloadRecord
@@ -259,7 +252,7 @@ def download_dataset(dataset_id):
 
     user_cookie = request.cookies.get("download_cookie")
     if not user_cookie:
-        user_cookie = str(uuid.uuid4())  # Generate a new unique identifier if it does not exist
+        user_cookie = str(uuid.uuid4())
         # Save the cookie to the user's browser
         resp = make_response(
             send_from_directory(
@@ -293,6 +286,48 @@ def download_dataset(dataset_id):
             download_date=datetime.now(timezone.utc),
             download_cookie=user_cookie,
         )
+
+        logger.info("Created new DSDownloadRecord for dataset=%s cookie=%s", dataset_id, user_cookie)
+
+        # If the user is authenticated, increment their downloaded datasets counter
+        try:
+            if current_user.is_authenticated and getattr(current_user, "profile", None):
+                profile = current_user.profile
+                profile.downloaded_datasets_count = (profile.downloaded_datasets_count or 0) + 1
+                profile.save()
+                logger.info(
+                    "Incremented downloaded_datasets_count for user_id=%s to %s",
+                    current_user.id,
+                    profile.downloaded_datasets_count,
+                )
+        except SQLAlchemyError:
+            logger.exception("Failed to update user's downloaded_datasets_count")
+    else:
+        logger.info(
+            "Existing DSDownloadRecord found for dataset=%s cookie=%s user_id=%s",
+            dataset_id,
+            user_cookie,
+            existing_record.user_id,
+        )
+        # If record exists but was anonymous and user is authenticated, attach it to the user and increment
+        try:
+            if (
+                current_user.is_authenticated
+                and existing_record.user_id is None
+                and getattr(current_user, "profile", None)
+            ):
+                existing_record.user_id = current_user.id
+                app.db.session.commit()
+                profile = current_user.profile
+                profile.downloaded_datasets_count = (profile.downloaded_datasets_count or 0) + 1
+                profile.save()
+                logger.info(
+                    "Attached anonymous DSDownloadRecord to user_id=%s and incremented counter to %s",
+                    current_user.id,
+                    profile.downloaded_datasets_count,
+                )
+        except SQLAlchemyError:
+            logger.exception("Failed while attaching anonymous download record or updating counter")
 
     return resp
 
