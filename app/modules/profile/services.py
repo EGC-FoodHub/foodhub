@@ -1,7 +1,8 @@
 from sqlalchemy.exc import SQLAlchemyError
-from app.modules.profile.repositories import UserProfileRepository
-from app.modules.profile.models import UserProfile
+
 from app import db
+from app.modules.profile.models import UserProfile
+from app.modules.profile.repositories import UserProfileRepository
 from core.services.BaseService import BaseService
 
 
