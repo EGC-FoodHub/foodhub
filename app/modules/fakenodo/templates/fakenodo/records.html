@@ -1,0 +1,49 @@
+{% extends "base_template.html" %}
+
+{% block title %}View fakenodo{% endblock %}
+
+{% block content %}
+<h1>Lista de registros</h1>
+
+<ul id="record-list">
+    <!-- Aquí se insertarán los registros dinámicamente -->
+</ul>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+    try {
+        const response = await fetch("/fakenodo/records");
+        if (!response.ok) {
+            throw new Error(`Error ${response.status}: ${response.statusText}`);
+        }
+        const records = await response.json();
+        const list = document.getElementById("record-list");
+
+        if (records.length === 0) {
+            list.innerHTML = "<li>No hay registros aún.</li>";
+            return;
+        }
+
+        records.forEach(record => {
+            const li = document.createElement("li");
+            li.innerHTML = `
+                <strong>ID:</strong> ${record.id} <br>
+                <strong>DOI:</strong> ${record.doi} <br>
+                <strong>Versión:</strong> ${record.version} <br>
+                <strong>Creado:</strong> ${record.created} <br>
+                <strong>Publicado:</strong> ${record.published ? "Sí" : "No"} <br>
+                <strong>Metadata:</strong> <pre>${JSON.stringify(record.metadata, null, 2)}</pre>
+                <strong>Archivos:</strong> <pre>${JSON.stringify(record.files, null, 2)}</pre>
+                <hr>
+            `;
+            list.appendChild(li);
+        });
+    } catch (error) {
+        console.error("Error al cargar registros:", error);
+        document.getElementById("record-list").innerHTML = "<li>Error al cargar registros.</li>";
+    }
+});
+</script>
+{% endblock %}
