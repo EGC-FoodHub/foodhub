@@ -99,8 +99,14 @@ class DataSetService(BaseService):
             "orcid": current_user.profile.orcid,
         }
         try:
+            # Crear metadatos del dataset
             logger.info(f"Creating dsmetadata...: {form.get_dsmetadata()}")
             dsmetadata = self.dsmetadata_repository.create(**form.get_dsmetadata())
+
+            # Detectar tipo de dataset y validarlo
+            
+            
+
             for author_data in [main_author] + form.get_authors():
                 author = self.author_repository.create(commit=False, ds_meta_data_id=dsmetadata.id, **author_data)
                 dsmetadata.authors.append(author)
