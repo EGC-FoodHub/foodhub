@@ -4,8 +4,9 @@ import secrets
 
 from flask_login import current_user, login_user
 
-from dotenv import load_dotenv
+from dotenv import load_dotenv, set_key
 
+from app import db
 from app.modules.auth.models import User
 from app.modules.auth.repositories import UserRepository
 from app.modules.profile.models import UserProfile
@@ -25,6 +26,11 @@ class AuthenticationService(BaseService):
 
     def login(self, email, password, remember=True):
         user = self.repository.get_by_email(email)
+        print(user)
+        print(user.password)
+        print(password)
+        print(user.password == password)
+        print("comprobacion", user.check_password(password))
         if user is not None and user.check_password(password):
             login_user(user, remember=remember)
             return True
@@ -85,13 +91,21 @@ class AuthenticationService(BaseService):
     def temp_folder_by_user(self, user: User) -> str:
         return os.path.join(uploads_folder_name(), "temp", str(user.id))
 
-    def send_recover_email(self):
+    def get_user_by_email(self, email) -> User | None:
+        print(email)
+        if(not self.is_email_available(email)):
+            return self.repository.get_by_email(email)
+        return None
+
+    def send_recover_email(self, email):
         resend.api_key = self.RESEND_API_KEY
-        token = os.getenv('TOKEN_KEY',secrets.token_hex(6))
+        token = secrets.token_hex(6)
+
+        os.environ["TOKEN_KEY"] = token
 
         params = {
             "from": "Acme <onboarding@resend.dev>",
-            "to": ["miguelgvizcaino@gmail.com"],
+            "to": [email],
             "subject": "FoodHub password change",
             "html": """
                 <p>This is the your key for changing your password</p>
@@ -100,22 +114,14 @@ class AuthenticationService(BaseService):
         }
 
         email = resend.Emails.send(params)
-        print(email)
 
-    def validate_recovery_token(self, token):
-        return token == os.getenv('TOKEN_KEY')
+    def validate_recovery(self, token, new_password, confirm_password):
+        print(os.getenv('TOKEN_KEY'))
+        print(token == os.getenv('TOKEN_KEY'))
+        print(new_password == confirm_password)
+        return token == os.getenv('TOKEN_KEY') and new_password == confirm_password
 
-    def update_password(self, user_profile_id, new_password):
-        self.update(user_profile_id,password = new_password)
-        return None
+    def update_password(self, user, new_password):
+        user.set_password(new_password)
+        db.session.commit()
 
-
-if __name__ == "__main__":
-    # código de prueba rápida
-    servicio = AuthenticationService()
-
-    servicio.send_recover_email()
-    token1 = os.getenv('TOKEN_KEY')
-
-    resultado = servicio.validate_recovery_token(token1)
-    print("Resultado:", resultado)
