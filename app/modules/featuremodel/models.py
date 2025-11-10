@@ -17,7 +17,7 @@ class FeatureModel(db.Model):
 
 class FMMetaData(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    uvl_filename = db.Column(db.String(120), nullable=False)
+    filename = db.Column(db.String(120), nullable=False)
     title = db.Column(db.String(120), nullable=False)
     description = db.Column(db.Text, nullable=False)
     publication_type = db.Column(SQLAlchemyEnum(PublicationType), nullable=False)
