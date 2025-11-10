@@ -26,11 +26,6 @@ class AuthenticationService(BaseService):
 
     def login(self, email, password, remember=True):
         user = self.repository.get_by_email(email)
-        print(user)
-        print(user.password)
-        print(password)
-        print(user.password == password)
-        print("comprobacion", user.check_password(password))
         if user is not None and user.check_password(password):
             login_user(user, remember=remember)
             return True
@@ -116,9 +111,6 @@ class AuthenticationService(BaseService):
         email = resend.Emails.send(params)
 
     def validate_recovery(self, token, new_password, confirm_password):
-        print(os.getenv('TOKEN_KEY'))
-        print(token == os.getenv('TOKEN_KEY'))
-        print(new_password == confirm_password)
         return token == os.getenv('TOKEN_KEY') and new_password == confirm_password
 
     def update_password(self, user, new_password):
