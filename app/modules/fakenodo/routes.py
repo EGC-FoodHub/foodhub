@@ -1,3 +1,4 @@
+import uuid
 from flask import render_template, jsonify, request
 import datetime
 from app.modules.fakenodo import fakenodo_bp
@@ -76,16 +77,16 @@ def records_data(id):
         return jsonify(record), 200
 
 @fakenodo_bp.route("/fakenodo/records/<id>/publish", methods=["POST"])
-def records:
-    record = record_dict.get(record_id)
+def records_publish(id):
+    record = record_dict.get(id)
     if not record:
         return jsonify({"error": "Record not found"}), 404
 
     new_version = record["version"] + 1
-    new_doi = generate_doi(new_version)
+    new_doi = service.generate_doi(new_version)
 
     new_record = {
-        "id": str(uuid.uuid4())[:8],
+        "id": record_dict["id"],
         "doi": new_doi,
         "metadata": record["metadata"],
         "files": record["files"],
@@ -98,8 +99,8 @@ def records:
     return jsonify(new_record), 201
 
 @fakenodo_bp.route("/fakenodo/records/<id>/files", methods=["POST"])
-def records:
-     record = record_dict.get(record_id)
+def records_files(id):
+    record = record_dict.get(id)
     if not record:
         return jsonify({"error": "Record not found"}), 404
 
