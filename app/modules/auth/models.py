@@ -2,9 +2,10 @@ from datetime import datetime, timezone
 
 from flask_login import UserMixin
 from werkzeug.security import check_password_hash, generate_password_hash
-from .twofa import verify
 
 from app import db
+
+from .twofa import verify
 
 
 class User(db.Model, UserMixin):
