@@ -1,4 +1,4 @@
-from flask import redirect, render_template, request, url_for, jsonify
+from flask import redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from app import db
@@ -54,6 +54,7 @@ def my_profile():
         total_datasets=total_datasets_count,
     )
 
+
 @profile_bp.route("/profile/metrics")
 @login_required
 def dashboard_metrics():
@@ -74,4 +75,3 @@ def dashboard_metrics():
         user=current_user,
         metrics=metrics
     )
-
