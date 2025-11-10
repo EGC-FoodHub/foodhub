@@ -104,8 +104,6 @@ class DataSetService(BaseService):
             dsmetadata = self.dsmetadata_repository.create(**form.get_dsmetadata())
 
             # Detectar tipo de dataset y validarlo
-            
-            
 
             for author_data in [main_author] + form.get_authors():
                 author = self.author_repository.create(commit=False, ds_meta_data_id=dsmetadata.id, **author_data)
