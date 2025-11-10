@@ -25,7 +25,7 @@ def dummy():
     elif request.method == "DELETE":
         return jsonify({"status": "deleted", "message": "dummy endpoint"}), 204
     else:
-        return jsonify({"status": "ok" , "message": "dummy endpoint"}), 200
+        return jsonify({"status": "ok", "message": "dummy endpoint"}), 200
 
 
 @fakenodo_bp.route("/fakenodo/dummy/1/files", methods=["GET", "POST", "PUT", "DELETE"])
