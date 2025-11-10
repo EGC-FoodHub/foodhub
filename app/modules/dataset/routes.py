@@ -272,7 +272,11 @@ def download_dataset(dataset_id):
         )
         # If record exists but was anonymous and user is authenticated, attach it to the user and increment
         try:
-            if current_user.is_authenticated and existing_record.user_id is None and getattr(current_user, "profile", None):
+            if (
+                current_user.is_authenticated
+                and existing_record.user_id is None
+                and getattr(current_user, "profile", None)
+            ):
                 existing_record.user_id = current_user.id
                 app.db.session.commit()
                 profile = current_user.profile
