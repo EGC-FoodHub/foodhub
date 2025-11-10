@@ -1,9 +1,10 @@
-import uuid
-from flask import render_template, jsonify, request
 import datetime
+import uuid
+
+from flask import jsonify, render_template, request
+
 from app.modules.fakenodo import fakenodo_bp
 from app.modules.fakenodo.services import FakenodoService
-
 
 service = FakenodoService()
 
