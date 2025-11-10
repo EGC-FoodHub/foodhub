@@ -1,5 +1,5 @@
-from flask import redirect, render_template, request, url_for, flash, session
-from flask_login import current_user, login_user, logout_user
+from flask import redirect, render_template, request, session, url_for
+from flask_login import current_user, logout_user
 
 from app.modules.auth import auth_bp
 from app.modules.auth.forms import LoginForm, SignupForm, TwoFactoAuthForm
@@ -27,7 +27,7 @@ def show_signup_form():
             return render_template("auth/signup_form.html", form=form, error=f"Error creating user: {exc}")
 
         # Log user
-        return render_template("auth/verify_email.html",email=user.email)
+        return render_template("auth/verify_email.html", email=user.email)
 
     return render_template("auth/signup_form.html", form=form)
 

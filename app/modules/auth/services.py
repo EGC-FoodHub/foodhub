@@ -5,15 +5,17 @@ from flask_login import current_user, login_user
 from app.modules.auth.models import User
 from app.modules.auth.repositories import UserRepository
 from app.modules.auth.twofa import generate_key, generate_qr, verify
+from app.modules.auth.utils.email_helper import send_email_verification
+from app.modules.auth.utils.email_token import confirm_verification_token, generate_verification_token
 from app.modules.profile.models import UserProfile
 from app.modules.profile.repositories import UserProfileRepository
 from core.configuration.configuration import uploads_folder_name
 from core.services.BaseService import BaseService
-from app.modules.auth.utils.email_token import generate_verification_token, confirm_verification_token
-from app.modules.auth.utils.email_helper import send_email_verification
+
 
 class EmailVerificationError(Exception):
     """Raised when email verification fails."""
+
 
 class AuthenticationService(BaseService):
     def __init__(self):
@@ -30,12 +32,12 @@ class AuthenticationService(BaseService):
 
         if not user.is_email_verified:
             from flask import flash
+
             flash("Please verify your email before logging in.", "warning")
             return False
 
         login_user(user, remember=remember)
         return True
-
 
     def check_password(self, email, password, remember=True):
         user = self.repository.get_by_email(email)
@@ -93,7 +95,6 @@ class AuthenticationService(BaseService):
 
             send_email_verification(user)
 
-
         except Exception as exc:
             self.repository.session.rollback()
             raise exc
@@ -132,8 +133,6 @@ class AuthenticationService(BaseService):
                 # self.update(current_user.id, twofa_key=encripted_key)
                 return True
         return False
-
-
 
     def verify_email(self, token: str):
         email = confirm_verification_token(token)
