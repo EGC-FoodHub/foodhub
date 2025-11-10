@@ -436,7 +436,6 @@ class DOIMapping(db.Model):
 DATASET_KIND_TO_CLASS = {
     "base": BaseDataset,
     # "uvl": UVLDataset,
-    # "gpx": GPXDataset,
     "food": FoodDataset,
 }
 
