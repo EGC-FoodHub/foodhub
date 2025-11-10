@@ -105,6 +105,7 @@ def create_dataset():
 
     return render_template("dataset/upload_dataset.html", form=form)
 
+
 @dataset_bp.route("/dataset/save_as_draft", methods=["GET", "POST"])
 @login_required
 def create_dataset_as_draft():
@@ -112,11 +113,11 @@ def create_dataset_as_draft():
     if request.method == "POST":
 
         dataset = None
-        
+
         form.title.data = form.title.data if form.title.data else ""
         form.desc.data = form.desc.data if form.desc.data else ""
         form.feature_models.entries = []
-       
+
         try:
             logger.info("Creating dataset...")
             dataset = dataset_service.create_from_form(form=form, current_user=current_user)
@@ -135,6 +136,7 @@ def create_dataset_as_draft():
         return jsonify({"message": msg}), 200
 
     return render_template("dataset/upload_dataset.html", form=form)
+
 
 @dataset_bp.route("/dataset/edit/<int:dataset_id>", methods=["GET", "POST"])
 @login_required
@@ -156,7 +158,7 @@ def edit_doi_dataset(dataset_id):
         form.publication_doi.data = dataset.ds_meta_data.publication_doi
         form.tags.data = dataset.ds_meta_data.tags
         form.desc.data = dataset.ds_meta_data.description
-        
+
         form.authors.entries = []
         for author in dataset.ds_meta_data.authors:
             subform = AuthorForm()
@@ -164,7 +166,7 @@ def edit_doi_dataset(dataset_id):
             subform.affiliation.data = author.affiliation
             subform.orcid.data = author.orcid
             form.authors.append_entry(subform.data)
-    
+
     return render_template("dataset/edit_dataset.html", form=form, dataset=dataset)
 
 
