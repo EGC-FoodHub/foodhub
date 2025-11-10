@@ -52,3 +52,7 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for("public.index"))
+
+@auth_bp.route("/change_password", methods=["GET","POST"])
+def change_password():
+    return None
