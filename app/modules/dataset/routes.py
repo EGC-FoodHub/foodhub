@@ -19,7 +19,6 @@ from flask import (
 )
 from flask_login import current_user, login_required
 from sqlalchemy.exc import SQLAlchemyError
-from requests.exceptions import RequestException
 import app
 
 from app.modules.dataset import dataset_bp
@@ -266,7 +265,7 @@ def download_dataset(dataset_id):
                 logger.info(
                     "Attached anonymous DSDownloadRecord to user_id=%s and incremented counter to %s",
                     current_user.id,
-                    profile.downloaded_datasets_count,
+                    profile.downloaded_datasets_count
                 )
         except SQLAlchemyError:
             logger.exception("Failed while attaching anonymous download record or updating counter")
