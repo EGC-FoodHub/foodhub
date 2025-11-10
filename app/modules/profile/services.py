@@ -28,10 +28,18 @@ class UserProfileService(BaseService):
             from app.modules.dataset.models import DataSet
             uploaded_datasets_count = DataSet.query.filter_by(user_id=user_id).count()
 
+            # Contar datasets sincronizados (con DOI) por el usuario
+            from app.modules.dataset.models import DataSet, DSMetaData
+            synchronized_datasets_count = (
+                DataSet.query.join(DSMetaData)
+                .filter(DataSet.user_id == user_id, DSMetaData.dataset_doi.isnot(None))
+                .count()
+            )
+
             metrics = {
                 "uploaded_datasets": uploaded_datasets_count,
                 "downloads": profile.downloaded_datasets_count,
-                "synchronizations": profile.synchronized_datasets_count,
+                "synchronizations": synchronized_datasets_count,
             }
 
             return metrics, None
