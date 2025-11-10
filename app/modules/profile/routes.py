@@ -69,9 +69,4 @@ def dashboard_metrics():
             "synchronizations": 0,
         }
 
-    return render_template(
-        "profile/dashboard.html",
-        user_profile=profile,
-        user=current_user,
-        metrics=metrics
-    )
+    return render_template("profile/dashboard.html", user_profile=profile, user=current_user, metrics=metrics)
