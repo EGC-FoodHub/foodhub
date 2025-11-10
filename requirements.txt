@@ -106,6 +106,7 @@ qrcode==8.2
 redis==6.2.0
 referencing==0.36.2
 requests==2.32.4
+resend==2.19.0
 rpds-py==0.26.0
 rq==2.4.1
 selenium==4.34.2
