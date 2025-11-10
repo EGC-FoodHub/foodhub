@@ -5,7 +5,8 @@ from typing import Optional
 from flask_login import current_user
 from sqlalchemy import desc, func
 
-from app.modules.dataset.models import Author, DataSet, DOIMapping, DSDownloadRecord, DSMetaData, DSViewRecord
+# SOLO importa los modelos básicos que sabes que existen
+from app.modules.dataset.models import Author, DataSet, DOIMapping, DSMetaData
 from core.repositories.BaseRepository import BaseRepository
 
 logger = logging.getLogger(__name__)
@@ -18,6 +19,8 @@ class AuthorRepository(BaseRepository):
 
 class DSDownloadRecordRepository(BaseRepository):
     def __init__(self):
+        # Importación diferida para evitar circulares
+        from app.modules.dataset.models import DSDownloadRecord
         super().__init__(DSDownloadRecord)
 
     def total_dataset_downloads(self) -> int:
@@ -35,6 +38,8 @@ class DSMetaDataRepository(BaseRepository):
 
 class DSViewRecordRepository(BaseRepository):
     def __init__(self):
+        # Importación diferida para evitar circulares
+        from app.modules.dataset.models import DSViewRecord
         super().__init__(DSViewRecord)
 
     def total_dataset_views(self) -> int:
@@ -105,4 +110,6 @@ class DOIMappingRepository(BaseRepository):
         super().__init__(DOIMapping)
 
     def get_new_doi(self, old_doi: str) -> str:
-        return self.model.query.filter_by(dataset_doi_old=old_doi).first()
+        # CORRECCIÓN: La columna se llama 'old_doi' no 'dataset_doi_old'
+        mapping = self.model.query.filter_by(old_doi=old_doi).first()
+        return mapping.new_doi if mapping else None

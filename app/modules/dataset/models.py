@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 
 from flask import request
-from sqlalchemy import Enum as SQLAlchemyEnum
+from sqlalchemy import Enum as SQLAlchemyEnum, func
 
 from app import db
 
@@ -64,6 +64,45 @@ class DSMetaData(db.Model):
     authors = db.relationship("Author", backref="ds_meta_data", lazy=True, cascade="all, delete")
 
 
+## ==========================================================
+# MODELOS PARA TRENDING Y DOI
+# ==========================================================
+
+class DSDownloadRecord(db.Model):
+    __tablename__ = 'ds_download_record'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    dataset_id = db.Column(db.Integer, db.ForeignKey('data_set.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    download_date = db.Column(db.DateTime, default=datetime.utcnow)
+    download_cookie = db.Column(db.String(255))
+    
+    # Relaciones
+    dataset = db.relationship('BaseDataset', backref=db.backref('download_records', lazy='dynamic'))
+
+class DSViewRecord(db.Model):
+    __tablename__ = 'ds_view_record'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    dataset_id = db.Column(db.Integer, db.ForeignKey('data_set.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    view_date = db.Column(db.DateTime, default=datetime.utcnow)
+    view_cookie = db.Column(db.String(255))
+    
+    # Relaciones
+    dataset = db.relationship('BaseDataset', backref=db.backref('view_records', lazy='dynamic'))
+
+class DOIMapping(db.Model):
+    __tablename__ = 'doi_mapping'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    old_doi = db.Column(db.String(255), unique=True, nullable=False)
+    new_doi = db.Column(db.String(255), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<DOIMapping {self.old_doi} -> {self.new_doi}>'
+    
 class BaseDataset(db.Model):
     """
     Base polimórfica para todos los tipos de dataset (UVL, GPX, Image, Tabular, ...).
@@ -317,11 +356,6 @@ class DatasetVersion(db.Model):
 # ==========================================================
 # FOOD Dataset y versiones (actualizado)
 # ==========================================================
-# app/modules/dataset/models.py
-from datetime import datetime, timedelta
-from sqlalchemy import func
-from app import db
-from .handlers.food_handler import FoodHandler  # Importación relativa
 
 class FoodDataset(BaseDataset):
     __mapper_args__ = {"polymorphic_identity": "food"}
@@ -343,18 +377,21 @@ class FoodDataset(BaseDataset):
 
     def calculate_total_ingredients(self):
         """Cuenta todos los ingredientes de todos los archivos .food"""
+        from .handlers.food_handler import FoodHandler
         handler = FoodHandler()
         summary = handler.summarize_dataset(self)
         return summary["total_ingredients"]
 
     def calculate_total_recipes(self):
         """Cuenta el número total de recetas"""
+        from .handlers.food_handler import FoodHandler
         handler = FoodHandler()
         summary = handler.summarize_dataset(self)
         return summary["total_recipes"]
 
     def update_food_metrics(self):
         """Actualiza las métricas de comida y las guarda"""
+        from .handlers.food_handler import FoodHandler
         handler = FoodHandler()
         summary = handler.summarize_dataset(self)
         
@@ -373,9 +410,6 @@ class FoodDataset(BaseDataset):
 
     def get_popularity_metrics(self, timeframe_days=7):
         """Obtiene métricas de popularidad para trending"""
-        # Importar aquí para evitar circular imports
-        from . import DSDownloadRecord, DSViewRecord
-        
         since_date = datetime.utcnow() - timedelta(days=timeframe_days)
         
         recent_downloads = db.session.query(func.count(DSDownloadRecord.id)).filter(
@@ -440,8 +474,6 @@ class FoodDataset(BaseDataset):
         db.session.commit()
         
         return new_version
-    
-
     
     def get_trending_metrics(self, timeframe_days=7):
         """Obtiene métricas de trending para este dataset específico"""
@@ -525,3 +557,6 @@ class FoodDatasetVersion(DatasetVersion):
             "total_recipes": self.total_recipes or 0
         })
         return data
+
+# Alias para compatibilidad
+DataSet = BaseDataset

@@ -1,10 +1,14 @@
-from flask_restful import Api
+from flask import Blueprint
 
-from app.modules.dataset.api import init_blueprint_api
-from core.blueprints.base_blueprint import BaseBlueprint
+# Crear blueprint básico
+dataset_bp = Blueprint('dataset', __name__, template_folder='templates')
 
-dataset_bp = BaseBlueprint("dataset", __name__, template_folder="templates")
+def init_blueprint_api():
+    """
+    Función para inicializar la API del dataset
+    Ahora esta función NO hace nada, ya que la API se maneja desde profile/routes.py
+    """
+    return None  # o puedes retornar dataset_bp si es necesario
 
-
-api = Api(dataset_bp)
-init_blueprint_api(api)
+# Importar routes al final para evitar dependencias circulares
+from . import routes

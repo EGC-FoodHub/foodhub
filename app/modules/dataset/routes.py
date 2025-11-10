@@ -4,11 +4,8 @@ import os
 import shutil
 import tempfile
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from zipfile import ZipFile
-from app.modules.dataset.food_trending_service import FoodTrendingService
-from app.modules.dataset.models import DSViewRecord, FoodDataset
-from datetime import timedelta  
 
 from flask import (
     abort,
@@ -25,7 +22,7 @@ from flask_login import current_user, login_required
 from app import db 
 from app.modules.dataset import dataset_bp
 from app.modules.dataset.forms import DataSetForm
-from app.modules.dataset.models import DSDownloadRecord
+from app.modules.dataset.models import DSDownloadRecord, DSViewRecord, FoodDataset
 from app.modules.dataset.food_trending_service import FoodTrendingService
 from app.modules.dataset.trending_formatter import TrendingFormatter
 from app.modules.dataset.services import (
@@ -175,7 +172,6 @@ def upload():
     )
 
 
-
 @dataset_bp.route("/dataset/file/delete", methods=["POST"])
 def delete():
     data = request.get_json()
@@ -268,53 +264,7 @@ def subdomain_index(doi):
 
     dataset = ds_meta_data.data_set
     
-    # Registrar vista (nuevo código)
-    user_cookie = request.cookies.get('view_cookie')
-    if not user_cookie:
-        user_cookie = str(uuid.uuid4())
-    
-    existing_view = DSViewRecord.query.filter(
-        DSViewRecord.dataset_id == dataset.id,
-        DSViewRecord.view_cookie == user_cookie,
-        DSViewRecord.view_date >= datetime.now(timezone.utc) - timedelta(hours=1)
-    ).first()
-    
-    if not existing_view:
-        view_record = DSViewRecord(
-            dataset_id=dataset.id,
-            user_id=current_user.id if current_user.is_authenticated else None,
-            view_date=datetime.now(timezone.utc),
-            view_cookie=user_cookie
-        )
-        db.session.add(view_record)
-        db.session.commit()
-    
-    # Si es dataset de comida, actualizar métricas
-    if hasattr(dataset, 'kind') and dataset.kind == "food":
-        food_dataset = FoodDataset.query.get(dataset.id)
-        if food_dataset:
-            food_dataset.update_food_metrics()
-
-    # Save the cookie to the user's browser
-    resp = make_response(render_template("dataset/view_dataset.html", dataset=dataset))
-    if not request.cookies.get('view_cookie'):
-        resp.set_cookie('view_cookie', user_cookie)
-
-    return resp@dataset_bp.route("/doi/<path:doi>/", methods=["GET"])
-def subdomain_index(doi):
-    # Check if the DOI is an old DOI
-    new_doi = doi_mapping_service.get_new_doi(doi)
-    if new_doi:
-        return redirect(url_for("dataset.subdomain_index", doi=new_doi), code=302)
-
-    # Try to search the dataset by the provided DOI
-    ds_meta_data = dsmetadata_service.filter_by_doi(doi)
-    if not ds_meta_data:
-        abort(404)
-
-    dataset = ds_meta_data.data_set
-    
-    # Registrar vista (nuevo código)
+    # Registrar vista
     user_cookie = request.cookies.get('view_cookie')
     if not user_cookie:
         user_cookie = str(uuid.uuid4())
@@ -348,10 +298,10 @@ def subdomain_index(doi):
 
     return resp
 
+
 @dataset_bp.route("/dataset/unsynchronized/<int:dataset_id>/", methods=["GET"])
 @login_required
 def get_unsynchronized_dataset(dataset_id):
-
     # Get dataset
     dataset = dataset_service.get_unsynchronized_dataset(current_user.id, dataset_id)
 
@@ -360,9 +310,6 @@ def get_unsynchronized_dataset(dataset_id):
 
     return render_template("dataset/view_dataset.html", dataset=dataset)
 
-# ==========================================================
-# TRENDING DATASETS ROUTES (VERSIÓN CORREGIDA)
-# ==========================================================
 
 @dataset_bp.route("/dataset/<int:dataset_id>/view")
 def view_dataset(dataset_id):
@@ -404,181 +351,10 @@ def view_dataset(dataset_id):
     
     return resp
 
-@dataset_bp.route("/trending")
-def trending_datasets():
-    """Página principal de trending datasets"""
-    trending_weekly = FoodTrendingService.get_weekly_trending(limit=10)
-    trending_monthly = FoodTrendingService.get_monthly_trending(limit=10)
-    most_recipes = FoodTrendingService.get_most_recipes_datasets(limit=5)
-    rich_ingredients = FoodTrendingService.get_richest_ingredient_datasets(limit=5)
-    
-    return render_template(
-        "dataset/trending.html",
-        trending_weekly=trending_weekly,
-        trending_monthly=trending_monthly,
-        most_recipes=most_recipes,
-        rich_ingredients=rich_ingredients
-    )
 
-@dataset_bp.route("/api/trending/weekly")
-def api_trending_weekly():
-    """API endpoint para trending semanal"""
-    trending = FoodTrendingService.get_weekly_trending(limit=10)
-    
-    trending_data = []
-    for dataset, downloads, views, recipes, score in trending:
-        trending_data.append({
-            "id": dataset.id,
-            "name": dataset.name,
-            "author": dataset.creator.username if dataset.creator else "Unknown",
-            "downloads": downloads,
-            "views": views,
-            "recipes": recipes,
-            "score": score,
-            "url": url_for('dataset.view_dataset', dataset_id=dataset.id)
-        })
-    
-    return jsonify({"trending_weekly": trending_data})
-
-@dataset_bp.route("/api/trending/monthly")
-def api_trending_monthly():
-    """API endpoint para trending mensual"""
-    trending = FoodTrendingService.get_monthly_trending(limit=10)
-    
-    trending_data = []
-    for dataset, downloads, views, recipes, score in trending:
-        trending_data.append({
-            "id": dataset.id,
-            "name": dataset.name,
-            "author": dataset.creator.username if dataset.creator else "Unknown",
-            "downloads": downloads,
-            "views": views,
-            "recipes": recipes,
-            "score": score,
-            "url": url_for('dataset.view_dataset', dataset_id=dataset.id)
-        })
-    
-    return jsonify({"trending_monthly": trending_data})
-
-@dataset_bp.route("/api/popular/recipes")
-def api_popular_recipes():
-    """API endpoint para datasets con más recetas"""
-    datasets = FoodTrendingService.get_most_recipes_datasets(limit=10)
-    
-    datasets_data = []
-    for dataset in datasets:
-        datasets_data.append({
-            "id": dataset.id,
-            "name": dataset.name,
-            "author": dataset.creator.username if dataset.creator else "Unknown",
-            "total_recipes": dataset.total_recipes or 0,
-            "total_ingredients": dataset.total_ingredients or 0,
-            "url": url_for('dataset.view_dataset', dataset_id=dataset.id)
-        })
-    
-    return jsonify({"popular_recipes": datasets_data})
-
-# Añadir al final de routes.py, antes del cierre
-
-@dataset_bp.route("/dataset/<int:dataset_id>/view")
-def view_dataset(dataset_id):
-    """Ruta para visualizar dataset y registrar vista"""
-    dataset = dataset_service.get_or_404(dataset_id)
-    
-    # Registrar vista
-    user_cookie = request.cookies.get('view_cookie')
-    if not user_cookie:
-        user_cookie = str(uuid.uuid4())
-    
-    # Verificar si ya existe un registro de vista reciente para este cookie
-    existing_view = DSViewRecord.query.filter(
-        DSViewRecord.dataset_id == dataset_id,
-        DSViewRecord.view_cookie == user_cookie,
-        DSViewRecord.view_date >= datetime.now(timezone.utc) - timedelta(hours=1)
-    ).first()
-    
-    if not existing_view:
-        view_record = DSViewRecord(
-            dataset_id=dataset_id,
-            user_id=current_user.id if current_user.is_authenticated else None,
-            view_date=datetime.now(timezone.utc),
-            view_cookie=user_cookie
-        )
-        db.session.add(view_record)
-        db.session.commit()
-    
-    # Si es dataset de comida, actualizar métricas
-    if hasattr(dataset, 'dataset_kind') and dataset.dataset_kind == "food":
-        food_dataset = FoodDataset.query.get(dataset_id)
-        if food_dataset:
-            food_dataset.update_food_metrics()
-    
-    # Crear respuesta
-    resp = make_response(render_template("dataset/view_dataset.html", dataset=dataset))
-    if not request.cookies.get('view_cookie'):
-        resp.set_cookie('view_cookie', user_cookie)
-    
-    return resp
-
-@dataset_bp.route("/trending")
-def trending_datasets():
-    """Página principal de trending datasets"""
-    trending_weekly = FoodTrendingService.get_weekly_trending(limit=10)
-    trending_monthly = FoodTrendingService.get_monthly_trending(limit=10)
-    most_recipes = FoodTrendingService.get_most_recipes_datasets(limit=5)
-    rich_ingredients = FoodTrendingService.get_richest_ingredient_datasets(limit=5)
-    
-    return render_template(
-        "dataset/trending.html",
-        trending_weekly=trending_weekly,
-        trending_monthly=trending_monthly,
-        most_recipes=most_recipes,
-        rich_ingredients=rich_ingredients
-    )
-
-@dataset_bp.route("/api/trending/weekly")
-def api_trending_weekly():
-    """API endpoint para trending semanal"""
-    trending = FoodTrendingService.get_weekly_trending(limit=10)
-    
-    trending_data = []
-    for dataset, downloads, views, recipes, score in trending:
-        trending_data.append({
-            "id": dataset.id,
-            "name": dataset.name(),
-            "author": dataset.user.username if dataset.user else "Unknown",
-            "downloads": downloads,
-            "views": views,
-            "recipes": recipes,
-            "score": score,
-            "url": url_for('dataset.view_dataset', dataset_id=dataset.id)
-        })
-    
-    return jsonify({"trending_weekly": trending_data})
-
-@dataset_bp.route("/api/trending/monthly")
-def api_trending_monthly():
-    """API endpoint para trending mensual"""
-    trending = FoodTrendingService.get_monthly_trending(limit=10)
-    
-    trending_data = []
-    for dataset, downloads, views, recipes, score in trending:
-        trending_data.append({
-            "id": dataset.id,
-            "name": dataset.name(),
-            "author": dataset.user.username if dataset.user else "Unknown",
-            "downloads": downloads,
-            "views": views,
-            "recipes": recipes,
-            "score": score,
-            "url": url_for('dataset.view_dataset', dataset_id=dataset.id)
-        })
-    
-    return jsonify({"trending_monthly": trending_data})
-
-
-
-# RUTAS NUEVAS Y MEJORADAS - Añadir después de tus rutas existentes
+# ==========================================================
+# RUTAS DE TRENDING (VERSIÓN ÚNICA SIN DUPLICADOS)
+# ==========================================================
 
 @dataset_bp.route("/trending")
 def trending_datasets():
@@ -610,6 +386,7 @@ def trending_datasets():
         return render_template("error.html", 
                              message="Error loading trending datasets. Please try again later."), 500
 
+
 @dataset_bp.route("/api/trending/<timeframe>")
 def api_trending(timeframe):
     """API endpoint único para trending - VERSIÓN MEJORADA"""
@@ -634,6 +411,7 @@ def api_trending(timeframe):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 @dataset_bp.route("/api/trending/recipes/most")
 def api_most_recipes():
     """API endpoint para datasets con más recetas"""
@@ -645,6 +423,7 @@ def api_most_recipes():
         return jsonify(response_data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @dataset_bp.route("/api/trending/ingredients/rich")
 def api_rich_ingredients():
@@ -658,7 +437,7 @@ def api_rich_ingredients():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# Ruta para el widget de trending en homepage
+
 @dataset_bp.route("/api/homepage/trending")
 def api_homepage_trending():
     """API específica para el widget de trending en homepage"""
