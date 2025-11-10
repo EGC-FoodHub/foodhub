@@ -70,7 +70,7 @@ class AuthenticationService(BaseService):
     def is_email_available(self, email: str) -> bool:
         return self.repository.get_by_email(email) is None
 
-    def create_with_profile(self, **kwargs):
+    def create_with_profile(self, **kwargs) -> User | None:
         try:
             email = kwargs.pop("email", None)
             password = kwargs.pop("password", None)
@@ -94,6 +94,7 @@ class AuthenticationService(BaseService):
             }
 
             user = self.create(commit=False, **user_data)
+
 
             token = generate_verification_token(email)
             user.email_verification_token = token

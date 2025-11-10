@@ -2,11 +2,7 @@ from flask import redirect, render_template, request, session, url_for
 from flask_login import current_user, logout_user
 
 from app.modules.auth import auth_bp
-<<<<<<< HEAD
-from app.modules.auth.forms import LoginForm, SignupForm, RecoverPasswordForm, SendEmailForm
-=======
-from app.modules.auth.forms import LoginForm, SignupForm, TwoFactoAuthForm
->>>>>>> trunk-1
+from app.modules.auth.forms import LoginForm, SignupForm, RecoverPasswordForm, SendEmailForm, TwoFactoAuthForm
 from app.modules.auth.services import AuthenticationService
 from app.modules.profile.services import UserProfileService
 
