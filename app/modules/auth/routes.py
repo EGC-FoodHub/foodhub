@@ -2,7 +2,7 @@ from flask import redirect, render_template, request, session, url_for
 from flask_login import current_user, logout_user
 
 from app.modules.auth import auth_bp
-from app.modules.auth.forms import LoginForm, SignupForm, RecoverPasswordForm, SendEmailForm, TwoFactoAuthForm
+from app.modules.auth.forms import LoginForm, RecoverPasswordForm, SendEmailForm, SignupForm, TwoFactoAuthForm
 from app.modules.auth.services import AuthenticationService
 from app.modules.profile.services import UserProfileService
 
@@ -56,17 +56,17 @@ def logout():
     return redirect(url_for("public.index"))
 
 
-@auth_bp.route("/enter_email", methods = ["GET", "POST"])
+@auth_bp.route("/enter_email", methods=["GET", "POST"])
 def enter_email():
     if current_user.is_authenticated:
         return redirect(url_for("public.index"))
 
-    form=SendEmailForm()
-    form2 = RecoverPasswordForm()
+    form = SendEmailForm()
+    RecoverPasswordForm()
 
-    if(request.method == "POST" and form.validate_on_submit()):
+    if request.method == "POST" and form.validate_on_submit():
         user_email = form.email.data
-        if(not authentication_service.is_email_available(user_email)):
+        if not authentication_service.is_email_available(user_email):
             authentication_service.send_recover_email(user_email)
             return redirect(url_for("auth.change_password", email=user_email))
         else:
@@ -74,13 +74,14 @@ def enter_email():
 
     return render_template("auth/send_email_for_recovery.html", form=form)
 
-@auth_bp.route("/change_password", methods=["GET","POST"])
+
+@auth_bp.route("/change_password", methods=["GET", "POST"])
 def change_password():
     if current_user.is_authenticated:
         return redirect(url_for("public.index"))
-    
+
     form = RecoverPasswordForm()
-    login_form = LoginForm()
+    LoginForm()
 
     code = form.token.data
     password = form.password.data
@@ -88,14 +89,16 @@ def change_password():
     user_email = request.args.get("email")
     user = authentication_service.get_user_by_email(user_email)
 
-    if(form.validate_on_submit() and request.method == "POST"):
-        if(authentication_service.validate_recovery(code, password, conf_password)):
+    if form.validate_on_submit() and request.method == "POST":
+        if authentication_service.validate_recovery(code, password, conf_password):
             authentication_service.update_password(user, password)
             return redirect(url_for("auth.login"))
         else:
-            return render_template("auth/recover_password_form.html",form=form, error="something went wrong")
+            return render_template("auth/recover_password_form.html", form=form, error="something went wrong")
 
     return render_template("auth/recover_password_form.html", form=form)
+
+
 @auth_bp.route("/enable_2fa", methods=["GET", "POST"])
 def enable_2fa():
     if current_user.is_authenticated and current_user.twofa_key is None:

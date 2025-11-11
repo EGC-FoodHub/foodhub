@@ -1,10 +1,9 @@
 import os
-import resend
 import secrets
 
+import resend
+from dotenv import load_dotenv
 from flask_login import current_user, login_user
-
-from dotenv import load_dotenv, set_key
 
 from app import db
 from app.modules.auth.models import User
@@ -19,6 +18,7 @@ from core.services.BaseService import BaseService
 
 load_dotenv()
 
+
 class EmailVerificationError(Exception):
     """Raised when email verification fails."""
 
@@ -28,7 +28,7 @@ class AuthenticationService(BaseService):
     def __init__(self):
         super().__init__(UserRepository())
         self.user_profile_repository = UserProfileRepository()
-        self.RESEND_API_KEY = os.getenv('RESEND_API_KEY')
+        self.RESEND_API_KEY = os.getenv("RESEND_API_KEY")
         resend.api_key = self.RESEND_API_KEY
 
     def login(self, email, password, remember=True):
@@ -95,7 +95,6 @@ class AuthenticationService(BaseService):
 
             user = self.create(commit=False, **user_data)
 
-
             token = generate_verification_token(email)
             user.email_verification_token = token
 
@@ -132,7 +131,7 @@ class AuthenticationService(BaseService):
 
     def get_user_by_email(self, email) -> User | None:
         print(email)
-        if(not self.is_email_available(email)):
+        if not self.is_email_available(email):
             return self.repository.get_by_email(email)
         return None
 
@@ -149,13 +148,15 @@ class AuthenticationService(BaseService):
             "html": """
                 <p>This is the your key for changing your password</p>
                 <p><strong>{token}</strong></p>
-                """.format(token=token)
+                """.format(
+                token=token
+            ),
         }
 
         email = resend.Emails.send(params)
 
     def validate_recovery(self, token, new_password, confirm_password):
-        return token == os.getenv('TOKEN_KEY') and new_password == confirm_password
+        return token == os.getenv("TOKEN_KEY") and new_password == confirm_password
 
     def update_password(self, user, new_password):
         user.set_password(new_password)
