@@ -51,13 +51,6 @@ class AuthenticationService(BaseService):
     def check_password(self, email, password, remember=True):
         user = self.repository.get_by_email(email)
         if user is not None and user.check_password(password):
-            login_user(user, remember=remember)
-            return True
-        return False
-
-    def check_password(self, email, password, remember=True):
-        user = self.repository.get_by_email(email)
-        if user is not None and user.check_password(password):
             return True
         return False
 
