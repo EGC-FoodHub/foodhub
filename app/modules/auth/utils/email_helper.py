@@ -18,13 +18,16 @@ def send_email_verification(user: User):
         "to": [user.email],
         "subject": "Verify your FoodHub account",
         "html": f"""
-  <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; color: #333; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e1e4e8; border-radius: 8px; background-color: #f6f8fa;">
+  <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial,
+   sans-serif; color: #333; max-width: 600px; margin: auto; padding: 20px;
+    border: 1px solid #e1e4e8; border-radius: 8px; background-color: #f6f8fa;">
       <h2 style="color: #0366d6;">Welcome to FoodHub, {user.profile.name} {user.profile.surname}! 🍽️</h2>
       <p>Hi {user.profile.name}, please confirm your email address to complete your signup.</p>
 
       <p style="text-align: center; margin: 30px 0;">
           <a href="{verification_link}"
-            style="background-color: #0366d6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600;">
+            style="background-color: #0366d6; color: white; padding: 12px 24px;
+                text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600;">
               Verify My Email
           </a>
       </p>
