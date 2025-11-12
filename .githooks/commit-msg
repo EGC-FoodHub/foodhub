@@ -6,6 +6,13 @@
 # Leer el mensaje del commit
 commit_message=$(cat "$1")
 
+# Ignorar commits automáticos
+case "$commit_message" in
+  Merge\ *|Revert\ *|Pull\ *|fixup\!*|squash\!*)
+    exit 0
+    ;;
+esac
+
 # Expresión regular del formato esperado
 conventional_regex='^(feat|fix|docs|style|refactor|test|chore)(\([a-z0-9_-]+\))?: .{1,}$'
 
