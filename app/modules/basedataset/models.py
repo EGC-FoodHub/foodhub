@@ -1,12 +1,12 @@
-from abc import abstractmethod
 import datetime
+from abc import abstractmethod
 from enum import Enum
 
 from requests import request
-from app import db
-
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.ext.declarative import declared_attr
+
+from app import db
 
 
 class PublicationType(Enum):
@@ -30,6 +30,7 @@ class PublicationType(Enum):
     WORKING_PAPER = "workingpaper"
     OTHER = "other"
 
+
 class Author(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
@@ -40,7 +41,7 @@ class Author(db.Model):
 
     def to_dict(self):
         return {"name": self.name, "affiliation": self.affiliation, "orcid": self.orcid}
-    
+
 
 class BDSMetaData(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -52,7 +53,6 @@ class BDSMetaData(db.Model):
     dataset_doi = db.Column(db.String(120))
     tags = db.Column(db.String(120))
     authors = db.relationship("Author", backref="ds_meta_data", lazy=True, cascade="all, delete")
-
 
 
 class BaseDataset(db.Model):
@@ -120,8 +120,6 @@ class BaseDataset(db.Model):
         """
         pass
 
-
-
     # ---------------------------
     # Métodos COMUNES (usados por plantillas y APIs)
     # ---------------------------
@@ -153,22 +151,22 @@ class BaseDataset(db.Model):
             if enum_member.name == s:
                 return enum_member
         return None
-    
+
     def get_cleaned_publication_type(self) -> str:
         pt = self._normalize_publication_type()
         if not pt:
             return "None"
         return pt.name.replace("_", " ").title()
-    
+
     def get_files_count(self) -> int:
         return len(self.files)
-    
+
     def get_file_total_size(self) -> int:
         total_size = 0
         for file in self.files:
             total_size += file.size_in_bytes
         return total_size
-    
+
     def get_file_total_size_for_human(self) -> str:
         # Uso local para evitar import circular
         size = self.get_file_total_size()
@@ -179,14 +177,15 @@ class BaseDataset(db.Model):
         elif size < 1024**3:
             return f"{round(size / (1024 ** 2), 2)} MB"
         return f"{round(size / (1024 ** 3), 2)} GB"
-    
+
     def get_zenodo_url(self):
         return f"https://zenodo.org/record/{self.ds_meta_data.deposition_id}" if self.ds_meta_data.dataset_doi else None
-    
+
     def get_doi(self):
         from app.modules.basedataset.services import BasedatasetService
+
         return BasedatasetService.get_doi(self)
-    
+
     # def to_dict(self):
     #     return {
     #         "title": self.bds_meta_data.title,
@@ -202,14 +201,14 @@ class BaseDataset(db.Model):
     #         "url": self.get_doi(),
     #         "download": f'{request.host_url.rstrip("/")}/basedataset/download/{self.id}',
     #         "zenodo": self.get_zenodo_url(),
-    #         "files": self.files,    
+    #         "files": self.files,
     #         "files_count": self.get_files_count(),
     #         "total_size_in_bytes": self.get_file_total_size(),
     #         "total_size_in_human_format": self.get_file_total_size_for_human(),
     #         "basedataset_kind": self.basedataset_kind,
     #         "specific_template": self.specific_template(),  # para vistas modulares
     #     }
-    
+
     def get_latest_version(self):
         """Obtener la última versión del dataset"""
         return self.versions.first()
@@ -217,7 +216,7 @@ class BaseDataset(db.Model):
     def get_version_count(self):
         """Contar número de versiones"""
         return self.versions.count()
-    
+
     # ---------------------------
     # HOOKS por tipo (cada subclase sobreescribe)
     # ---------------------------
@@ -248,8 +247,9 @@ class BaseDataset(db.Model):
         return None
 
     def __repr__(self):
-        return f'Basedataset<{self.id}>'
-    
+        return f"Basedataset<{self.id}>"
+
+
 class BaseDatasetVersion(db.Model):
 
     __tablename__ = "basedataset_version"
@@ -283,7 +283,7 @@ class BaseDatasetVersion(db.Model):
 
     def __repr__(self):
         return f"<DatasetVersion {self.version_number} for Dataset {self.dataset_id}>"
-    
+
     def to_dict(self):
         """Serializar a diccionario"""
         return {
@@ -332,8 +332,10 @@ class BaseDatasetVersion(db.Model):
                 modified.append(filename)
 
         return {"added": added, "removed": removed, "modified": modified}
-    
+
     # ---------------------------
+
+
 # Métricas/Registros/DOI mapping
 # ---------------------------
 class BDSDownloadRecord(db.Model):

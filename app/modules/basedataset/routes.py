@@ -20,16 +20,16 @@ from flask import (
 from flask_login import current_user, login_required
 
 from app.modules.basedataset import basedataset_bp
+from app.modules.basedataset.factory import DatasetFactory
 from app.modules.basedataset.forms import BaseDatasetForm
-from app.modules.basedataset.services import BaseDatasetService
 from app.modules.basedataset.services import (
     AuthorService,
-    DOIMappingService,
+    BaseDatasetService,
+    BDSDownloadRecordService,
     BDSMetaDataService,
     BDSViewRecordService,
-    BDSDownloadRecordService,
+    DOIMappingService,
 )
-from app.modules.basedataset.factory import DatasetFactory
 from app.modules.zenodo.services import ZenodoService
 
 logger = logging.getLogger(__name__)
@@ -194,9 +194,7 @@ def download_dataset(dataset_id):
     # Cookie to prevent multiple counts
     cookie = request.cookies.get("download_cookie") or str(uuid.uuid4())
 
-    response = make_response(
-        send_from_directory(temp_dir, f"dataset_{dataset_id}.zip", as_attachment=True)
-    )
+    response = make_response(send_from_directory(temp_dir, f"dataset_{dataset_id}.zip", as_attachment=True))
     response.set_cookie("download_cookie", cookie)
 
     # Record download

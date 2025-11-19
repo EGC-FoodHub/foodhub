@@ -5,21 +5,16 @@ from typing import Optional
 
 from flask import request
 
-from core.services.BaseService import BaseService
-
-from app.modules.basedataset.models import (
-    BaseDataset,
-    BDSMetaData,
-    BDSViewRecord
-)
+from app.modules.basedataset.models import BaseDataset, BDSMetaData, BDSViewRecord
 from app.modules.basedataset.repositories import (
     AuthorRepository,
     BaseDatasetRepository,
-    DOIMappingRepository,
     BDSDownloadRecordRepository,
     BDSMetaDataRepository,
-    BDSViewRecordRepository
+    BDSViewRecordRepository,
+    DOIMappingRepository,
 )
+from core.services.BaseService import BaseService
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +28,7 @@ class BaseDatasetService(BaseService):
 
     def __init__(self):
         super().__init__(BaseDatasetRepository())
-        
+
         # Repositorios comunes
         self.author_repository = AuthorRepository()
         self.metadata_repository = BDSMetaDataRepository()
@@ -104,19 +99,11 @@ class BaseDatasetService(BaseService):
             all_authors = [main_author] + form.get_authors()
 
             for author_data in all_authors:
-                author = self.author_repository.create(
-                    commit=False,
-                    bd_meta_data_id=metadata.id,
-                    **author_data
-                )
+                author = self.author_repository.create(commit=False, bd_meta_data_id=metadata.id, **author_data)
                 metadata.authors.append(author)
 
             # Crear el dataset base
-            dataset = self.create(
-                commit=False,
-                user_id=current_user.id,
-                bd_meta_data_id=metadata.id
-            )
+            dataset = self.create(commit=False, user_id=current_user.id, bd_meta_data_id=metadata.id)
 
             # Commit de lo común (el servicio hijo hará commit al final)
             self.repository.session.commit()
@@ -167,9 +154,11 @@ class BaseDatasetService(BaseService):
 # Servicios secundarios comunes
 # -------------------------------------------------------------------------
 
+
 class AuthorService(AuthorRepository):
     def __init__(self):
         super().__init__(AuthorRepository())
+
 
 class BDSMetaDataService(BaseService):
     def __init__(self):

@@ -4,21 +4,20 @@ from typing import Optional
 from flask_login import current_user
 from sqlalchemy import desc, func
 
-from core.repositories.BaseRepository import BaseRepository
-
 from app.modules.basedataset.models import (
     Author,
     BaseDataset,
-    DOIMapping,
     BDSDownloadRecord,
     BDSMetaData,
     BDSViewRecord,
+    DOIMapping,
 )
-
+from core.repositories.BaseRepository import BaseRepository
 
 # ----------------------------------------
 # Author Repository
 # ----------------------------------------
+
 
 class AuthorRepository(BaseRepository):
     def __init__(self):
@@ -28,6 +27,7 @@ class AuthorRepository(BaseRepository):
 # ----------------------------------------
 # Download Records
 # ----------------------------------------
+
 
 class BDSDownloadRecordRepository(BaseRepository):
     def __init__(self):
@@ -42,6 +42,7 @@ class BDSDownloadRecordRepository(BaseRepository):
 # Metadata
 # ----------------------------------------
 
+
 class BDSMetaDataRepository(BaseRepository):
     def __init__(self):
         super().__init__(BDSMetaData)
@@ -53,6 +54,7 @@ class BDSMetaDataRepository(BaseRepository):
 # ----------------------------------------
 # View Records
 # ----------------------------------------
+
 
 class BDSViewRecordRepository(BaseRepository):
     def __init__(self):
@@ -82,6 +84,7 @@ class BDSViewRecordRepository(BaseRepository):
 # BaseDataset Repository
 # ----------------------------------------
 
+
 class BaseDatasetRepository(BaseRepository):
     def __init__(self):
         super().__init__(BaseDataset)
@@ -89,10 +92,7 @@ class BaseDatasetRepository(BaseRepository):
     def get_synchronized(self, current_user_id: int):
         return (
             self.model.query.join(BDSMetaData)
-            .filter(
-                BaseDataset.user_id == current_user_id,
-                BDSMetaData.dataset_doi.isnot(None)
-            )
+            .filter(BaseDataset.user_id == current_user_id, BDSMetaData.dataset_doi.isnot(None))
             .order_by(self.model.created_at.desc())
             .all()
         )
@@ -100,10 +100,7 @@ class BaseDatasetRepository(BaseRepository):
     def get_unsynchronized(self, current_user_id: int):
         return (
             self.model.query.join(BDSMetaData)
-            .filter(
-                BaseDataset.user_id == current_user_id,
-                BDSMetaData.dataset_doi.is_(None)
-            )
+            .filter(BaseDataset.user_id == current_user_id, BDSMetaData.dataset_doi.is_(None))
             .order_by(self.model.created_at.desc())
             .all()
         )
@@ -112,22 +109,16 @@ class BaseDatasetRepository(BaseRepository):
         return (
             self.model.query.join(BDSMetaData)
             .filter(
-                BaseDataset.user_id == current_user_id,
-                BaseDataset.id == dataset_id,
-                BDSMetaData.dataset_doi.is_(None)
+                BaseDataset.user_id == current_user_id, BaseDataset.id == dataset_id, BDSMetaData.dataset_doi.is_(None)
             )
             .first()
         )
 
     def count_synchronized_datasets(self):
-        return self.model.query.join(BDSMetaData).filter(
-            BDSMetaData.dataset_doi.isnot(None)
-        ).count()
+        return self.model.query.join(BDSMetaData).filter(BDSMetaData.dataset_doi.isnot(None)).count()
 
     def count_unsynchronized_datasets(self):
-        return self.model.query.join(BDSMetaData).filter(
-            BDSMetaData.dataset_doi.is_(None)
-        ).count()
+        return self.model.query.join(BDSMetaData).filter(BDSMetaData.dataset_doi.is_(None)).count()
 
     def latest_synchronized(self):
         return (
@@ -142,6 +133,7 @@ class BaseDatasetRepository(BaseRepository):
 # ----------------------------------------
 # DOI Mapping
 # ----------------------------------------
+
 
 class DOIMappingRepository(BaseRepository):
     def __init__(self):
