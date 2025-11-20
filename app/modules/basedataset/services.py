@@ -5,13 +5,13 @@ from typing import Optional
 
 from flask import request
 
-from app.modules.basedataset.models import BaseDataset, BDSMetaData, BDSViewRecord
+from app.modules.basedataset.models import BaseDataset, BaseDSMetaData, BaseDSViewRecord
 from app.modules.basedataset.repositories import (
     AuthorRepository,
     BaseDatasetRepository,
-    BDSDownloadRecordRepository,
-    BDSMetaDataRepository,
-    BDSViewRecordRepository,
+    DSDownloadRecordRepository,
+    DSMetaDataRepository,
+    DSViewRecordRepository,
     DOIMappingRepository,
 )
 from core.services.BaseService import BaseService
@@ -31,9 +31,9 @@ class BaseDatasetService(BaseService):
 
         # Repositorios comunes
         self.author_repository = AuthorRepository()
-        self.metadata_repository = BDSMetaDataRepository()
-        self.download_repository = BDSDownloadRecordRepository()
-        self.view_repository = BDSViewRecordRepository()
+        self.metadata_repository = DSMetaDataRepository()
+        self.download_repository = DSDownloadRecordRepository()
+        self.view_repository = DSViewRecordRepository()
         self.doi_mapping_repository = DOIMappingRepository()
 
     # -------------------------------------------------------------------------
@@ -133,7 +133,7 @@ class BaseDatasetService(BaseService):
     def view_record_exists(self, dataset: BaseDataset, user_cookie: str):
         return self.view_repository.the_record_exists(dataset, user_cookie)
 
-    def create_new_view_record(self, dataset: BaseDataset, user_cookie: str) -> BDSViewRecord:
+    def create_new_view_record(self, dataset: BaseDataset, user_cookie: str) -> BaseDSViewRecord:
         return self.view_repository.create_new_record(dataset, user_cookie)
 
     def create_cookie(self, dataset: BaseDataset) -> str:
@@ -155,30 +155,30 @@ class BaseDatasetService(BaseService):
 # -------------------------------------------------------------------------
 
 
-class AuthorService(AuthorRepository):
+class AuthorService(BaseService):
     def __init__(self):
         super().__init__(AuthorRepository())
 
 
-class BDSMetaDataService(BaseService):
+class DSMetaDataService(BaseService):
     def __init__(self):
-        super().__init__(BDSMetaDataRepository())
+        super().__init__(DSMetaDataRepository())
 
     def update(self, id, **kwargs):
         return self.repository.update(id, **kwargs)
 
-    def filter_by_doi(self, doi: str) -> Optional[BDSMetaData]:
+    def filter_by_doi(self, doi: str) -> Optional[BaseDSMetaData]:
         return self.repository.filter_by_doi(doi)
 
 
-class BDSViewRecordService(BaseService):
+class DSViewRecordService(BaseService):
     def __init__(self):
-        super().__init__(BDSViewRecordRepository())
+        super().__init__(DSViewRecordRepository())
 
 
-class BDSDownloadRecordService(BaseService):
+class DSDownloadRecordService(BaseService):
     def __init__(self):
-        super().__init__(BDSDownloadRecordRepository())
+        super().__init__(DSDownloadRecordRepository())
 
 
 class DOIMappingService(BaseService):

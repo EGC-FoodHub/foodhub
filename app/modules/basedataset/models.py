@@ -9,7 +9,7 @@ from sqlalchemy.ext.declarative import declared_attr
 from app import db
 
 
-class PublicationType(Enum):
+class BasePublicationType(Enum):
     NONE = "none"
     ANNOTATION_COLLECTION = "annotationcollection"
     BOOK = "book"
@@ -31,7 +31,7 @@ class PublicationType(Enum):
     OTHER = "other"
 
 
-class Author(db.Model):
+class BaseAuthor(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     affiliation = db.Column(db.String(120))
@@ -43,17 +43,16 @@ class Author(db.Model):
         return {"name": self.name, "affiliation": self.affiliation, "orcid": self.orcid}
 
 
-class BDSMetaData(db.Model):
+class BaseDSMetaData(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     deposition_id = db.Column(db.Integer)
     title = db.Column(db.String(120), nullable=False)
     description = db.Column(db.Text, nullable=False)
-    publication_type = db.Column(SQLAlchemyEnum(PublicationType), nullable=False)
+    publication_type = db.Column(SQLAlchemyEnum(BasePublicationType), nullable=False)
     publication_doi = db.Column(db.String(120))
     dataset_doi = db.Column(db.String(120))
     tags = db.Column(db.String(120))
-    authors = db.relationship("Author", backref="ds_meta_data", lazy=True, cascade="all, delete")
-
+    authors = db.relationship("BaseAuthor", backref="ds_meta_data", lazy=True, cascade="all, delete")
 
 class BaseDataset(db.Model):
 
@@ -141,13 +140,13 @@ class BaseDataset(db.Model):
         pt = getattr(self.ds_meta_data, "publication_type", None)
         if pt is None:
             return None
-        if isinstance(pt, PublicationType):
+        if isinstance(pt, BasePublicationType):
             return pt
         s = str(pt).strip()
-        for enum_member in PublicationType:
+        for enum_member in BasePublicationType:
             if enum_member.value == s:
                 return enum_member
-        for enum_member in PublicationType:
+        for enum_member in BasePublicationType:
             if enum_member.name == s:
                 return enum_member
         return None
@@ -338,7 +337,7 @@ class BaseDatasetVersion(db.Model):
 
 # Métricas/Registros/DOI mapping
 # ---------------------------
-class BDSDownloadRecord(db.Model):
+class BaseDSDownloadRecord(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
     dataset_id = db.Column(db.Integer, db.ForeignKey("data_set.id"))
@@ -352,7 +351,7 @@ class BDSDownloadRecord(db.Model):
         )
 
 
-class BDSViewRecord(db.Model):
+class BaseDSViewRecord(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
     dataset_id = db.Column(db.Integer, db.ForeignKey("data_set.id"))
@@ -363,7 +362,7 @@ class BDSViewRecord(db.Model):
         return f"<View id={self.id} dataset_id={self.dataset_id} date={self.view_date} cookie={self.view_cookie}>"
 
 
-class DOIMapping(db.Model):
+class BaseDOIMapping(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     dataset_doi_old = db.Column(db.String(120))
     dataset_doi_new = db.Column(db.String(120))
