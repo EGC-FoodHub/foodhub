@@ -31,6 +31,7 @@ class PublicationType(Enum):
 
 
 class Author(db.Model):
+    __abstract__ = True  # ⬅️ Esto lo evita crear tabla
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     affiliation = db.Column(db.String(120))
@@ -43,6 +44,7 @@ class Author(db.Model):
 
 
 class DSMetrics(db.Model):
+    __abstract__ = True  # ⬅️ Esto lo evita crear tabla
     id = db.Column(db.Integer, primary_key=True)
     number_of_models = db.Column(db.String(120))
     number_of_features = db.Column(db.String(120))
@@ -52,6 +54,7 @@ class DSMetrics(db.Model):
 
 
 class DSMetaData(db.Model):
+    __abstract__ = True  # ⬅️ Esto lo evita crear tabla
     id = db.Column(db.Integer, primary_key=True)
     deposition_id = db.Column(db.Integer)
     title = db.Column(db.String(120), nullable=False)
@@ -65,7 +68,7 @@ class DSMetaData(db.Model):
     authors = db.relationship("Author", backref="ds_meta_data", lazy=True, cascade="all, delete")
 
 
-class BaseDataset(db.Model):
+class DataSet(db.Model):
     """
     Base polimórfica para todos los tipos de dataset (UVL, GPX, Image, Tabular, ...).
     Compartimos una sola tabla 'data_set' para compatibilidad con la plataforma.
@@ -322,7 +325,7 @@ class DatasetVersion(db.Model):
 # ==========================================================
 
 
-class FoodDataset(BaseDataset):
+class FoodDataset(DataSet):
     __mapper_args__ = {"polymorphic_identity": "food"}
 
     @classmethod
@@ -379,7 +382,7 @@ class FoodDataset(BaseDataset):
         return [food["name"] for food in summary["foods"]]
 
 
-class UVLDataset(BaseDataset):
+class UVLDataset(DataSet):
     __mapper_args__ = {"polymorphic_identity": "uvl"}
 
     @classmethod
@@ -526,17 +529,7 @@ class DOIMapping(db.Model):
 # Registro de tipos (útil para factorías en servicios/rutas)
 # ---------------------------
 DATASET_KIND_TO_CLASS = {
-    "base": BaseDataset,
+    "base": DataSet,
     "uvl": UVLDataset,
     "food": FoodDataset,
 }
-
-
-# Alias retrocompatible
-class DataSet(BaseDataset):
-    __mapper_args__ = {
-        "polymorphic_identity": "base",  # mismo que BaseDataset
-        "concrete": False,  # no crea nueva tabla
-    }
-
-    # Nota: no se redefine __tablename__, así que sigue apuntando a "data_set"
