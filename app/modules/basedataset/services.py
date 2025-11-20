@@ -9,10 +9,10 @@ from app.modules.basedataset.models import BaseDataset, BaseDSMetaData, BaseDSVi
 from app.modules.basedataset.repositories import (
     AuthorRepository,
     BaseDatasetRepository,
+    DOIMappingRepository,
     DSDownloadRecordRepository,
     DSMetaDataRepository,
     DSViewRecordRepository,
-    DOIMappingRepository,
 )
 from core.services.BaseService import BaseService
 

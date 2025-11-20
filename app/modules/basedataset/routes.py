@@ -25,10 +25,10 @@ from app.modules.basedataset.forms import BaseDatasetForm
 from app.modules.basedataset.services import (
     AuthorService,
     BaseDatasetService,
+    DOIMappingService,
     DSDownloadRecordService,
     DSMetaDataService,
     DSViewRecordService,
-    DOIMappingService,
 )
 from app.modules.zenodo.services import ZenodoService
 
@@ -42,6 +42,7 @@ zenodo_service = ZenodoService()
 doi_mapping_service = DOIMappingService()
 view_record_service = DSViewRecordService()
 download_record_service = DSDownloadRecordService()
+
 
 # ============================================================
 #  CREATE DATASET (GENERIC)

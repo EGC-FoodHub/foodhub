@@ -54,6 +54,7 @@ class BaseDSMetaData(db.Model):
     tags = db.Column(db.String(120))
     authors = db.relationship("BaseAuthor", backref="ds_meta_data", lazy=True, cascade="all, delete")
 
+
 class BaseDataset(db.Model):
 
     __abstract__ = True  # SQLAlchemy: evita crear tabla

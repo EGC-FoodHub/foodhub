@@ -7,10 +7,10 @@ from sqlalchemy import desc, func
 from app.modules.basedataset.models import (
     BaseAuthor,
     BaseDataset,
+    BaseDOIMapping,
     BaseDSDownloadRecord,
     BaseDSMetaData,
     BaseDSViewRecord,
-    BaseDOIMapping,
 )
 from core.repositories.BaseRepository import BaseRepository
 
@@ -109,7 +109,9 @@ class BaseDatasetRepository(BaseRepository):
         return (
             self.model.query.join(BaseDSMetaData)
             .filter(
-                BaseDataset.user_id == current_user_id, BaseDataset.id == dataset_id, BaseDSMetaData.dataset_doi.is_(None)
+                BaseDataset.user_id == current_user_id,
+                BaseDataset.id == dataset_id,
+                BaseDSMetaData.dataset_doi.is_(None),
             )
             .first()
         )
