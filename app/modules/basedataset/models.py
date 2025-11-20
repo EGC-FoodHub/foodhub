@@ -1,5 +1,5 @@
-from datetime import datetime
 from abc import abstractmethod
+from datetime import datetime
 from enum import Enum
 
 from requests import request
