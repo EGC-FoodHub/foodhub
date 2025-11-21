@@ -1,4 +1,5 @@
 import pytest
+import uuid
 
 from datetime import datetime
 from app import db
@@ -25,47 +26,50 @@ def test_client(test_client):
 
     yield test_client
 
+
 @pytest.fixture
 def user_with_datasets(test_client):
-    """
-    Crea un usuario con perfil y datasets reales (con DSMetaData)
-    para probar la vista /profile/<id>.
-    """
+    user_id = None
+    
     with test_client.application.app_context():
-        # Crear usuario y perfil
-        user = User(email="dataset_user@example.com", password="pass1234")
+
+        unique_email = f"dataset_user_{uuid.uuid4()}@example.com"
+        user = User(email=unique_email, password="pass1234")
         db.session.add(user)
         db.session.commit()
-
-        profile = UserProfile(user_id=user.id, name="Test", surname="User")
+        
+        user_id = user.id
+        profile = UserProfile(user_id=user_id, name="Test", surname="User")
         db.session.add(profile)
-        db.session.commit()
 
-        # Crear datasets con metadatos asociados
-        for i in range(3):
+        for i in range(2):
             meta = DSMetaData(
-                title=f"Dataset {i}",
-                description=f"Descripción del dataset {i}",
-                publication_type=PublicationType.JOURNAL_ARTICLE, 
-                deposition_id=None,
-                dataset_doi=None,
-                publication_doi=None,
-                tags="test,pytest",
+                title=f"Dataset {i}", 
+                description=f"Desc {i}",
+                publication_type=PublicationType.JOURNAL_ARTICLE,
+                tags="test"
             )
             db.session.add(meta)
-            db.session.flush()  # para obtener meta.id antes de usarlo
+            db.session.flush() 
 
             dataset = DataSet(
-                user_id=user.id,
-                ds_meta_data_id=meta.id,
-                created_at=datetime.utcnow(),
+                user_id=user_id, 
+                ds_meta_data_id=meta.id, 
+                created_at=datetime.utcnow()
             )
             db.session.add(dataset)
 
         db.session.commit()
 
-        yield user
+    yield user_id
 
+    with test_client.application.app_context():
+        if user_id:
+            DataSet.query.filter_by(user_id=user_id).delete()
+            UserProfile.query.filter_by(user_id=user_id).delete()
+            User.query.filter_by(id=user_id).delete()
+            db.session.commit()
+            db.session.remove()
 
 
 def test_edit_profile_page_get(test_client):
@@ -82,28 +86,55 @@ def test_edit_profile_page_get(test_client):
     logout(test_client)
 
 
-def test_user_profile_view(test_client, user_with_datasets):
-    """
-    Verifica que la vista /profile/<id> muestra correctamente
-    el perfil y los datasets de un usuario público.
-    """
-    user = user_with_datasets
-
-    response = test_client.get(f"/profile/{user.id}")
-    assert response.status_code == 200, "La vista de perfil público no respondió con 200 OK."
-
-    # Comprobamos que el perfil se renderiza correctamente
-    assert b"Test" in response.data, "El nombre del perfil no aparece en la página."
-    assert b"User" in response.data, "El apellido del perfil no aparece en la página."
-
-    # Verificamos que los datasets aparecen
-    assert b"Dataset 0" in response.data or b"Dataset 1" in response.data, \
-        "Los datasets del usuario no aparecen en la página."
-
-
 def test_user_profile_not_found(test_client):
     """
     Verifica que acceder a un perfil inexistente devuelve 404.
     """
     response = test_client.get("/profile/99999")  # ID que no existe
     assert response.status_code == 404, "Un perfil inexistente debería devolver 404."
+
+
+def test_user_profile_view(test_client, user_with_datasets):
+    """
+    Verifica que la vista /profile/<id> muestra correctamente
+    el perfil y los datasets.
+    """
+    user_id = user_with_datasets
+    response = test_client.get(f"/profile/{user_id}")
+    
+    assert response.status_code == 200, "La vista de perfil público no respondió con 200 OK."
+    response_content = response.data.decode('utf-8')
+
+    assert "Test" in response_content, "El nombre del perfil no aparece."
+    assert "User" in response_content, "El apellido del perfil no aparece."
+
+
+    assert "Dataset 0" in response_content or "Dataset 1" in response_content, \
+        "Los datasets del usuario no aparecen en la página."
+    
+
+def test_user_profile_view2(test_client, user_with_datasets):
+    """
+    Test de diagnóstico para encontrar por qué da 404.
+    """
+    user_id = user_with_datasets
+    print(f"\n--- DIAGNÓSTICO ---")
+    print(f"1. ID del usuario creado: {user_id}")
+    
+    # Comprobamos si el usuario existe en la DB ahora mismo
+    with test_client.application.app_context():
+        user_db = User.query.get(user_id)
+        print(f"2. ¿Existe el usuario en DB antes de llamar al cliente?: {'SÍ' if user_db else 'NO'}")
+        
+        # Verificamos las rutas registradas para ver si hay prefijos raros
+        print("3. Rutas registradas para 'profile':")
+        for rule in test_client.application.url_map.iter_rules():
+            if "profile" in str(rule):
+                print(f"   - {rule}")
+
+    target_url = f"/profile/{user_id}"
+    print(f"4. Intentando acceder a: {target_url}")
+    response = test_client.get(target_url)
+    print(f"5. Código de estado obtenido: {response.status_code}")
+    print("-------------------")
+    assert response.status_code == 200
