@@ -44,6 +44,9 @@ class BaseAuthor(db.Model):
 
 
 class BaseDSMetaData(db.Model):
+
+    __abstract__ = True
+
     id = db.Column(db.Integer, primary_key=True)
     deposition_id = db.Column(db.Integer)
     title = db.Column(db.String(120), nullable=False)
@@ -62,7 +65,6 @@ class BaseDataset(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
 
-    bds_meta_data_id = db.Column(db.Integer, db.ForeignKey("bds_meta_data.id"), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     # Discriminador de tipo; el server_default evita '' en inserts directos (problema del KeyError en mapper)
@@ -87,7 +89,6 @@ class BaseDataset(db.Model):
     )
 
     user = db.relationship("User", foreign_keys=[user_id], back_populates="data_sets")
-    bds_meta_data = db.relationship("BDSMetaData", backref=db.backref("data_set", uselist=False))
 
     # ---------------------
     # MÉTODOS ABSTRACTOS
