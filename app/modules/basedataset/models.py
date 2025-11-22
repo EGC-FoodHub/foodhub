@@ -37,7 +37,7 @@ class BaseAuthor(db.Model):
     affiliation = db.Column(db.String(120))
     orcid = db.Column(db.String(120))
     ds_meta_data_id = db.Column(db.Integer, db.ForeignKey("ds_meta_data.id"))
-    fm_meta_data_id = db.Column(db.Integer, db.ForeignKey("fm_meta_data.id"))
+    food_meta_data_id = db.Column(db.Integer, db.ForeignKey("food_meta_data.id"))
 
     def to_dict(self):
         return {"name": self.name, "affiliation": self.affiliation, "orcid": self.orcid}
@@ -55,7 +55,10 @@ class BaseDSMetaData(db.Model):
     publication_doi = db.Column(db.String(120))
     dataset_doi = db.Column(db.String(120))
     tags = db.Column(db.String(120))
-    authors = db.relationship("BaseAuthor", backref="ds_meta_data", lazy=True, cascade="all, delete")
+
+    @declared_attr
+    def authors(cls):
+        return db.relationship("BaseAuthor", backref="ds_meta_data", lazy=True, cascade="all, delete")
 
 
 class BaseDataset(db.Model):
@@ -80,15 +83,19 @@ class BaseDataset(db.Model):
         "polymorphic_on": basedataset_kind,
     }
 
-    versions = db.relationship(
-        "BaseDatasetVersion",
-        back_populates="basedataset",
-        lazy="dynamic",
-        cascade="all, delete-orphan",
-        order_by="BaseDatasetVersion.created_at.desc()",
-    )
+    @declared_attr
+    def versions(cls):
+        return db.relationship(
+            "BaseDatasetVersion",
+            back_populates="basedataset", # Asegúrate que en BaseDatasetVersion la relación inversa coincida
+            lazy="dynamic",
+            cascade="all, delete-orphan",
+            order_by="BaseDatasetVersion.created_at.desc()",
+        )
 
-    user = db.relationship("User", foreign_keys=[user_id], back_populates="data_sets")
+    @declared_attr
+    def user(cls):
+        return db.relationship("User", foreign_keys=[cls.user_id], back_populates="data_sets")
 
     # ---------------------
     # MÉTODOS ABSTRACTOS
@@ -126,9 +133,6 @@ class BaseDataset(db.Model):
     # ---------------------------
     def name(self) -> str:
         return self.ds_meta_data.title
-
-    def files(self):
-        return self.files
 
     def delete(self):
         db.session.delete(self)
@@ -183,9 +187,9 @@ class BaseDataset(db.Model):
         return f"https://zenodo.org/record/{self.ds_meta_data.deposition_id}" if self.ds_meta_data.dataset_doi else None
 
     def get_doi(self):
-        from app.modules.basedataset.services import BasedatasetService
+        from app.modules.basedataset.services import BaseDatasetService
 
-        return BasedatasetService.get_doi(self)
+        return BaseDatasetService.get_doi(self)
 
     # def to_dict(self):
     #     return {
