@@ -1,5 +1,7 @@
 import enum
-import yaml # Lo he movido arriba para que esté limpio
+
+import yaml  # Lo he movido arriba para que esté limpio
+
 from app import db
 from app.modules.basedataset.models import BaseDataset, BaseDSMetaData
 from app.modules.foodmodel.models import FoodMetaData, FoodModel
@@ -7,6 +9,7 @@ from app.modules.foodmodel.models import FoodMetaData, FoodModel
 # ======================================================
 #   ENUM: Tipo de alimento
 # ======================================================
+
 
 class FoodType(enum.Enum):
     VEGAN = "vegan"
@@ -21,6 +24,7 @@ class FoodType(enum.Enum):
 #   (solo la parte administrativa / contenedor)
 # ======================================================
 
+
 class FoodDataset(BaseDataset):
 
     __tablename__ = "food_dataset"
@@ -29,7 +33,7 @@ class FoodDataset(BaseDataset):
 
     # CAMBIO 1: Renombrar metadata_id y la relación metadata
     ds_meta_data_id = db.Column(db.Integer, db.ForeignKey("food_ds_meta_data.id"))
-    
+
     # ¡AQUÍ ESTABA EL ERROR! "metadata" es reservado. Lo llamamos "ds_meta_data"
     ds_meta_data = db.relationship("FoodDSMetaData", back_populates="dataset")
 
@@ -126,6 +130,7 @@ class FoodDataset(BaseDataset):
 #   (contenido científico derivado del .food file)
 # ======================================================
 
+
 class FoodDSMetaData(BaseDSMetaData):
     __tablename__ = "food_ds_meta_data"
 
@@ -134,9 +139,9 @@ class FoodDSMetaData(BaseDSMetaData):
 
     # CAMBIO 3: Actualizar back_populates a "ds_meta_data"
     nutritional_values = db.relationship(
-        "FoodNutritionalValue", 
-        back_populates="ds_meta_data", # Coincide con el nombre en FoodNutritionalValue
-        cascade="all, delete-orphan"
+        "FoodNutritionalValue",
+        back_populates="ds_meta_data",  # Coincide con el nombre en FoodNutritionalValue
+        cascade="all, delete-orphan",
     )
 
     # CAMBIO 4: Actualizar back_populates a "ds_meta_data"
@@ -148,11 +153,12 @@ class FoodDSMetaData(BaseDSMetaData):
 #   (tabla dinámica para vitaminas, proteínas, etc)
 # ======================================================
 
+
 class FoodNutritionalValue(db.Model):
     __tablename__ = "food_nutritional_value"
 
     id = db.Column(db.Integer, primary_key=True)
-    
+
     # CAMBIO 5: Renombrar la FK y la relación
     ds_meta_data_id = db.Column(db.Integer, db.ForeignKey("food_ds_meta_data.id"))
 

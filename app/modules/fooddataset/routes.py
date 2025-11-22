@@ -1,9 +1,10 @@
 import logging
-from flask import Blueprint, request, jsonify, render_template, abort
-from flask_login import login_required, current_user
 
-from app.modules.fooddataset.services import FoodDatasetService
+from flask import Blueprint, abort, jsonify, render_template, request
+from flask_login import current_user, login_required
+
 from app.modules.fooddataset.repositories import FoodDatasetRepository
+from app.modules.fooddataset.services import FoodDatasetService
 
 logger = logging.getLogger(__name__)
 
@@ -30,10 +31,7 @@ def create_food_dataset():
 
     dataset = food_service.create_food_dataset(current_user, name)
 
-    return jsonify({
-        "message": "FoodDataset created",
-        "dataset_id": dataset.id
-    }), 200
+    return jsonify({"message": "FoodDataset created", "dataset_id": dataset.id}), 200
 
 
 # ============================================================
@@ -63,10 +61,7 @@ def upload_food_file(dataset_id):
         logger.exception(exc)
         return jsonify({"error": str(exc)}), 400
 
-    return jsonify({
-        "message": "Food file uploaded and parsed",
-        "file_id": hubfile.id
-    }), 200
+    return jsonify({"message": "Food file uploaded and parsed", "file_id": hubfile.id}), 200
 
 
 # ============================================================
@@ -82,7 +77,7 @@ def view_food_dataset(dataset_id):
         dataset=dataset,
         metadata=dataset.metadata,
         nutritional_values=dataset.metadata.nutritional_values if dataset.metadata else None,
-        files=dataset.files
+        files=dataset.files,
     )
 
 
@@ -96,15 +91,17 @@ def get_nutritional_values(dataset_id):
     if not nv:
         return jsonify({"error": "No nutritional values found"}), 404
 
-    return jsonify({
-        "protein": nv.protein,
-        "carbohydrates": nv.carbohydrates,
-        "fat": nv.fat,
-        "fiber": nv.fiber,
-        "vitamin_e": nv.vitamin_e,
-        "magnesium": nv.magnesium,
-        "calcium": nv.calcium,
-    })
+    return jsonify(
+        {
+            "protein": nv.protein,
+            "carbohydrates": nv.carbohydrates,
+            "fat": nv.fat,
+            "fiber": nv.fiber,
+            "vitamin_e": nv.vitamin_e,
+            "magnesium": nv.magnesium,
+            "calcium": nv.calcium,
+        }
+    )
 
 
 # ============================================================
@@ -113,15 +110,17 @@ def get_nutritional_values(dataset_id):
 @food_bp.route("/<int:dataset_id>/files")
 def list_food_files(dataset_id):
     files = food_service.get_files(dataset_id)
-    return jsonify([
-        {
-            "id": f.id,
-            "name": f.name,
-            "size": f.size,
-            "checksum": f.checksum,
-        }
-        for f in files
-    ])
+    return jsonify(
+        [
+            {
+                "id": f.id,
+                "name": f.name,
+                "size": f.size,
+                "checksum": f.checksum,
+            }
+            for f in files
+        ]
+    )
 
 
 # ============================================================

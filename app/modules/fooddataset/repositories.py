@@ -1,7 +1,8 @@
 from app import db
 from app.modules.basedataset.repositories import BaseDatasetRepository
-from .models import FoodDataset, FoodDSMetaData, FoodNutritionalValue
 from app.modules.hubfile.models import Hubfile
+
+from .models import FoodDataset, FoodDSMetaData, FoodNutritionalValue
 
 
 class FoodDatasetRepository(BaseDatasetRepository):
@@ -52,32 +53,20 @@ class FoodDatasetRepository(BaseDatasetRepository):
         nutritional_values: dict | None = None,
     ) -> FoodDSMetaData:
 
-        meta = FoodDSMetaData(
-            title=title,
-            food_type=food_type,
-            description=description
-        )
+        meta = FoodDSMetaData(title=title, food_type=food_type, description=description)
 
         db.session.add(meta)
         db.session.flush()  # para obtener meta.id
 
         # Crear valores nutricionales
         if nutritional_values:
-            nutrition = FoodNutritionalValue(
-                metadata_id=meta.id,
-                **nutritional_values
-            )
+            nutrition = FoodNutritionalValue(metadata_id=meta.id, **nutritional_values)
             db.session.add(nutrition)
 
         return meta
 
     def add_file(self, dataset: FoodDataset, name: str, checksum: str, size: int, content_path: str):
-        file = Hubfile(
-            name=name,
-            checksum=checksum,
-            size=size,
-            dataset=dataset
-        )
+        file = Hubfile(name=name, checksum=checksum, size=size, dataset=dataset)
         db.session.add(file)
         return file
 

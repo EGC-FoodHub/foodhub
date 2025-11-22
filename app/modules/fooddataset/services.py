@@ -1,10 +1,11 @@
-import yaml
 import hashlib
+
+import yaml
 
 from app import db
 from app.modules.basedataset.services import BaseDatasetService
-from app.modules.fooddataset.repositories import FoodDatasetRepository
 from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData, FoodNutritionalValue
+from app.modules.fooddataset.repositories import FoodDatasetRepository
 from app.modules.hubfile.models import Hubfile
 from app.modules.hubfile.services import HubfileService
 
@@ -18,7 +19,7 @@ class FoodDatasetService(BaseDatasetService):
 
     def __init__(self):
         super().__init__()
-        self.repo = FoodDatasetRepository()      # Reemplaza el repo genérico
+        self.repo = FoodDatasetRepository()  # Reemplaza el repo genérico
         self.hubfile_service = HubfileService()
 
     # -------------------------------------------------------------------------
@@ -29,11 +30,7 @@ class FoodDatasetService(BaseDatasetService):
         """
         Crea un dataset Food vacío. No crea archivos ni metadata aún.
         """
-        dataset = self.repo.create(
-            name=name,
-            owner_user_id=user.id,
-            dataset_type="FOOD"
-        )
+        dataset = self.repo.create(name=name, owner_user_id=user.id, dataset_type="FOOD")
         return dataset
 
     # -------------------------------------------------------------------------
@@ -57,7 +54,7 @@ class FoodDatasetService(BaseDatasetService):
             food_type=data.get("type", "UNKNOWN"),
         )
         db.session.add(metadata)
-        db.session.flush()    # obtiene metadata.id
+        db.session.flush()  # obtiene metadata.id
 
         # 3) Crear valores nutricionales
         nv = data.get("nutritional_values", {})
@@ -81,10 +78,7 @@ class FoodDatasetService(BaseDatasetService):
         checksum = hashlib.md5(raw_content.encode("utf-8")).hexdigest()
 
         hubfile = Hubfile(
-            name=file_storage.filename,
-            size=len(raw_content.encode("utf-8")),
-            checksum=checksum,
-            dataset=dataset
+            name=file_storage.filename, size=len(raw_content.encode("utf-8")), checksum=checksum, dataset=dataset
         )
         db.session.add(hubfile)
 
