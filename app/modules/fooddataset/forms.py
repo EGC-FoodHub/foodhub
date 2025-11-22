@@ -3,4 +3,4 @@ from wtforms import SubmitField
 
 
 class FooddatasetForm(FlaskForm):
-    submit = SubmitField('Save fooddataset')
+    submit = SubmitField("Save fooddataset")

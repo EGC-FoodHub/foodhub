@@ -1,7 +1,5 @@
-from app import db
-
-
 from sqlalchemy import Enum as SQLAlchemyEnum
+
 from app import db
 from app.modules.dataset.models import Author, PublicationType
 
@@ -11,6 +9,7 @@ class FoodModel(db.Model):
     Representa un único archivo .food dentro de un FoodDataset.
     Equivalente a FeatureModel.
     """
+
     __tablename__ = "food_model"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -22,20 +21,10 @@ class FoodModel(db.Model):
     food_meta_data_id = db.Column(db.Integer, db.ForeignKey("food_meta_data.id"))
 
     # Archivos asociados (.food)
-    files = db.relationship(
-        "Hubfile",
-        backref="food_model",
-        lazy=True,
-        cascade="all, delete"
-    )
+    files = db.relationship("Hubfile", backref="food_model", lazy=True, cascade="all, delete")
 
     # Metadata específica
-    food_meta_data = db.relationship(
-        "FoodMetaData",
-        uselist=False,
-        backref="food_model",
-        cascade="all, delete"
-    )
+    food_meta_data = db.relationship("FoodMetaData", uselist=False, backref="food_model", cascade="all, delete")
 
     def __repr__(self):
         return f"FoodModel<{self.id}>"
@@ -46,6 +35,7 @@ class FoodMetaData(db.Model):
     Contiene los metadatos extraídos del archivo .food
     Equivalente a FMMetaData
     """
+
     __tablename__ = "food_meta_data"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -64,11 +54,7 @@ class FoodMetaData(db.Model):
 
     # Relación a métricas nutricionales
     food_metrics_id = db.Column(db.Integer, db.ForeignKey("food_metrics.id"))
-    food_metrics = db.relationship(
-        "FoodMetrics",
-        uselist=False,
-        backref="food_meta_data"
-    )
+    food_metrics = db.relationship("FoodMetrics", uselist=False, backref="food_meta_data")
 
     # Autores (igual que FMMetaData)
     authors = db.relationship(
@@ -76,7 +62,7 @@ class FoodMetaData(db.Model):
         backref="food_metadata",
         lazy=True,
         cascade="all, delete",
-        foreign_keys=[Author.food_meta_data_id]  # necesitas añadir esta columna al modelo Author
+        foreign_keys=[Author.food_meta_data_id],  # necesitas añadir esta columna al modelo Author
     )
 
     def __repr__(self):
@@ -88,6 +74,7 @@ class FoodMetrics(db.Model):
     Métricas nutricionales del alimento.
     Equivalente a FMMetrics.
     """
+
     __tablename__ = "food_metrics"
 
     id = db.Column(db.Integer, primary_key=True)

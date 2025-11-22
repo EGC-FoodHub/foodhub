@@ -1,12 +1,13 @@
 import enum
+
 from app import db
 from app.modules.basedataset.models import BaseDataset, BaseDSMetaData
 from app.modules.foodmodel.models import FoodMetaData, FoodModel
 
-
 # ======================================================
 #   ENUM: Tipo de alimento
 # ======================================================
+
 
 class FoodType(enum.Enum):
     VEGAN = "vegan"
@@ -20,6 +21,7 @@ class FoodType(enum.Enum):
 #   FOOD DATASET
 #   (solo la parte administrativa / contenedor)
 # ======================================================
+
 
 class FoodDataset(BaseDataset):
 
@@ -105,10 +107,10 @@ class FoodDataset(BaseDataset):
 
         # Persistencia
         from app import db
+
         db.session.add(food_model)
 
         return food_model
-
 
     def calculate_metrics(self):
         """
@@ -139,6 +141,7 @@ class FoodDataset(BaseDataset):
 #   (contenido científico derivado del .food file)
 # ======================================================
 
+
 class FoodDSMetaData(BaseDSMetaData):
     """
     Representa los metadatos científicos del archivo .food:
@@ -156,25 +159,18 @@ class FoodDSMetaData(BaseDSMetaData):
 
     # Relación con tabla de valores nutricionales
     nutritional_values = db.relationship(
-        "FoodNutritionalValue",
-        back_populates="metadata",
-        cascade="all, delete-orphan"
+        "FoodNutritionalValue", back_populates="metadata", cascade="all, delete-orphan"
     )
 
     # Relación 1–1 con el dataset FoodDataset
-    dataset = db.relationship(
-        "FoodDataset",
-        back_populates="metadata",
-        uselist=False
-    )
-
-    
+    dataset = db.relationship("FoodDataset", back_populates="metadata", uselist=False)
 
 
 # ======================================================
 #   FOOD NUTRITIONAL VALUES
 #   (tabla dinámica para vitaminas, proteínas, etc)
 # ======================================================
+
 
 class FoodNutritionalValue(db.Model):
     """
@@ -193,10 +189,7 @@ class FoodNutritionalValue(db.Model):
     name = db.Column(db.String(120), nullable=False)
     value = db.Column(db.String(50), nullable=False)
 
-    metadata = db.relationship(
-        "FoodDSMetaData",
-        back_populates="nutritional_values"
-    )
+    metadata = db.relationship("FoodDSMetaData", back_populates="nutritional_values")
 
     def to_dict(self):
         return {
