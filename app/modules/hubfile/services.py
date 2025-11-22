@@ -2,6 +2,7 @@ import os
 
 from app.modules.auth.models import User
 from app.modules.dataset.models import DataSet
+from app.modules.fooddataset.models import FoodDataset
 from app.modules.hubfile.models import Hubfile
 from app.modules.hubfile.repositories import (
     HubfileDownloadRecordRepository,
@@ -20,7 +21,7 @@ class HubfileService(BaseService):
     def get_owner_user_by_hubfile(self, hubfile: Hubfile) -> User:
         return self.repository.get_owner_user_by_hubfile(hubfile)
 
-    def get_dataset_by_hubfile(self, hubfile: Hubfile) -> DataSet:
+    def get_dataset_by_hubfile(self, hubfile: Hubfile) -> FoodDataset:
         return self.repository.get_dataset_by_hubfile(hubfile)
 
     def get_path_by_hubfile(self, hubfile: Hubfile) -> str:
