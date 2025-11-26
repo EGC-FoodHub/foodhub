@@ -29,17 +29,19 @@ class FoodDataset(BaseDataset):
 
     __tablename__ = "food_dataset"
 
-    id = db.Column(db.Integer, db.ForeignKey("data_set.id"), primary_key=True)
+    id = db.Column(db.Integer, db.ForeignKey("base_dataset.id"), primary_key=True)
 
     # CAMBIO 1: Renombrar metadata_id y la relación metadata
-    ds_meta_data_id = db.Column(db.Integer, db.ForeignKey("food_ds_meta_data.id"))
+    ds_meta_data_id = db.Column(
+        db.Integer, db.ForeignKey("food_ds_meta_data.id", use_alter=True, name="fk_food_dataset_ds_metadata")
+    )
 
     # ¡AQUÍ ESTABA EL ERROR! "metadata" es reservado. Lo llamamos "ds_meta_data"
     ds_meta_data = db.relationship("FoodDSMetaData", back_populates="dataset")
 
     # Archivos .food asociados
     files = db.relationship(
-        "FoodFile",
+        "app.modules.foodmodel.models.FoodModel",
         back_populates="dataset",
         cascade="all, delete-orphan",
         lazy=True,
@@ -134,6 +136,8 @@ class FoodDataset(BaseDataset):
 class FoodDSMetaData(BaseDSMetaData):
     __tablename__ = "food_ds_meta_data"
 
+    id = db.Column(db.Integer, db.ForeignKey("ds_meta_data.id"), primary_key=True)
+
     calories = db.Column(db.String(50))
     type = db.Column(db.String(50))
 
@@ -160,7 +164,9 @@ class FoodNutritionalValue(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     # CAMBIO 5: Renombrar la FK y la relación
-    ds_meta_data_id = db.Column(db.Integer, db.ForeignKey("food_ds_meta_data.id"))
+    ds_meta_data_id = db.Column(
+        db.Integer, db.ForeignKey("food_ds_meta_data.id", use_alter=True, name="fk_nutritional_val_ds_metadata")
+    )
 
     name = db.Column(db.String(120), nullable=False)
     value = db.Column(db.String(50), nullable=False)

@@ -4,7 +4,7 @@ from flask import request
 
 from app import db
 from app.modules.auth.models import User
-from app.modules.dataset.models import DataSet
+from app.modules.basedataset.models import BaseDataset
 
 
 class Hubfile(db.Model):
@@ -13,7 +13,27 @@ class Hubfile(db.Model):
     name = db.Column(db.String(120), nullable=False)
     checksum = db.Column(db.String(120), nullable=False)
     size = db.Column(db.Integer, nullable=False)
-    food_model_id = db.Column(db.Integer, db.ForeignKey("food_model.id"), nullable=False)
+
+    # =========================================================
+    # CORRECCIÓN DE CLAVES FORÁNEAS (Polimorfismo simple)
+    # =========================================================
+
+    # 1. Cambiamos food_model_id a nullable=True
+    # (porque un archivo UVL no tendrá food_model)
+    food_model_id = db.Column(db.Integer, db.ForeignKey("food_model.id"), nullable=True)
+
+    # 2. AÑADIMOS la FK que faltaba para FeatureModel
+    feature_model_id = db.Column(db.Integer, db.ForeignKey("feature_model.id"), nullable=True)
+
+    # =========================================================
+    # RELACIONES
+    # =========================================================
+
+    # Relación inversa para FeatureModel (ahora sí funcionará porque existe feature_model_id)
+    feature_model = db.relationship("FeatureModel", back_populates="files")
+
+    # Relación inversa para FoodModel (suponiendo que FoodModel tiene back_populates='files')
+    # food_model = db.relationship('FoodModel', back_populates='files')
 
     def get_formatted_size(self):
         from app.modules.dataset.services import SizeService
@@ -25,12 +45,12 @@ class Hubfile(db.Model):
 
         return HubfileService().get_owner_user_by_hubfile(self)
 
-    def get_dataset(self) -> DataSet:
+    def get_dataset(self) -> BaseDataset:  # Actualizado el type hint
         from app.modules.hubfile.services import HubfileService
 
         return HubfileService().get_dataset_by_hubfile(self)
 
-    def get_path(self) -> DataSet:
+    def get_path(self):
         from app.modules.hubfile.services import HubfileService
 
         return HubfileService().get_path_by_hubfile(self)

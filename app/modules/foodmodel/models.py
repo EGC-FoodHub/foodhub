@@ -26,6 +26,8 @@ class FoodModel(db.Model):
     # Metadata específica
     food_meta_data = db.relationship("FoodMetaData", uselist=False, backref="food_model", cascade="all, delete")
 
+    dataset = db.relationship("app.modules.fooddataset.models.FoodDataset", back_populates="files")
+
     def __repr__(self):
         return f"FoodModel<{self.id}>"
 
@@ -58,7 +60,7 @@ class FoodMetaData(db.Model):
 
     # Autores (igual que FMMetaData)
     authors = db.relationship(
-        "Author",
+        "app.modules.basedataset.models.BaseAuthor",
         backref="food_metadata",
         lazy=True,
         cascade="all, delete",
@@ -66,7 +68,7 @@ class FoodMetaData(db.Model):
     )
 
     def __repr__(self):
-        return f"FoodMetaData<{self.name}>"
+        return f"FoodMetaData<{self.title}>"
 
 
 class FoodMetrics(db.Model):

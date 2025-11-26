@@ -23,11 +23,9 @@ class DataSetSeeder(BaseSeeder):
         if not user1 or not user2:
             raise Exception("Users not found. Please seed users first.")
 
-        # Create DSMetrics instance
-        ds_metrics = DSMetrics(number_of_models="5", number_of_features="50")
-        seeded_ds_metrics = self.seed([ds_metrics])[0]
-
-        # Create DSMetaData instances
+        # -------------------------------------------------------------
+        # 1. Crear DSMetaData (SIN ds_metrics_id)
+        # -------------------------------------------------------------
         ds_meta_data_list = [
             DSMetaData(
                 deposition_id=1 + i,
@@ -37,13 +35,15 @@ class DataSetSeeder(BaseSeeder):
                 publication_doi=f"10.1234/dataset{i+1}",
                 dataset_doi=f"10.1234/dataset{i+1}",
                 tags="tag1, tag2",
-                ds_metrics_id=seeded_ds_metrics.id,
+                # ELIMINADO: ds_metrics_id=seeded_ds_metrics.id (Ya no existe en metadatos)
             )
             for i in range(4)
         ]
         seeded_ds_meta_data = self.seed(ds_meta_data_list)
 
-        # Create Author instances and associate with DSMetaData
+        # -------------------------------------------------------------
+        # 2. Crear Autores y asociar a DSMetaData
+        # -------------------------------------------------------------
         authors = [
             Author(
                 name=f"Author {i+1}",
@@ -55,17 +55,41 @@ class DataSetSeeder(BaseSeeder):
         ]
         self.seed(authors)
 
-        # Create DataSet instances
+        # -------------------------------------------------------------
+        # 3. Crear DataSet instances
+        # -------------------------------------------------------------
+        # Nota: Asumimos que DataSet (BaseDataset) tiene ds_meta_data_id o una relación compatible.
+        # Si BaseDataset no tiene esta columna, tendrías que asignar la relación después.
         datasets = [
             DataSet(
                 user_id=user1.id if i % 2 == 0 else user2.id,
-                ds_meta_data_id=seeded_ds_meta_data[i].id,
+                # --- BORRA ESTA LÍNEA ---
+                # ds_meta_data_id=seeded_ds_meta_data[i].id,
+                # ------------------------
                 created_at=datetime.now(timezone.utc),
             )
             for i in range(4)
         ]
         seeded_datasets = self.seed(datasets)
 
+        # -------------------------------------------------------------
+        # 4. Crear DSMetrics (NUEVA UBICACIÓN)
+        # -------------------------------------------------------------
+        # Ahora que tenemos los datasets creados, creamos sus métricas asociadas
+
+        ds_metrics_list = []
+        for dataset in seeded_datasets:
+            metrics = DSMetrics(
+                number_of_models="5",
+                number_of_features="50",
+                dataset_id=dataset.id,  # Vinculamos al ID del dataset creado
+            )
+            ds_metrics_list.append(metrics)
+        self.seed(ds_metrics_list)
+
+        # -------------------------------------------------------------
+        # 5. Feature Models (UVL) Logic
+        # -------------------------------------------------------------
         # Assume there are 12 UVL files, create corresponding FMMetaData and FeatureModel
         fm_meta_data_list = [
             FMMetaData(
@@ -103,22 +127,34 @@ class DataSetSeeder(BaseSeeder):
         load_dotenv()
         working_dir = os.getenv("WORKING_DIR", "")
         src_folder = os.path.join(working_dir, "app", "modules", "dataset", "uvl_examples")
-        for i in range(12):
-            file_name = f"file{i+1}.uvl"
-            feature_model = seeded_feature_models[i]
-            dataset = next(ds for ds in seeded_datasets if ds.id == feature_model.data_set_id)
-            user_id = dataset.user_id
 
-            dest_folder = os.path.join(working_dir, "uploads", f"user_{user_id}", f"dataset_{dataset.id}")
-            os.makedirs(dest_folder, exist_ok=True)
-            shutil.copy(os.path.join(src_folder, file_name), dest_folder)
+        # Asegurarse que la carpeta origen existe, o saltar este paso para evitar errores
+        if os.path.exists(src_folder):
+            for i in range(12):
+                file_name = f"file{i+1}.uvl"
+                feature_model = seeded_feature_models[i]
 
-            file_path = os.path.join(dest_folder, file_name)
+                # Buscar el dataset padre
+                dataset = next(ds for ds in seeded_datasets if ds.id == feature_model.data_set_id)
+                user_id = dataset.user_id
 
-            uvl_file = Hubfile(
-                name=file_name,
-                checksum=f"checksum{i+1}",
-                size=os.path.getsize(file_path),
-                feature_model_id=feature_model.id,
-            )
-            self.seed([uvl_file])
+                dest_folder = os.path.join(working_dir, "uploads", f"user_{user_id}", f"dataset_{dataset.id}")
+                os.makedirs(dest_folder, exist_ok=True)
+
+                src_file_path = os.path.join(src_folder, file_name)
+                # Solo copiar si el archivo origen existe
+                if os.path.exists(src_file_path):
+                    shutil.copy(src_file_path, dest_folder)
+                    file_path = os.path.join(dest_folder, file_name)
+                    file_size = os.path.getsize(file_path)
+                else:
+                    # Fallback si no hay ficheros reales
+                    file_size = 0
+
+                uvl_file = Hubfile(
+                    name=file_name,
+                    checksum=f"checksum{i+1}",
+                    size=file_size,
+                    feature_model_id=feature_model.id,
+                )
+                self.seed([uvl_file])
