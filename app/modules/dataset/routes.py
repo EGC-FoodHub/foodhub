@@ -24,6 +24,8 @@ from app.modules.dataset.services import (
     DSViewRecordService,
 )
 from app.modules.zenodo.services import ZenodoService
+from app.modules.recommendations.services import RecommendationService
+
 
 logger = logging.getLogger(__name__)
 
@@ -350,9 +352,11 @@ def subdomain_index(doi):
     # Get dataset
     dataset = ds_meta_data.data_set
 
+    related_datasets = RecommendationService.get_related_datasets(dataset, limit=5)
+
     # Save the cookie to the user's browser
     user_cookie = ds_view_record_service.create_cookie(dataset=dataset)
-    resp = make_response(render_template("dataset/view_dataset.html", dataset=dataset))
+    resp = make_response(render_template("dataset/view_dataset.html", dataset=dataset, related_datasets=related_datasets))
     resp.set_cookie("view_cookie", user_cookie)
 
     return resp
@@ -367,5 +371,7 @@ def get_unsynchronized_dataset(dataset_id):
 
     if not dataset:
         abort(404)
+        
+    related_datasets = RecommendationService.get_related_datasets(dataset, limit=5)
 
-    return render_template("dataset/view_dataset.html", dataset=dataset)
+    return render_template("dataset/view_dataset.html", dataset=dataset, related_datasets = related_datasets)

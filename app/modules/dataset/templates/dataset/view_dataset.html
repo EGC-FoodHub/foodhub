@@ -153,8 +153,32 @@
                     </div>
 
                 </div>
-
-                
+                <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h3>Related Datasets</h3>
+                            {% if related_datasets %}
+                                <div class="row">
+                                    {% for ds in related_datasets %}
+                                        <div class="col-md-12 mb-2">
+                                            <a href="{{ url_for('dataset.subdomain_index', doi=ds.ds_meta_data.dataset_doi) }}">
+                                                {{ ds.ds_meta_data.title }}
+                                            </a>
+                                            <br>
+                                            <small class="text-muted">
+                                                Uploaded on {{ ds.created_at.strftime('%B %d, %Y') }} |
+                                                {{ ds.get_cleaned_publication_type() }}
+                                            </small>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="text-secondary">No related datasets found.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
 
             </div>
 
