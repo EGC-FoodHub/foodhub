@@ -101,6 +101,9 @@
                                             <a href="{{ url_for('dataset.get_unsynchronized_dataset', dataset_id=local_dataset.id) }}">
                                                 <i data-feather="eye"></i>
                                             </a>
+                                            <a href="{{ url_for('dataset.edit_doi_dataset', dataset_id=local_dataset.id) }}">
+                                                <i data-feather="edit"></i>
+                                            </a>
                                             <a href="{{ url_for('dataset.download_dataset', dataset_id=local_dataset.id) }}">
                                                 <i data-feather="download"></i>
                                             </a>

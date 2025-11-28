@@ -46,6 +46,9 @@ class AuthenticationService(BaseService):
             profile_data = {
                 "name": name,
                 "surname": surname,
+                "uploaded_datasets_count": 0,
+                "downloaded_datasets_count": 0,
+                "synchronized_datasets_count": 0,
             }
 
             user = self.create(commit=False, **user_data)
