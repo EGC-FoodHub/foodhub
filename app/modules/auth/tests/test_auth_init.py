@@ -6,7 +6,6 @@ from app.modules.auth.services import AuthenticationService
 class TestAuthInit:
     
     def test_init_sets_resend_api_key(self):
-        """Test que __init__ configura correctamente la API key de Resend"""
         with patch.dict(os.environ, {'RESEND_API_KEY': 'test_api_key_123'}):
             with patch('app.modules.auth.services.resend') as mock_resend:
                 service = AuthenticationService()
@@ -15,7 +14,6 @@ class TestAuthInit:
                 assert mock_resend.api_key == 'test_api_key_123'
     
     def test_init_initializes_repositories(self):
-        """Test que __init__ inicializa los repositorios correctamente"""
         with patch.dict(os.environ, {'RESEND_API_KEY': 'test_key'}):
             service = AuthenticationService()
             
