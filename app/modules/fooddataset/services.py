@@ -1,110 +1,120 @@
 import hashlib
+import logging
+import os
+import shutil
 
-import yaml
-
-from app import db
+from app.modules.auth.services import AuthenticationService
 from app.modules.basedataset.services import BaseDatasetService
-from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData, FoodNutritionalValue
+from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData
 from app.modules.fooddataset.repositories import FoodDatasetRepository
-from app.modules.hubfile.models import Hubfile
-from app.modules.hubfile.services import HubfileService
+from app.modules.foodmodel.models import FoodMetaData, FoodModel
+from app.modules.hubfile.repositories import HubfileRepository
+
+logger = logging.getLogger(__name__)
+
+
+def calculate_checksum_and_size(file_path):
+    file_size = os.path.getsize(file_path)
+    with open(file_path, "rb") as file:
+        content = file.read()
+        hash_md5 = hashlib.md5(content).hexdigest()
+        return hash_md5, file_size
 
 
 class FoodDatasetService(BaseDatasetService):
-    """
-    Servicio específico para FoodDataset.
-    Extiende el comportamiento genérico de BaseDatasetService
-    con lógica propia para procesar archivos .food.
-    """
-
     def __init__(self):
-        super().__init__()
-        self.repo = FoodDatasetRepository()  # Reemplaza el repo genérico
-        self.hubfile_service = HubfileService()
+        super().__init__(repository=FoodDatasetRepository())
+        self.hubfile_repository = HubfileRepository()
+        self.author_repository = self.author_repository
+        self.dsmetadata_repository = self.dsmetadata_repository
 
-    # -------------------------------------------------------------------------
-    # CREACIÓN ESPECÍFICA
-    # -------------------------------------------------------------------------
+    def get_synchronized(self, current_user_id: int):
+        return self.repository.get_synchronized(current_user_id)
 
-    def create_food_dataset(self, user, name: str) -> FoodDataset:
-        """
-        Crea un dataset Food vacío. No crea archivos ni metadata aún.
-        """
-        dataset = self.repo.create(name=name, owner_user_id=user.id, dataset_type="FOOD")
+    def get_unsynchronized(self, current_user_id: int):
+        return self.repository.get_unsynchronized(current_user_id)
+
+    def get_unsynchronized_dataset(self, current_user_id: int, dataset_id: int):
+        return self.repository.get_unsynchronized_dataset(current_user_id, dataset_id)
+
+    def latest_synchronized(self):
+        return self.repository.latest_synchronized()
+
+    def count_synchronized_datasets(self):
+        return self.repository.count_synchronized_datasets()
+
+    def count_unsynchronized_datasets(self):
+        return self.repository.count_unsynchronized_datasets()
+
+    def get_uvlhub_doi(self, dataset: FoodDataset) -> str:
+        domain = os.getenv("DOMAIN", "localhost")
+        return f"http://{domain}/doi/{dataset.ds_meta_data.dataset_doi}"
+
+    def create_from_form(self, form, current_user) -> FoodDataset:
+        main_author = {
+            "name": f"{current_user.profile.surname}, {current_user.profile.name}",
+            "affiliation": current_user.profile.affiliation,
+            "orcid": current_user.profile.orcid,
+        }
+
+        try:
+            logger.info(f"Creating FoodDSMetaData...: {form.get_dsmetadata()}")
+
+            dsmetadata = FoodDSMetaData(**form.get_dsmetadata())
+
+            self.dsmetadata_repository.session.add(dsmetadata)
+            self.dsmetadata_repository.session.flush()
+
+            for author_data in [main_author] + form.get_authors():
+                author = self.author_repository.create(commit=False, food_ds_meta_data_id=dsmetadata.id, **author_data)
+
+            dataset = self.create(commit=False, user_id=current_user.id)
+
+            dataset.ds_meta_data_id = dsmetadata.id
+
+            for food_model_form in form.food_models:
+                filename = food_model_form.filename.data
+
+                food_metadata = FoodMetaData(**food_model_form.get_food_metadata())
+                self.repository.session.add(food_metadata)
+                self.repository.session.flush()
+
+                for author_data in food_model_form.get_authors():
+                    author = self.author_repository.create(
+                        commit=False, food_meta_data_id=food_metadata.id, **author_data
+                    )
+
+                food_model = FoodModel(dataset=dataset, food_meta_data_id=food_metadata.id)
+
+                file_path = os.path.join(current_user.temp_folder(), filename)
+                checksum, size = calculate_checksum_and_size(file_path)
+
+                hubfile = self.hubfile_repository.create(
+                    commit=False, name=filename, checksum=checksum, size=size, food_model=food_model
+                )
+
+                food_model.files.append(hubfile)
+
+            self.repository.session.commit()
+
+            self._move_dataset_files(dataset, current_user)
+
+        except Exception as exc:
+            logger.error(f"Exception creating food dataset: {exc}")
+            self.repository.session.rollback()
+            raise exc
+
         return dataset
 
-    # -------------------------------------------------------------------------
-    # PARSEADOR DE ARCHIVOS .FOOD
-    # -------------------------------------------------------------------------
+    def _move_dataset_files(self, dataset, current_user):
+        """Mueve los archivos físicos del directorio temporal al final."""
+        source_dir = current_user.temp_folder()
+        working_dir = os.getenv("WORKING_DIR", "")
+        dest_dir = os.path.join(working_dir, "uploads", f"user_{current_user.id}", f"dataset_{dataset.id}")
+        os.makedirs(dest_dir, exist_ok=True)
 
-    def parse_uploaded_file(self, dataset: FoodDataset, file_storage):
-        """
-        Procesa un archivo YAML .food, crea metadatos, valores nutricionales
-        y guarda el archivo mediante Hubfile.
-        """
-
-        # 1) Leer archivo
-        raw_content = file_storage.read().decode("utf-8")
-        data = yaml.safe_load(raw_content)
-
-        # 2) Crear metadatos
-        metadata = FoodDSMetaData(
-            title=data.get("name", "Unnamed Food"),
-            description=data.get("description", f"Nutritional profile for {data.get('name')}"),
-            food_type=data.get("type", "UNKNOWN"),
-        )
-        db.session.add(metadata)
-        db.session.flush()  # obtiene metadata.id
-
-        # 3) Crear valores nutricionales
-        nv = data.get("nutritional_values", {})
-        nutritional = FoodNutritionalValue(
-            metadata_id=metadata.id,
-            protein=nv.get("protein"),
-            carbohydrates=nv.get("carbohydrates"),
-            fat=nv.get("fat"),
-            fiber=nv.get("fiber"),
-            vitamin_e=nv.get("vitamin_e"),
-            magnesium=nv.get("magnesium"),
-            calcium=nv.get("calcium"),
-        )
-        db.session.add(nutritional)
-
-        # 4) Asociar metadata al dataset
-        dataset.metadata_id = metadata.id
-        db.session.add(dataset)
-
-        # 5) Guardar archivo como Hubfile
-        checksum = hashlib.md5(raw_content.encode("utf-8")).hexdigest()
-
-        hubfile = Hubfile(
-            name=file_storage.filename, size=len(raw_content.encode("utf-8")), checksum=checksum, dataset=dataset
-        )
-        db.session.add(hubfile)
-
-        db.session.commit()
-
-        return hubfile
-
-    # -------------------------------------------------------------------------
-    # GETTERS
-    # -------------------------------------------------------------------------
-
-    def get_metadata(self, dataset_id: int):
-        dataset = self.repo.get(dataset_id)
-        return dataset.metadata if dataset else None
-
-    def get_nutritional_values(self, dataset_id: int):
-        return self.repo.get_nutritional_values(dataset_id)
-
-    def get_files(self, dataset_id: int):
-        return self.repo.get_files(dataset_id)
-
-    # -------------------------------------------------------------------------
-    # DELETE
-    # -------------------------------------------------------------------------
-
-    def delete_dataset(self, dataset_id: int) -> bool:
-        ok = self.repo.delete_dataset(dataset_id)
-        db.session.commit()
-        return ok
+        for food_model in dataset.files:
+            for file in food_model.files:
+                src_file = os.path.join(source_dir, file.name)
+                if os.path.exists(src_file):
+                    shutil.move(src_file, dest_dir)

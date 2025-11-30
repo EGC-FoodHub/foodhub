@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -14,36 +15,24 @@ from app.modules.basedataset.models import (
 )
 from core.repositories.BaseRepository import BaseRepository
 
-# ----------------------------------------
-# Author Repository
-# ----------------------------------------
+logger = logging.getLogger(__name__)
 
 
-class AuthorRepository(BaseRepository):
+class BaseAuthorRepository(BaseRepository):
     def __init__(self):
         super().__init__(BaseAuthor)
 
 
-# ----------------------------------------
-# Download Records
-# ----------------------------------------
-
-
-class DSDownloadRecordRepository(BaseRepository):
+class BaseDSDownloadRecordRepository(BaseRepository):
     def __init__(self):
         super().__init__(BaseDSDownloadRecord)
 
     def total_dataset_downloads(self) -> int:
         max_id = self.model.query.with_entities(func.max(self.model.id)).scalar()
-        return max_id or 0
+        return max_id if max_id is not None else 0
 
 
-# ----------------------------------------
-# Metadata
-# ----------------------------------------
-
-
-class DSMetaDataRepository(BaseRepository):
+class BaseDSMetaDataRepository(BaseRepository):
     def __init__(self):
         super().__init__(BaseDSMetaData)
 
@@ -51,20 +40,18 @@ class DSMetaDataRepository(BaseRepository):
         return self.model.query.filter_by(dataset_doi=doi).first()
 
 
-# ----------------------------------------
-# View Records
-# ----------------------------------------
-
-
-class DSViewRecordRepository(BaseRepository):
+class BaseDSViewRecordRepository(BaseRepository):
     def __init__(self):
         super().__init__(BaseDSViewRecord)
 
     def total_dataset_views(self) -> int:
         max_id = self.model.query.with_entities(func.max(self.model.id)).scalar()
-        return max_id or 0
+        return max_id if max_id is not None else 0
 
     def the_record_exists(self, dataset: BaseDataset, user_cookie: str):
+        """
+        Verifica si existe un registro de vista para cualquier tipo de dataset (BaseDataset).
+        """
         return self.model.query.filter_by(
             user_id=current_user.id if current_user.is_authenticated else None,
             dataset_id=dataset.id,
@@ -80,66 +67,21 @@ class DSViewRecordRepository(BaseRepository):
         )
 
 
-# ----------------------------------------
-# BaseDataset Repository
-# ----------------------------------------
+class BaseDOIMappingRepository(BaseRepository):
+    def __init__(self):
+        super().__init__(BaseDOIMapping)
+
+    def get_new_doi(self, old_doi: str) -> Optional[str]:
+        mapping = self.model.query.filter_by(dataset_doi_old=old_doi).first()
+        return mapping.dataset_doi_new if mapping else None
 
 
 class BaseDatasetRepository(BaseRepository):
     def __init__(self):
         super().__init__(BaseDataset)
 
-    def get_synchronized(self, current_user_id: int):
-        return (
-            self.model.query.join(BaseDSMetaData)
-            .filter(BaseDataset.user_id == current_user_id, BaseDSMetaData.dataset_doi.isnot(None))
-            .order_by(self.model.created_at.desc())
-            .all()
-        )
+    def get_all_by_user_id(self, user_id: int):
+        return self.model.query.filter_by(user_id=user_id).order_by(self.model.created_at.desc()).all()
 
-    def get_unsynchronized(self, current_user_id: int):
-        return (
-            self.model.query.join(BaseDSMetaData)
-            .filter(BaseDataset.user_id == current_user_id, BaseDSMetaData.dataset_doi.is_(None))
-            .order_by(self.model.created_at.desc())
-            .all()
-        )
-
-    def get_unsynchronized_dataset(self, current_user_id: int, dataset_id: int):
-        return (
-            self.model.query.join(BaseDSMetaData)
-            .filter(
-                BaseDataset.user_id == current_user_id,
-                BaseDataset.id == dataset_id,
-                BaseDSMetaData.dataset_doi.is_(None),
-            )
-            .first()
-        )
-
-    def count_synchronized_datasets(self):
-        return self.model.query.join(BaseDSMetaData).filter(BaseDSMetaData.dataset_doi.isnot(None)).count()
-
-    def count_unsynchronized_datasets(self):
-        return self.model.query.join(BaseDSMetaData).filter(BaseDSMetaData.dataset_doi.is_(None)).count()
-
-    def latest_synchronized(self):
-        return (
-            self.model.query.join(BaseDSMetaData)
-            .filter(BaseDSMetaData.dataset_doi.isnot(None))
-            .order_by(desc(self.model.id))
-            .limit(5)
-            .all()
-        )
-
-
-# ----------------------------------------
-# DOI Mapping
-# ----------------------------------------
-
-
-class DOIMappingRepository(BaseRepository):
-    def __init__(self):
-        super().__init__(BaseDOIMapping)
-
-    def get_new_doi(self, old_doi: str):
-        return self.model.query.filter_by(dataset_doi_old=old_doi).first()
+    def get_latest(self, limit=10):
+        return self.model.query.order_by(self.model.created_at.desc()).limit(limit).all()
