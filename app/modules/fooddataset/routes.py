@@ -1,140 +1,141 @@
+import json
 import logging
+import os
+import shutil
 
-from flask import Blueprint, abort, jsonify, render_template, request
+from flask import Blueprint, jsonify, render_template, request, send_from_directory
 from flask_login import current_user, login_required
 
-from app.modules.fooddataset.repositories import FoodDatasetRepository
+from app.modules.fooddataset.forms import FoodDatasetForm
 from app.modules.fooddataset.services import FoodDatasetService
+from app.modules.zenodo.services import ZenodoService
 
 logger = logging.getLogger(__name__)
 
-food_bp = Blueprint("food_dataset", __name__, url_prefix="/food")
+fooddataset_bp = Blueprint("fooddataset", __name__, template_folder="templates", static_folder="assets")
 
 food_service = FoodDatasetService()
-food_repo = FoodDatasetRepository()
 
 
-# ============================================================
-#  CREATE FOOD DATASET (simple)
-# ============================================================
-@food_bp.route("/create", methods=["POST"])
+@fooddataset_bp.route("/scripts.js")
+def scripts():
+    return send_from_directory(os.path.join(os.path.dirname(__file__), "assets"), "scripts.js")
+
+
+@fooddataset_bp.route("/dataset/upload", methods=["GET", "POST"])
 @login_required
-def create_food_dataset():
+def create_dataset():
     """
-    Crea un dataset Food vacío (sin archivos).
-    El proceso completo se hace desde la UI genérica.
+    Ruta para subir un nuevo Food Dataset.
     """
-    name = request.json.get("name")
+    form = FoodDatasetForm()
 
-    if not name:
-        return jsonify({"error": "Name is required"}), 400
+    if request.method == "POST":
+        dataset = None
 
-    dataset = food_service.create_food_dataset(current_user, name)
+        if not form.validate_on_submit():
+            return jsonify({"message": form.errors}), 400
 
-    return jsonify({"message": "FoodDataset created", "dataset_id": dataset.id}), 200
+        try:
+            logger.info("Creating food dataset...")
+            dataset = food_service.create_from_form(form=form, current_user=current_user)
+            logger.info(f"Created dataset: {dataset.id}")
+
+        except Exception as exc:
+            logger.exception(f"Exception creating local dataset: {exc}")
+            return jsonify({"error": str(exc)}), 400
+
+        zenodo_service = ZenodoService()
+
+        data = {}
+        try:
+            zenodo_response_json = zenodo_service.create_new_deposition(dataset)
+            response_data = json.dumps(zenodo_response_json)
+            data = json.loads(response_data)
+        except Exception as exc:
+            logger.exception(f"Exception creating Zenodo deposition: {exc}")
+
+        if data.get("conceptrecid"):
+            deposition_id = data.get("id")
+
+            try:
+                for food_model in dataset.files:
+                    zenodo_service.upload_file(dataset, deposition_id, food_model)
+
+                zenodo_service.publish_deposition(deposition_id)
+
+                deposition_doi = zenodo_service.get_doi(deposition_id)
+
+            except Exception as e:
+                msg = f"Error uploading to Zenodo: {e}"
+                logger.error(msg)
+                return jsonify({"message": msg}), 200
+
+        file_path = current_user.temp_folder()
+        if os.path.exists(file_path) and os.path.isdir(file_path):
+            shutil.rmtree(file_path)
+
+        msg = "Dataset created successfully!"
+        return jsonify({"message": msg, "redirect": "/basedataset/list"}), 200
+
+    return render_template("fooddataset/upload_dataset.html", form=form)
 
 
-# ============================================================
-#  UPLOAD & PARSE FOOD FILE (.food)
-# ============================================================
-@food_bp.route("/<int:dataset_id>/upload-food", methods=["POST"])
+@fooddataset_bp.route("/dataset/file/upload", methods=["POST"])
 @login_required
-def upload_food_file(dataset_id):
-
-    dataset = food_repo.get_or_404(dataset_id)
-
-    if dataset.owner_user_id != current_user.id:
-        abort(403)
-
+def upload_file_temp():
+    """
+    Sube un archivo temporal (.food) al servidor antes de crear el dataset.
+    """
     file = request.files.get("file")
-
     if not file:
-        return jsonify({"error": "File is required"}), 400
+        return jsonify({"message": "No file provided"}), 400
 
-    if not file.filename.endswith(".food"):
-        return jsonify({"error": "Only .food files are allowed"}), 400
+    filename = file.filename.lower()
+
+    allowed_extensions = [".food"]
+
+    if not any(filename.endswith(ext) for ext in allowed_extensions):
+        return jsonify({"message": "File type not allowed (only .food)"}), 400
+
+    temp_folder = current_user.temp_folder()
+
+    if not os.path.exists(temp_folder):
+        os.makedirs(temp_folder)
+
+    file_path = os.path.join(temp_folder, file.filename)
+
+    if os.path.exists(file_path):
+        base_name, extension = os.path.splitext(file.filename)
+        i = 1
+        while os.path.exists(os.path.join(temp_folder, f"{base_name} ({i}){extension}")):
+            i += 1
+        new_filename = f"{base_name} ({i}){extension}"
+        file_path = os.path.join(temp_folder, new_filename)
+    else:
+        new_filename = file.filename
 
     try:
-        hubfile = food_service.parse_uploaded_file(dataset, file)
+        file.save(file_path)
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
 
-    except Exception as exc:
-        logger.exception(exc)
-        return jsonify({"error": str(exc)}), 400
-
-    return jsonify({"message": "Food file uploaded and parsed", "file_id": hubfile.id}), 200
+    return jsonify({"message": "File uploaded successfully", "filename": new_filename}), 200
 
 
-# ============================================================
-#  VIEW METADATA AND NUTRITION
-# ============================================================
-@food_bp.route("/<int:dataset_id>")
-def view_food_dataset(dataset_id):
-
-    dataset = food_repo.get_or_404(dataset_id)
-
-    return render_template(
-        "food/view_food_dataset.html",
-        dataset=dataset,
-        metadata=dataset.metadata,
-        nutritional_values=dataset.metadata.nutritional_values if dataset.metadata else None,
-        files=dataset.files,
-    )
-
-
-# ============================================================
-#  GET NUTRITIONAL VALUES (AJAX)
-# ============================================================
-@food_bp.route("/<int:dataset_id>/nutrition")
-def get_nutritional_values(dataset_id):
-    nv = food_service.get_nutritional_values(dataset_id)
-
-    if not nv:
-        return jsonify({"error": "No nutritional values found"}), 404
-
-    return jsonify(
-        {
-            "protein": nv.protein,
-            "carbohydrates": nv.carbohydrates,
-            "fat": nv.fat,
-            "fiber": nv.fiber,
-            "vitamin_e": nv.vitamin_e,
-            "magnesium": nv.magnesium,
-            "calcium": nv.calcium,
-        }
-    )
-
-
-# ============================================================
-#  LIST FOOD FILES
-# ============================================================
-@food_bp.route("/<int:dataset_id>/files")
-def list_food_files(dataset_id):
-    files = food_service.get_files(dataset_id)
-    return jsonify(
-        [
-            {
-                "id": f.id,
-                "name": f.name,
-                "size": f.size,
-                "checksum": f.checksum,
-            }
-            for f in files
-        ]
-    )
-
-
-# ============================================================
-#  DELETE FOOD DATASET
-# ============================================================
-@food_bp.route("/<int:dataset_id>/delete", methods=["DELETE"])
+@fooddataset_bp.route("/dataset/file/delete", methods=["POST"])
 @login_required
-def delete_food_dataset(dataset_id):
+def delete_file_temp():
+    data = request.get_json()
+    filename = data.get("file")
+    if not filename:
+        return jsonify({"error": "No filename provided"}), 400
 
-    dataset = food_repo.get_or_404(dataset_id)
+    temp_folder = current_user.temp_folder()
+    filepath = os.path.join(temp_folder, filename)
 
-    if dataset.owner_user_id != current_user.id:
-        abort(403)
+    if os.path.exists(filepath):
+        os.remove(filepath)
+        return jsonify({"message": "File deleted successfully"})
 
-    ok = food_service.delete_dataset(dataset_id)
-
-    return jsonify({"deleted": ok}), 200
+    return jsonify({"error": "File not found"})
