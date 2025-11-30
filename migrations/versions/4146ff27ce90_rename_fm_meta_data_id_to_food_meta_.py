@@ -1,8 +1,8 @@
-"""Final Architecture Complete
+"""Rename fm_meta_data_id to food_meta_data_id
 
-Revision ID: 76856ccc203e
+Revision ID: 4146ff27ce90
 Revises: 
-Create Date: 2025-11-25 21:37:44.734890
+Create Date: 2025-11-29 12:06:39.506193
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '76856ccc203e'
+revision = '4146ff27ce90'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -35,21 +35,14 @@ def upgrade():
     sa.Column('tags', sa.String(length=120), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_table('fm_metrics',
+    op.create_table('food_meta_data',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('solver', sa.Text(), nullable=True),
-    sa.Column('not_solver', sa.Text(), nullable=True),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_table('food_metrics',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('protein', sa.String(length=20), nullable=True),
-    sa.Column('carbohydrates', sa.String(length=20), nullable=True),
-    sa.Column('fat', sa.String(length=20), nullable=True),
-    sa.Column('fiber', sa.String(length=20), nullable=True),
-    sa.Column('vitamin_e', sa.String(length=20), nullable=True),
-    sa.Column('magnesium', sa.String(length=20), nullable=True),
-    sa.Column('calcium', sa.String(length=20), nullable=True),
+    sa.Column('food_filename', sa.String(length=120), nullable=False),
+    sa.Column('title', sa.String(length=120), nullable=False),
+    sa.Column('description', sa.Text(), nullable=False),
+    sa.Column('publication_type', sa.String(length=50), nullable=True),
+    sa.Column('publication_doi', sa.String(length=120), nullable=True),
+    sa.Column('tags', sa.String(length=120), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('food_nutritional_value',
@@ -85,11 +78,9 @@ def upgrade():
     sa.Column('affiliation', sa.String(length=120), nullable=True),
     sa.Column('orcid', sa.String(length=120), nullable=True),
     sa.Column('food_meta_data_id', sa.Integer(), nullable=True),
-    sa.Column('fm_meta_data_id', sa.Integer(), nullable=True),
     sa.Column('food_ds_meta_data_id', sa.Integer(), nullable=True),
     sa.Column('ds_meta_data_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['ds_meta_data_id'], ['ds_meta_data.id'], ),
-    sa.ForeignKeyConstraint(['fm_meta_data_id'], ['fm_meta_data.id'], name='fk_author_fm_metadata', use_alter=True),
     sa.ForeignKeyConstraint(['food_ds_meta_data_id'], ['food_ds_meta_data.id'], name='fk_author_food_ds_metadata', use_alter=True),
     sa.ForeignKeyConstraint(['food_meta_data_id'], ['food_meta_data.id'], name='fk_author_food_metadata', use_alter=True),
     sa.PrimaryKeyConstraint('id')
@@ -105,38 +96,11 @@ def upgrade():
     with op.batch_alter_table('base_dataset', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_base_dataset_basedataset_kind'), ['basedataset_kind'], unique=False)
 
-    op.create_table('fm_meta_data',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('uvl_filename', sa.String(length=120), nullable=False),
-    sa.Column('title', sa.String(length=120), nullable=False),
-    sa.Column('description', sa.Text(), nullable=False),
-    sa.Column('publication_type', sa.Enum('NONE', 'ANNOTATION_COLLECTION', 'BOOK', 'BOOK_SECTION', 'CONFERENCE_PAPER', 'DATA_MANAGEMENT_PLAN', 'JOURNAL_ARTICLE', 'PATENT', 'PREPRINT', 'PROJECT_DELIVERABLE', 'PROJECT_MILESTONE', 'PROPOSAL', 'REPORT', 'SOFTWARE_DOCUMENTATION', 'TAXONOMIC_TREATMENT', 'TECHNICAL_NOTE', 'THESIS', 'WORKING_PAPER', 'OTHER', name='basepublicationtype'), nullable=False),
-    sa.Column('publication_doi', sa.String(length=120), nullable=True),
-    sa.Column('tags', sa.String(length=120), nullable=True),
-    sa.Column('uvl_version', sa.String(length=120), nullable=True),
-    sa.Column('fm_metrics_id', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['fm_metrics_id'], ['fm_metrics.id'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
     op.create_table('food_ds_meta_data',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('calories', sa.String(length=50), nullable=True),
     sa.Column('type', sa.String(length=50), nullable=True),
     sa.ForeignKeyConstraint(['id'], ['ds_meta_data.id'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_table('food_meta_data',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('food_filename', sa.String(length=120), nullable=False),
-    sa.Column('title', sa.String(length=120), nullable=False),
-    sa.Column('food_type', sa.String(length=50), nullable=True),
-    sa.Column('calories', sa.String(length=50), nullable=True),
-    sa.Column('description', sa.Text(), nullable=True),
-    sa.Column('publication_type', sa.Enum('NONE', 'ANNOTATION_COLLECTION', 'BOOK', 'BOOK_SECTION', 'CONFERENCE_PAPER', 'DATA_MANAGEMENT_PLAN', 'JOURNAL_ARTICLE', 'PATENT', 'PREPRINT', 'PROJECT_DELIVERABLE', 'PROJECT_MILESTONE', 'PROPOSAL', 'REPORT', 'SOFTWARE_DOCUMENTATION', 'TAXONOMIC_TREATMENT', 'TECHNICAL_NOTE', 'THESIS', 'WORKING_PAPER', 'OTHER', name='basepublicationtype'), nullable=True),
-    sa.Column('publication_doi', sa.String(length=120), nullable=True),
-    sa.Column('tags', sa.String(length=120), nullable=True),
-    sa.Column('food_metrics_id', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['food_metrics_id'], ['food_metrics.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('user_profile',
@@ -189,16 +153,7 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('dataset_id', sa.Integer(), nullable=True),
     sa.Column('number_of_models', sa.String(length=100), nullable=True),
-    sa.Column('number_of_features', sa.String(length=100), nullable=True),
     sa.ForeignKeyConstraint(['dataset_id'], ['base_dataset.id'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_table('feature_model',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('data_set_id', sa.Integer(), nullable=False),
-    sa.Column('fm_meta_data_id', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['data_set_id'], ['base_dataset.id'], ),
-    sa.ForeignKeyConstraint(['fm_meta_data_id'], ['fm_meta_data.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('food_dataset',
@@ -222,8 +177,6 @@ def upgrade():
     sa.Column('checksum', sa.String(length=120), nullable=False),
     sa.Column('size', sa.Integer(), nullable=False),
     sa.Column('food_model_id', sa.Integer(), nullable=True),
-    sa.Column('feature_model_id', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['feature_model_id'], ['feature_model.id'], ),
     sa.ForeignKeyConstraint(['food_model_id'], ['food_model.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -240,9 +193,9 @@ def upgrade():
     op.create_table('file_view_record',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=True),
-    sa.Column('file_id', sa.Integer(), nullable=False),
-    sa.Column('view_date', sa.DateTime(), nullable=True),
-    sa.Column('view_cookie', sa.String(length=36), nullable=True),
+    sa.Column('file_id', sa.Integer(), nullable=True),
+    sa.Column('view_date', sa.DateTime(), nullable=False),
+    sa.Column('view_cookie', sa.String(length=36), nullable=False),
     sa.ForeignKeyConstraint(['file_id'], ['file.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -257,15 +210,12 @@ def downgrade():
     op.drop_table('file')
     op.drop_table('food_model')
     op.drop_table('food_dataset')
-    op.drop_table('feature_model')
     op.drop_table('ds_metrics')
     op.drop_table('basedataset_version')
     op.drop_table('base_ds_view_record')
     op.drop_table('base_ds_download_record')
     op.drop_table('user_profile')
-    op.drop_table('food_meta_data')
     op.drop_table('food_ds_meta_data')
-    op.drop_table('fm_meta_data')
     with op.batch_alter_table('base_dataset', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_base_dataset_basedataset_kind'))
 
@@ -275,8 +225,7 @@ def downgrade():
     op.drop_table('webhook')
     op.drop_table('user')
     op.drop_table('food_nutritional_value')
-    op.drop_table('food_metrics')
-    op.drop_table('fm_metrics')
+    op.drop_table('food_meta_data')
     op.drop_table('ds_meta_data')
     op.drop_table('base_doi_mapping')
     # ### end Alembic commands ###
