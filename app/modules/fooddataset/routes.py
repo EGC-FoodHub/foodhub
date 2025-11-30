@@ -76,7 +76,7 @@ def create_dataset():
             shutil.rmtree(file_path)
 
         msg = "Dataset created successfully!"
-        return jsonify({"message": msg, "redirect": url_for('basedataset.list_dataset')}), 200
+        return jsonify({"message": msg, "redirect": url_for("basedataset.list_dataset")}), 200
 
     return render_template("fooddataset/upload_dataset.html", form=form)
 
