@@ -1,73 +1,73 @@
 from flask_wtf import FlaskForm
-from wtforms import FieldList, FormField, SelectField, StringField, TextAreaField
+from wtforms import FieldList, FormField, SelectField, StringField, SubmitField, TextAreaField
 from wtforms.validators import URL, DataRequired, Optional
 
-from app.modules.dataset.models import PublicationType
+from app.modules.basedataset.models import BasePublicationType
 
 
-# -------------------------------------------------------------------
-# Generic Author Form
-# -------------------------------------------------------------------
 class AuthorForm(FlaskForm):
+    """
+    Formulario reutilizable para autores.
+    Se usa tanto para el dataset como para los modelos individuales.
+    """
+
     name = StringField("Name", validators=[DataRequired()])
-    affiliation = StringField("Affiliation", validators=[Optional()])
-    orcid = StringField("ORCID", validators=[Optional()])
-    gnd = StringField("GND", validators=[Optional()])
+    affiliation = StringField("Affiliation")
+    orcid = StringField("ORCID")
+    gnd = StringField("GND")
 
     class Meta:
-        csrf = False  # subform does not need CSRF
+        csrf = False
 
-    def get_author(self) -> dict:
+    def get_author(self):
         return {
             "name": self.name.data,
             "affiliation": self.affiliation.data,
             "orcid": self.orcid.data,
-            "gnd": self.gnd.data,
         }
 
 
-# -------------------------------------------------------------------
-# Generic Dataset Metadata Form
-# (Each dataset type will extend this)
-# -------------------------------------------------------------------
 class BaseDatasetForm(FlaskForm):
+    """
+    Formulario Base con los metadatos comunes a cualquier dataset.
+    NO incluye la lista de archivos/modelos (eso va en los hijos).
+    """
+
     title = StringField("Title", validators=[DataRequired()])
     desc = TextAreaField("Description", validators=[DataRequired()])
 
     publication_type = SelectField(
         "Publication type",
-        choices=[(pt.value, pt.name.replace("_", " ").title()) for pt in PublicationType],
+        choices=[(pt.value, pt.name.replace("_", " ").title()) for pt in BasePublicationType],
         validators=[DataRequired()],
     )
 
     publication_doi = StringField("Publication DOI", validators=[Optional(), URL()])
     dataset_doi = StringField("Dataset DOI", validators=[Optional(), URL()])
-    tags = StringField("Tags (comma-separated)", validators=[Optional()])
+    tags = StringField("Tags (separated by commas)")
+    authors = FieldList(FormField(AuthorForm))
+    submit = SubmitField("Submit")
 
-    authors = FieldList(FormField(AuthorForm), min_entries=1)
+    def get_dsmetadata(self):
+        """
+        Devuelve un diccionario listo para crear un objeto BaseDSMetaData (o hijos).
+        """
+        publication_type_converted = self.convert_publication_type(self.publication_type.data)
 
-    class Meta:
-        csrf = False
-
-    # --------------------------
-    # Helpers
-    # --------------------------
-    def get_authors(self) -> list:
-        return [author.get_author() for author in self.authors]
-
-    def convert_publication_type(self, raw_value: str) -> str:
-        """Convert Enum value → Enum name for DB storage."""
-        for pt in PublicationType:
-            if pt.value == raw_value:
-                return pt.name
-        return "NONE"
-
-    def get_metadata(self) -> dict:
         return {
             "title": self.title.data,
             "description": self.desc.data,
-            "publication_type": self.convert_publication_type(self.publication_type.data),
+            "publication_type": publication_type_converted,
             "publication_doi": self.publication_doi.data,
             "dataset_doi": self.dataset_doi.data,
             "tags": self.tags.data,
         }
+
+    def convert_publication_type(self, value):
+        for pt in BasePublicationType:
+            if pt.value == value:
+                return pt.name
+        return "NONE"
+
+    def get_authors(self):
+        return [author.get_author() for author in self.authors]

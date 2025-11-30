@@ -35,25 +35,12 @@ class BaseAuthor(db.Model):
     name = db.Column(db.String(120), nullable=False)
     affiliation = db.Column(db.String(120))
     orcid = db.Column(db.String(120))
-
-    # --- Modificaciones con use_alter=True ---
-
-    # FK para Food MetaData (Archivo)
     food_meta_data_id = db.Column(
         db.Integer, db.ForeignKey("food_meta_data.id", use_alter=True, name="fk_author_food_metadata")
     )
-
-    # FK para FeatureModel MetaData (Archivo UVL)
-    fm_meta_data_id = db.Column(
-        db.Integer, db.ForeignKey("fm_meta_data.id", use_alter=True, name="fk_author_fm_metadata")
-    )
-
-    # FK para Food Dataset MetaData (El que daba el error)
     food_ds_meta_data_id = db.Column(
         db.Integer, db.ForeignKey("food_ds_meta_data.id", use_alter=True, name="fk_author_food_ds_metadata")
     )
-
-    # Si descomentaste ds_meta_data_id (la genérica), déjala normal o con use_alter si también falla:
     ds_meta_data_id = db.Column(db.Integer, db.ForeignKey("ds_meta_data.id"))
 
     def to_dict(self):
@@ -61,14 +48,9 @@ class BaseAuthor(db.Model):
 
 
 class BaseDSMetaData(db.Model):
-    # CAMBIO: Quitamos __abstract__ = True
-    # __abstract__ = True  <-- ELIMINAR O COMENTAR
-
-    # CAMBIO: Añadimos nombre de tabla
     __tablename__ = "ds_meta_data"
 
     id = db.Column(db.Integer, primary_key=True)
-    # ... (el resto de campos deposition_id, title, etc. se quedan IGUAL) ...
     deposition_id = db.Column(db.Integer)
     title = db.Column(db.String(120), nullable=False)
     description = db.Column(db.Text, nullable=False)
@@ -83,10 +65,7 @@ class BaseDSMetaData(db.Model):
 
 
 class BaseDataset(db.Model):
-    # ---------------------------------------------------
-    # CONFIGURACIÓN DE TABLA CONCRETA
-    # ---------------------------------------------------
-    __tablename__ = "base_dataset"  # Nombre corregido
+    __tablename__ = "base_dataset"
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
@@ -101,26 +80,15 @@ class BaseDataset(db.Model):
     )
 
     __mapper_args__ = {"polymorphic_on": basedataset_kind, "polymorphic_identity": "base"}
-
-    # ---------------------------------------------------
-    # RELACIONES CON RUTAS ABSOLUTAS (SOLUCIÓN DEL ERROR)
-    # ---------------------------------------------------
     versions = db.relationship(
-        "app.modules.basedataset.models.BaseDatasetVersion",  # <--- RUTA COMPLETA
+        "app.modules.basedataset.models.BaseDatasetVersion",
         back_populates="dataset",
         lazy="dynamic",
         cascade="all, delete-orphan",
         order_by="BaseDatasetVersion.created_at.desc()",
     )
-
-    # Nota: También usamos ruta completa para User si es necesario,
-    # pero normalmente "User" funciona si el import es correcto.
-    # Si fallara, pondríamos "app.modules.auth.models.User".
     user = db.relationship("app.modules.auth.models.User", foreign_keys=[user_id], back_populates="data_sets")
 
-    # ---------------------
-    # MÉTODOS ABSTRACTOS
-    # ---------------------
     @abstractmethod
     def get_all_files(self):
         pass
@@ -133,9 +101,6 @@ class BaseDataset(db.Model):
     def calculate_metrics(self):
         pass
 
-    # ---------------------------
-    # Métodos COMUNES
-    # ---------------------------
     def name(self) -> str:
         return self.ds_meta_data.title if hasattr(self, "ds_meta_data") else "Untitled"
 
@@ -226,7 +191,6 @@ class BaseDatasetVersion(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
 
-    # FK apuntando a la tabla base_dataset
     dataset_id = db.Column(db.Integer, db.ForeignKey("base_dataset.id"), nullable=False)
 
     version_number = db.Column(db.String(20), nullable=False)
@@ -241,12 +205,7 @@ class BaseDatasetVersion(db.Model):
 
     __mapper_args__ = {"polymorphic_identity": "base", "polymorphic_on": version_type}
 
-    # ---------------------------------------------------
-    # RELACIÓN INVERSA CON RUTA ABSOLUTA
-    # ---------------------------------------------------
-    dataset = db.relationship(
-        "app.modules.basedataset.models.BaseDataset", back_populates="versions"  # <--- RUTA COMPLETA
-    )
+    dataset = db.relationship("app.modules.basedataset.models.BaseDataset", back_populates="versions")
 
     created_by = db.relationship("User", foreign_keys=[created_by_id])
 
@@ -295,7 +254,7 @@ class BaseDatasetVersion(db.Model):
 class BaseDSDownloadRecord(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
-    dataset_id = db.Column(db.Integer, db.ForeignKey("base_dataset.id"))  # Corregido
+    dataset_id = db.Column(db.Integer, db.ForeignKey("base_dataset.id"))
     download_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     download_cookie = db.Column(db.String(36), nullable=False)
 
@@ -306,7 +265,7 @@ class BaseDSDownloadRecord(db.Model):
 class BaseDSViewRecord(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
-    dataset_id = db.Column(db.Integer, db.ForeignKey("base_dataset.id"))  # Corregido
+    dataset_id = db.Column(db.Integer, db.ForeignKey("base_dataset.id"))
     view_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     view_cookie = db.Column(db.String(36), nullable=False)
 
@@ -320,9 +279,7 @@ class BaseDSMetrics(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     dataset_id = db.Column(db.Integer, db.ForeignKey("base_dataset.id"))
 
-    # Campos que usaba el seeder antiguo (ajusta si tenías más)
     number_of_models = db.Column(db.String(100))
-    number_of_features = db.Column(db.String(100))
 
     def __repr__(self):
         return f"DSMetrics<dataset_id={self.dataset_id}>"
