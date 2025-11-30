@@ -1,7 +1,7 @@
+import logging
 import os
 
 from app.modules.auth.models import User
-from app.modules.dataset.models import DataSet
 from app.modules.fooddataset.models import FoodDataset
 from app.modules.hubfile.models import Hubfile
 from app.modules.hubfile.repositories import (
@@ -9,7 +9,10 @@ from app.modules.hubfile.repositories import (
     HubfileRepository,
     HubfileViewRecordRepository,
 )
+from core.configuration.configuration import uploads_folder_name
 from core.services.BaseService import BaseService
+
+logger = logging.getLogger(__name__)
 
 
 class HubfileService(BaseService):
@@ -19,20 +22,36 @@ class HubfileService(BaseService):
         self.hubfile_download_record_repository = HubfileDownloadRecordRepository()
 
     def get_owner_user_by_hubfile(self, hubfile: Hubfile) -> User:
-        return self.repository.get_owner_user_by_hubfile(hubfile)
+        """
+        Obtiene el usuario dueño del archivo navegando las relaciones.
+        """
+        if hubfile.food_model and hubfile.food_model.dataset:
+            return hubfile.food_model.dataset.user
+        return None
 
     def get_dataset_by_hubfile(self, hubfile: Hubfile) -> FoodDataset:
-        return self.repository.get_dataset_by_hubfile(hubfile)
+        """
+        Obtiene el dataset al que pertenece el archivo.
+        """
+        if hubfile.food_model:
+            return hubfile.food_model.dataset
+        return None
 
     def get_path_by_hubfile(self, hubfile: Hubfile) -> str:
+        """
+        Construye la ruta física absoluta del archivo.
+        """
+        dataset = self.get_dataset_by_hubfile(hubfile)
 
-        hubfile_user = self.get_owner_user_by_hubfile(hubfile)
-        hubfile_dataset = self.get_dataset_by_hubfile(hubfile)
-        working_dir = os.getenv("WORKING_DIR")
+        if not dataset:
+            logger.error(f"Hubfile {hubfile.id} is orphaned (no linked dataset)")
+            return None
 
-        path = os.path.join(
-            working_dir, "uploads", f"user_{hubfile_user.id}", f"dataset_{hubfile_dataset.id}", hubfile.name
-        )
+        user = dataset.user
+
+        base_dir = uploads_folder_name()
+
+        path = os.path.join(base_dir, f"user_{user.id}", f"dataset_{dataset.id}", hubfile.name)
 
         return path
 
@@ -40,8 +59,7 @@ class HubfileService(BaseService):
         return self.hubfile_view_record_repository.total_hubfile_views()
 
     def total_hubfile_downloads(self) -> int:
-        hubfile_download_record_repository = HubfileDownloadRecordRepository()
-        return hubfile_download_record_repository.total_hubfile_downloads()
+        return self.hubfile_download_record_repository.total_hubfile_downloads()
 
 
 class HubfileDownloadRecordService(BaseService):
