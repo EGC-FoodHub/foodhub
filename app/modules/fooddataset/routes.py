@@ -3,7 +3,7 @@ import logging
 import os
 import shutil
 
-from flask import Blueprint, jsonify, render_template, request, send_from_directory
+from flask import Blueprint, jsonify, render_template, request, send_from_directory, url_for
 from flask_login import current_user, login_required
 
 from app.modules.fooddataset.forms import FoodDatasetForm
@@ -76,7 +76,7 @@ def create_dataset():
             shutil.rmtree(file_path)
 
         msg = "Dataset created successfully!"
-        return jsonify({"message": msg, "redirect": "/basedataset/list"}), 200
+        return jsonify({"message": msg, "redirect": url_for('basedataset.list_dataset')}), 200
 
     return render_template("fooddataset/upload_dataset.html", form=form)
 
