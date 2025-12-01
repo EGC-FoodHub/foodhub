@@ -3,7 +3,7 @@
 | Versión | Fecha       | Autor  | Descripción del cambio |
 |---------|------------|--------|-----------------------|
 | 1.0     | 20/10/2025 | Adrián y Pepe | Documento inicial creado |
-| 1.1     | 01/12/2025 | Equipo         | Añadida sección de nueva metodología de creación de ramas por subgrupo |
+| 1.1     | 01/12/2025 | Salma y Miguel         | Añadida sección de nueva metodología de creación de ramas por subgrupo |
 
 # Proceso de gestión del cambio
 

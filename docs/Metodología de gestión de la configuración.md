@@ -3,7 +3,7 @@
 | Versión | Fecha       | Autor  | Descripción del cambio |
 |---------|------------|--------|-----------------------|
 | 1.0     | 20/10/2025 | Emilio y Germán | Documento inicial creado |
-| 1.1     | 01/12/2025 | Equipo         | Añadidas pautas de creación de ramas y ejemplo de rama feature por subgrupo |
+| 1.1     | 01/12/2025 | Salma y Miguel         | Añadidas pautas de creación de ramas y ejemplo de rama feature por subgrupo |
 
 # Metodología de gestión de la configuración
 
@@ -68,7 +68,6 @@ Estos estándares garantizan un código más limpio, legible y mantenible, reduc
 
 - Commits atómicos, claros, en inglés  
 - Primera letra mayúscula, imperativo, sin punto final
-- Se recomienda el uso de la extensión 'Conventional Commits' creado por vivaxy.
 
 ### 2.1 Estructura del mensaje de commit
 [tipo]: [emoji] [Verbo en imperativo] [descripción]
