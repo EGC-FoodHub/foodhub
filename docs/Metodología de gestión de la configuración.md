@@ -3,6 +3,7 @@
 | Versión | Fecha       | Autor  | Descripción del cambio |
 |---------|------------|--------|-----------------------|
 | 1.0     | 20/10/2025 | Emilio y Germán | Documento inicial creado |
+| 1.1     | 01/12/2025 | Equipo         | Añadidas pautas de creación de ramas y ejemplo de rama feature por subgrupo |
 
 # Metodología de gestión de la configuración
 
@@ -18,7 +19,7 @@ Este documento describe la metodología de gestión de la configuración adoptad
 2. [Política de commits](#2-política-de-commits)  
    2.1 [Estructura del mensaje de commit](#21-estructura-del-mensaje-de-commit)  
    2.2 [Tipos de commits](#22-tipos-de-commits)  
-   - [Ejemplos](#ejemplos)  
+   2.3 [Ejemplos](#ejemplos)  
 3. [Estructura de los repositorios y ramas por defecto](#3-estructura-de-los-repositorios-y-ramas-por-defecto)  
 4. [Estrategia de branching](#4-estrategia-de-branching)  
    4.1 [Cómo desarrollar las ramas de funcionalidad](#41-cómo-desarrollar-las-ramas-de-funcionalidad)  
@@ -87,7 +88,7 @@ Estos estándares garantizan un código más limpio, legible y mantenible, reduc
 | refactor | ♻️ | Cambios que no alteran funcionalidad |
 | revert | ⏪ | Revertir commit |
 
-### Ejemplos
+### 2.3 Ejemplos
 
 ci: 🔄 Create commits validation
 feat: ✨ Improve view dataset GUI
@@ -106,16 +107,30 @@ fix: 🐛 Resolve bug in create dataset
 - `trunk`: desarrollo ágil, merge frecuente, no se destruye
 
 **Ramas de características:**  
-feature/Issue-identifier-[nombre_del_elemento_de_trabajo]
+feature-gX/Issue-identifier-[nombre_del_elemento_de_trabajo]
 
 **Ramas de bugfix:**  
-bugfix/Issue_identifier-[nombre_del_elemento_de_trabajo]
+bugfix-gX/Issue-identifier-[nombre_del_elemento_de_trabajo]
+
+**Ramas de documentación:**  
+docs-gX/Issue-identifier-[nombre_del_elemento_de_trabajo]
 
 **Pautas:**  
 - No usar ramas por persona  
 - Destruir ramas tras merge exitoso  
 - Merge frecuente  
 - Despliegues automáticos en `trunk` y `main`
+
+### Ejemplos de ramas
+
+| Tipo     | Ejemplo |
+|----------|---------|
+| Feature  | `feature-g1/23-add-login-page` |
+| Feature  | `feature-g2/17-update-dataset-UI` |
+| Bugfix   | `bugfix-g1/45-fix-upload-error` |
+| Bugfix   | `bugfix-g2/32-correct-typo-in-readme` |
+| Docs     | `docs-g2/40-add-existing-docs-to-github` |
+| Docs     | `docs-g1/12-update-configuration-methodology` |
 
 ---
 
@@ -150,7 +165,7 @@ bugfix/Issue_identifier-[nombre_del_elemento_de_trabajo]
 
 ### 4.3 Corrección de bugs en producción
 
-1. Crear rama `bugfix/...` desde `main`  
+1. Crear rama `bugfix-gX/...` desde `main`  
 2. Aplicar y probar corrección  
 3. Pasar pruebas unitarias e integración  
 4. Merge en `main` y `trunk`  
@@ -179,5 +194,3 @@ Versionado Semántico `X.Y.Z`:
 - Estrategia de ramas
 
 ---
-
-**Última modificación:** 20/10/2025

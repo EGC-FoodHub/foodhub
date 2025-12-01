@@ -3,6 +3,7 @@
 | Versión | Fecha       | Autor  | Descripción del cambio |
 |---------|------------|--------|-----------------------|
 | 1.0     | 20/10/2025 | Adrián y Pepe | Documento inicial creado |
+| 1.1     | 01/12/2025 | Equipo         | Añadida sección de nueva metodología de creación de ramas por subgrupo |
 
 # Proceso de gestión del cambio
 
@@ -36,6 +37,7 @@ La prioridad del cambio vendrá directamente definida por la finalidad del cambi
 
 - **Work Items**: tareas que modifican el proyecto; errores funcionales etiquetados con `bug`.  
 - **Incidencias**: errores tras modificaciones, etiquetados con `bug`.  
+- **Cambios de documentación**: modificaciones en documentación, etiquetados con `documentation`.
 
 ---
 
