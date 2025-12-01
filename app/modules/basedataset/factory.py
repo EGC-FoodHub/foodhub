@@ -5,7 +5,7 @@ Punto central del sistema modular de datasets.
 Permite registrar nuevos tipos de dataset sin modificar rutas ni lógica interna.
 """
 
-from typing import Dict, List, Type
+from typing import Dict, List
 
 from app.modules.basedataset.services import BaseDatasetService
 

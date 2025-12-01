@@ -64,7 +64,7 @@ def create_dataset():
 
                 zenodo_service.publish_deposition(deposition_id)
 
-                deposition_doi = zenodo_service.get_doi(deposition_id)
+                zenodo_service.get_doi(deposition_id)
 
             except Exception as e:
                 msg = f"Error uploading to Zenodo: {e}"
