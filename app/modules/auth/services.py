@@ -54,12 +54,6 @@ class AuthenticationService(BaseService):
             return True
         return False
 
-    def check_2FA_is_enabled(self, email):
-        user: User | None = self.repository.get_by_email(email)
-        if user is not None and user.twofa_key is not None:
-            return True
-        return False
-
     def is_email_available(self, email: str) -> bool:
         return self.repository.get_by_email(email) is None
 
@@ -155,6 +149,12 @@ class AuthenticationService(BaseService):
         user.set_password(new_password)
         db.session.commit()
 
+    def check_2FA_is_enabled(self, email):
+        user: User | None = self.repository.get_by_email(email)
+        if user != None and getattr(user, "twofa_key", None) != None:
+            return True
+        return False
+
     def generate_key_qr(self):
         if current_user.is_authenticated:
             key = generate_key()
@@ -165,9 +165,21 @@ class AuthenticationService(BaseService):
         if current_user.is_authenticated:
             comprobation = verify(encripted_key, code)
             if comprobation:
-                # self.update(current_user.id, twofa_key=encripted_key)
+                self.update(current_user.id, twofa_key=encripted_key)
                 return True
         return False
+
+    def validate_2fa_code(self, code: int, email=None):
+
+        if  getattr(current_user,"is_authenticated"):
+            user = current_user
+        elif email != None:
+            user = self.repository.get_by_email(email)
+        else:
+            return False
+
+        comprobation = verify(user.twofa_key, code)
+        return comprobation
 
     def verify_email(self, token: str):
         email = confirm_verification_token(token)
