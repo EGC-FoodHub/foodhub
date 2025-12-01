@@ -107,13 +107,13 @@ fix: 🐛 Resolve bug in create dataset
 - `trunk`: desarrollo ágil, merge frecuente, no se destruye
 
 **Ramas de características:**  
-feature-gX/Issue-identifier-[nombre_del_elemento_de_trabajo]
+feature-gX/Issue-identifier-[nombre-del-elemento-de-trabajo]
 
 **Ramas de bugfix:**  
-bugfix-gX/Issue-identifier-[nombre_del_elemento_de_trabajo]
+bugfix-gX/Issue-identifier-[nombre-del-elemento-de-trabajo]
 
 **Ramas de documentación:**  
-docs-gX/Issue-identifier-[nombre_del_elemento_de_trabajo]
+docs-gX/Issue-identifier-[nombre-del-elemento-de-trabajo]
 
 **Pautas:**  
 - No usar ramas por persona  
