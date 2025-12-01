@@ -3,7 +3,6 @@ import os
 
 import requests
 from dotenv import load_dotenv
-from flask import jsonify
 
 from app.modules.fooddataset.models import FoodDataset
 from app.modules.foodmodel.models import FoodModel
