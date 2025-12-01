@@ -128,7 +128,7 @@ def enable_2fa():
 @auth_bp.route("/verify_2fa", methods=["GET", "POST"])
 def verify_2fa():
 
-    if session["temp_mail"] == None or session["temp_pass"] == None:
+    if session["temp_mail"] is None or session["temp_pass"] is None:
         return redirect(url_for("auth.login"))
 
     if current_user.is_anonymous:

@@ -151,7 +151,7 @@ class AuthenticationService(BaseService):
 
     def check_2FA_is_enabled(self, email):
         user: User | None = self.repository.get_by_email(email)
-        if user != None and getattr(user, "twofa_key", None) != None:
+        if user is not None and getattr(user, "twofa_key", None) is not None:
             return True
         return False
 
@@ -173,7 +173,7 @@ class AuthenticationService(BaseService):
 
         if getattr(current_user, "is_authenticated"):
             user = current_user
-        elif email != None:
+        elif email is not None:
             user = self.repository.get_by_email(email)
         else:
             return False
