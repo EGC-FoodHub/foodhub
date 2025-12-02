@@ -19,11 +19,15 @@ function send_query() {
             const searchCriteria = {
                 csrf_token: csrfToken,
                 query: document.querySelector('#query').value,
+                author_query: document.querySelector('#author_query').value,
+                tag_query: document.querySelector('#tag_query').value,
+                date_from: document.querySelector('#date_from').value,
+                date_to: document.querySelector('#date_to').value,
                 publication_type: document.querySelector('#publication_type').value,
                 sorting: document.querySelector('[name="sorting"]:checked').value,
             };
 
-            console.log(document.querySelector('#publication_type').value);
+            console.log(searchCriteria);
 
             fetch('/explore', {
                 method: 'POST',
@@ -178,7 +182,11 @@ function clearFilters() {
         option.checked = option.value == "newest"; // replace "default" with whatever your default value is
         // option.dispatchEvent(new Event('input', {bubbles: true}));
     });
-
+    let datefromInput = document.querySelector('#date_from');
+    datefromInput.value = "";
+    let datetoInput = document.querySelector('#date_to');
+    datetoInput.value = "";
+    
     // Perform a new search with the reset filters
     queryInput.dispatchEvent(new Event('input', {bubbles: true}));
 }

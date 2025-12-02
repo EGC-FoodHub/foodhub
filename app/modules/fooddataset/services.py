@@ -90,7 +90,7 @@ class FoodDatasetService(BaseDatasetService):
                 checksum, size = calculate_checksum_and_size(file_path)
 
                 hubfile = self.hubfile_repository.create(
-                    commit=False, name=filename, checksum=checksum, size=size, food_model=food_model
+                    name=filename, checksum=checksum, size=size, food_model=food_model
                 )
 
                 food_model.files.append(hubfile)
