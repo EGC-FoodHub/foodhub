@@ -3,4 +3,4 @@ from wtforms import SubmitField
 
 
 class FoodCheckerForm(FlaskForm):
-    submit = SubmitField('Save food_checker')
+    submit = SubmitField("Save food_checker")

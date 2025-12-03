@@ -1,11 +1,12 @@
+import logging
+import os
+
 from app.modules.food_checker.repositories import FoodCheckerRepository
+from app.modules.hubfile.services import HubfileService
 from core.services.BaseService import BaseService
 
-import os
-import logging
-from app.modules.hubfile.services import HubfileService
-
 logger = logging.getLogger(__name__)
+
 
 class FoodCheckerService:
     def __init__(self):
@@ -18,23 +19,24 @@ class FoodCheckerService:
         data = {}
         current_section = None
         valid_structure = False
-        
+
         try:
-            lines = content.split('\n')
+            lines = content.split("\n")
             for line in lines:
                 line = line.rstrip()
-                if not line or line.startswith('#'): continue
+                if not line or line.startswith("#"):
+                    continue
 
-                if line.startswith('  ') or line.startswith('\t'):
+                if line.startswith("  ") or line.startswith("\t"):
                     if current_section and current_section in data:
-                        key, value = line.strip().split(':', 1)
+                        key, value = line.strip().split(":", 1)
                         data[current_section][key.strip()] = value.strip()
                 else:
-                    if ':' in line:
-                        key, value = line.split(':', 1)
+                    if ":" in line:
+                        key, value = line.split(":", 1)
                         key = key.strip()
                         value = value.strip()
-                        
+
                         if not value:
                             current_section = key
                             data[current_section] = {}
@@ -42,10 +44,10 @@ class FoodCheckerService:
                             current_section = None
                             data[key] = value
 
-            required_keys = ['name', 'calories', 'type']
+            required_keys = ["name", "calories", "type"]
             if all(key in data for key in required_keys):
                 valid_structure = True
-                
+
             return {"valid": valid_structure, "data": data, "error": None}
 
         except Exception as e:
@@ -55,9 +57,9 @@ class FoodCheckerService:
         """Valida un archivo físico."""
         if not os.path.exists(file_path):
             return {"valid": False, "error": "File not found"}
-            
+
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
             return self._parse_food_content(content)
         except Exception as e:
@@ -71,25 +73,20 @@ class FoodCheckerService:
 
     def check_dataset(self, dataset):
         """Analiza todo el dataset."""
-        summary = {
-            "total_files": 0,
-            "valid_files": 0,
-            "total_calories": 0,
-            "details": []
-        }
-        
+        summary = {"total_files": 0, "valid_files": 0, "total_calories": 0, "details": []}
+
         for food_model in dataset.files:
             for hubfile in food_model.files:
                 summary["total_files"] += 1
                 result = self.check_hubfile(hubfile.id)
-                
+
                 info = {
                     "filename": hubfile.name,
                     "valid": result["valid"],
                     "data": result.get("data"),
-                    "error": result.get("error")
+                    "error": result.get("error"),
                 }
-                
+
                 if result["valid"]:
                     summary["valid_files"] += 1
                     try:
@@ -97,7 +94,7 @@ class FoodCheckerService:
                         summary["total_calories"] += int(cal_str)
                     except:
                         pass
-                        
+
                 summary["details"].append(info)
-                
+
         return summary
