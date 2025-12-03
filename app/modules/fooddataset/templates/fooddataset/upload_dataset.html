@@ -20,7 +20,6 @@
     </div>
 
     <div class="row">
-
         <div class="col-xl-6 col-lg-12 col-md-12 col-sm-12">
             <div id="basic_info_form">
                 {{ form.hidden_tag() }}
@@ -64,8 +63,7 @@
                             </div>
                             
                             <div class="col-12">
-                                <div id="authors">
-                                    </div>
+                                <div id="authors"></div>
                                 <button type="button" class="btn btn-secondary mt-2" id="add_author">Add author</button>
                             </div>
                         </div>
@@ -124,7 +122,7 @@
                 let alerts = document.getElementById('alerts');
 
                 this.on('success', function (file, response) {
-                    show_upload_dataset(); // Función global de scripts.js
+                    show_upload_dataset(); 
 
                     let listItem = document.createElement('li');
                     listItem.className = "mb-3 p-3 border rounded bg-light";
@@ -133,10 +131,8 @@
                     header.className = "d-flex justify-content-between align-items-center mb-2";
                     header.innerHTML = `<strong>${response.filename}</strong>`;
                     
-                    // ID único para los campos de este archivo
                     let formUniqueId = generateIncrementalId(); 
                     
-                    // Botones
                     let btnGroup = document.createElement('div');
                     
                     let toggleBtn = document.createElement('button');
@@ -149,14 +145,14 @@
                     deleteBtn.innerHTML = "Delete";
                     deleteBtn.type = "button";
 
-                    // Formulario de metadatos oculto por defecto
                     let metaForm = document.createElement('div');
                     metaForm.style.display = "none";
                     metaForm.className = "mt-2 pt-2 border-top";
                     
-                    // HTML del formulario del archivo (Usando nombres food_models-ID-campo)
                     metaForm.innerHTML = `
                         <input type="hidden" name="food_models-${formUniqueId}-filename" value="${response.filename}">
+                        
+                        <div class="mb-2" id="check_status_${formUniqueId}"></div>
                         
                         <div class="mb-2">
                             <label class="form-label small">Title</label>
@@ -182,13 +178,11 @@
                         </div>
                     `;
 
-                    // Eventos
                     toggleBtn.addEventListener('click', () => {
                         metaForm.style.display = metaForm.style.display === "none" ? "block" : "none";
                     });
 
                     deleteBtn.addEventListener('click', () => {
-                        // Llamada para borrar temporal
                         fetch("{{ url_for('fooddataset.delete_file_temp') }}", {
                             method: 'POST',
                             headers: {'Content-Type': 'application/json'},
@@ -208,6 +202,11 @@
                     listItem.appendChild(header);
                     listItem.appendChild(metaForm);
                     fileList.appendChild(listItem);
+
+                    // NUEVO: LLAMADA A LA FUNCIÓN DE VALIDACIÓN DEFINIDA EN SCRIPTS.JS
+                    if (typeof validateTempFile === 'function') {
+                        validateTempFile(response.filename, `check_status_${formUniqueId}`);
+                    }
                 });
 
                 this.on('error', function (file, response) {
@@ -219,7 +218,6 @@
             }
         };
 
-        // Checkbox lógica
         document.getElementById('agreeCheckbox').addEventListener('change', function() {
             document.getElementById('upload_button').disabled = !this.checked;
         });

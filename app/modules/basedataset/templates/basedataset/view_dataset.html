@@ -182,6 +182,10 @@
                                 <a href="{{ url_for('hubfile.download_file', file_id=file.id) }}" class="btn btn-primary btn-sm" style="border-radius: 5px;">
                                     <i data-feather="download"></i> Download
                                 </a>
+
+                                <button onclick="checkFile('{{ file.id }}')" class="btn btn-outline-success btn-sm ms-1" style="border-radius: 5px;" title="Check Data">
+                                    <i data-feather="clipboard"></i>
+                                </button>
                                 
                                 </div>
                         </div>
@@ -197,6 +201,10 @@
         <a href="{{ url_for('basedataset.download_dataset', dataset_id=dataset.id) }}" class="btn btn-primary w-100" style="border-radius: 5px;">
             <i data-feather="download" class="me-1"></i> Download All (.zip)
         </a>
+
+        <button onclick="checkDataset('{{ dataset.id }}')" class="btn btn-warning w-100 mt-2 text-dark" style="border-radius: 5px;">
+            <i data-feather="activity" class="me-1"></i> Check Nutrition
+        </button>
 
     </div>
 
@@ -254,6 +262,73 @@
     function copyToClipboard() {
         const text = document.getElementById('fileContent').textContent;
         navigator.clipboard.writeText(text).then(() => alert("Content copied!"));
+    }
+</script>
+
+<div class="modal fade" id="checkerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Food Checker Result</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-light">
+                <div id="checkerContent"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function checkFile(fileId) {
+        fetch(`/api/food_checker/check/file/${fileId}`)
+            .then(res => res.json())
+            .then(renderCheckerResult)
+            .catch(err => alert("Error checking file"));
+    }
+
+    function checkDataset(datasetId) {
+        fetch(`/api/food_checker/check/dataset/${datasetId}`)
+            .then(res => res.json())
+            .then(data => {
+                let html = `<h4>Total Calories: <b>${data.total_calories} kcal</b></h4>`;
+                html += `<p>Valid Files: ${data.valid_files} / ${data.total_files}</p><hr>`;
+                data.details.forEach(f => {
+                    let color = f.valid ? 'success' : 'danger';
+                    html += `<div class="mb-2 p-2 border-start border-4 border-${color} bg-white">
+                                <strong>${f.filename}</strong>: ${f.valid ? (f.data.calories || 'No cal info') : f.error}
+                             </div>`;
+                });
+                showModal(html);
+            });
+    }
+
+    function renderCheckerResult(data) {
+        if (!data.valid) {
+            showModal(`<div class="alert alert-danger">${data.error}</div>`);
+            return;
+        }
+        // Renderizar bonito los datos del .food
+        let d = data.data;
+        let html = `<div class="card p-3">
+                        <h3>${d.name} <span class="badge bg-success float-end">${d.type}</span></h3>
+                        <h5 class="text-muted">${d.calories}</h5>
+                        <hr>
+                        <h6>Nutritional Values:</h6>
+                        <ul>`;
+        
+        if (d.nutritional_values) {
+            for (const [key, val] of Object.entries(d.nutritional_values)) {
+                html += `<li><b>${key}:</b> ${val}</li>`;
+            }
+        }
+        html += `</ul></div>`;
+        showModal(html);
+    }
+
+    function showModal(htmlContent) {
+        document.getElementById('checkerContent').innerHTML = htmlContent;
+        new bootstrap.Modal(document.getElementById('checkerModal')).show();
     }
 </script>
 
