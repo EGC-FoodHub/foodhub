@@ -17,7 +17,6 @@ from flask import (
 )
 from flask_login import current_user, login_required
 
-from app.modules.basedataset.models import BaseDSDownloadRecord
 from app.modules.basedataset.services import (
     BaseDatasetService,
     BaseDOIMappingService,

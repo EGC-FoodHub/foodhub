@@ -99,12 +99,13 @@
 
                 </div>
             </form>
-
+            {% if current_user.twofa_key is none %}
             <div class="col-12 mt-2">
                 <a href="{{ url_for('auth.enable_2fa') }}" class="btn btn-primary">
                     Activar 2FA
                 </a>
             </div>
+            {% endif %}
 
         </div>
 

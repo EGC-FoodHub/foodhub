@@ -1,7 +1,5 @@
 import os
-from unittest.mock import Mock, patch
-
-import pytest
+from unittest.mock import patch
 
 from app.modules.auth.services import AuthenticationService
 

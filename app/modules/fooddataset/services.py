@@ -3,7 +3,6 @@ import logging
 import os
 import shutil
 
-from app.modules.auth.services import AuthenticationService
 from app.modules.basedataset.services import BaseDatasetService
 from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData
 from app.modules.fooddataset.repositories import FoodDatasetRepository

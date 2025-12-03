@@ -48,8 +48,46 @@ class LoginBehavior(TaskSet):
             print(f"Login failed: {response.status_code}")
 
 
+class Enable2FABehaviour(TaskSet):
+    def on_start(self):
+        self.ensure_logged_in()
+        self.enter_activate_2fa_page()
+
+    def ensure_logged_in(self):
+        response = self.client.get("/login")
+        if response.status_code == 200:
+            print("Not logged in, redirecting to login")
+            csrf_token = get_csrf_token(response)
+            response = self.client.post(
+                "/login", data={"email": "user2@example.com", "password": "1234", "csrf_token": csrf_token}
+            )
+            if response.status_code != 200:
+                print(f"Login failed: {response.status_code}")
+
+    @task
+    def enter_activate_2fa_page(self):
+        response = self.client.get("/enable_2fa")
+        if response.status_code != 200:
+            response.failure(f"Rendering failed: {response.status_code}")
+
+    @task
+    def add_failing_code(self):
+        response = self.client.get("/enable_2fa")
+        if response.status_code == 200:
+            csrf_token = get_csrf_token(response)
+            with self.client.post(
+                "/enable_2fa", data={"code": 999999, "csrf_token": csrf_token}, catch_response=True
+            ) as resp:
+                if resp.status_code == 200 and "Incorrect 2FA code" in resp.text:
+                    resp.success()
+                elif resp.status_code == 302:
+                    resp.failure("Invalid code was accepted - should have failed")
+                else:
+                    resp.failure(f"Unexpected response: {resp.status_code}")
+
+
 class AuthUser(HttpUser):
-    tasks = [SignupBehavior, LoginBehavior]
+    tasks = [SignupBehavior, LoginBehavior, Enable2FABehaviour]
     min_wait = 5000
     max_wait = 9000
     host = get_host_for_locust_testing()

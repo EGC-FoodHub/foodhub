@@ -41,7 +41,9 @@ def login():
     if request.method == "POST" and form.validate_on_submit():
         if authentication_service.check_password(form.email.data, form.password.data):
             if authentication_service.check_2FA_is_enabled(form.email.data):
-                return render_template("auth/tfa_verification.html")
+                session["temp_mail"] = form.email.data
+                session["temp_pass"] = form.password.data
+                return redirect(url_for("auth.verify_2fa"))
             authentication_service.login(form.email.data, form.password.data)
             return redirect(url_for("public.index"))
 
@@ -121,6 +123,27 @@ def enable_2fa():
         return render_template("auth/tfa_verification.html", form=form, qrcode=qr)
 
     return redirect(url_for("auth.login"))
+
+
+@auth_bp.route("/verify_2fa", methods=["GET", "POST"])
+def verify_2fa():
+
+    if session["temp_mail"] is None or session["temp_pass"] is None:
+        return redirect(url_for("auth.login"))
+
+    if current_user.is_anonymous:
+        form = TwoFactoAuthForm()
+        if request.method == "POST" and form.validate_on_submit():
+            if authentication_service.validate_2fa_code(form.code.data, session["temp_mail"]):
+                authentication_service.login(session["temp_mail"], session["temp_pass"])
+                session.pop("temp_mail")
+                session.pop("temp_pass")
+                return redirect(url_for("public.index"))
+            return render_template("auth/tfa_verification.html", form=form, error="Incorrect 2FA code")
+
+        return render_template("auth/tfa_verification.html", form=form)
+
+    return redirect(url_for("public.index"))
 
 
 @auth_bp.route("/verify/<token>")

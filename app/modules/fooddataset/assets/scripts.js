@@ -190,3 +190,26 @@ function isValidOrcid(orcid) {
     let orcidRegex = /^\d{4}-\d{4}-\d{4}-\d{4}$/;
     return orcidRegex.test(orcid);
 }
+
+function validateTempFile(filename, statusElementId) {
+    let statusEl = document.getElementById(statusElementId);
+    statusEl.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Checking...';
+
+    fetch('/api/food_checker/check/temp', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({filename: filename})
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.valid) {
+            statusEl.innerHTML = `<span class="badge bg-success">Valid: ${data.data.type}</span>`;
+        } else {
+            statusEl.innerHTML = `<span class="badge bg-danger">Invalid Format</span>`;
+            console.error(data.error);
+        }
+    })
+    .catch(() => {
+        statusEl.innerHTML = `<span class="badge bg-warning">Check Failed</span>`;
+    });
+}
