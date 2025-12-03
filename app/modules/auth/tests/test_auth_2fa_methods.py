@@ -69,17 +69,18 @@ class TestAuth2FAMethods:
                 assert result is False
                 mock_verify.assert_not_called()
 
-    def test_confirm_and_add_2fa_persists_key_when_verified(self, auth_service):
+    def test_confirm_and_add_2fa_not_persists_when_incorrect_code(self, auth_service):
         mock_user = Mock()
         mock_user.is_authenticated = True
         mock_user.id = 1
-
+        auth_service.repository.update = Mock()
         with patch("app.modules.auth.services.current_user", mock_user):
-            with patch("app.modules.auth.services.verify", return_value=True):
+            with patch("app.modules.auth.services.verify", return_value=False):
 
                 result = auth_service.confirm_and_add_2fa("encrypted_key", "123456")
 
-                assert result is True
+                assert result is False
+                auth_service.repository.update.assert_not_called()
 
     def test_validate_failing_anonymous_2fa_code(self, auth_service):
         mock_user = Mock()
