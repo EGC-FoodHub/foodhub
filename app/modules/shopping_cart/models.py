@@ -6,8 +6,8 @@ class ShoppingCart(db.Model):
 
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
-    data_sets = db.relationship('DataSet', backref='shoppingcart', lazy=True)
-    user = db.relationship('User', backref='shoppingcart', lazy=True)
+    data_sets = db.relationship('DataSet', backref='shoppingCart', lazy=True)
+    user = db.relationship('User', backref='shoppingCart', lazy=True)
 
     def __repr__(self):
         return f'Shoppingcart<{self.id}>'

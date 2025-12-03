@@ -67,6 +67,7 @@ class DSMetaData(db.Model):
 class DataSet(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    shoppingcart_id = db.Column(db.Integer, db.ForeignKey('shopping_cart.id'), nullable=True)  
 
     ds_meta_data_id = db.Column(db.Integer, db.ForeignKey("ds_meta_data.id"), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
