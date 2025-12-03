@@ -11,3 +11,14 @@ class ShoppingCart(db.Model):
 
     def __repr__(self):
         return f'Shoppingcart<{self.id}>'
+
+    def get_total_amount_from_file_sizes_for_human(self):
+        from app.modules.dataset.services import SizeService
+
+        sum = 0
+        for data_set in self.data_sets:
+            sum += data_set.get_file_total_size()
+
+        return SizeService().get_human_readable_size(sum)
+
+

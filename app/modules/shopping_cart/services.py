@@ -27,12 +27,16 @@ class ShoppingCartService(BaseService):
         cart.data_sets.append(dataset)
         self.repository.session.commit()
         
-
     def remove_from_cart(self, user_id, dataset_id):
         cart = self.get_by_user(user_id)
-        dataset = self.repository.get_by_id(dataset_id)
+        dataset = self.dataset_repository.get_by_id(dataset_id)
         cart.data_sets.remove(dataset)
         self.repository.session.commit()
+
+    def get_all_datasets_from_cart(self, user_id):
+        self.repository.get_all_datasets_from_cart(user_id)
+
+
 
 
         

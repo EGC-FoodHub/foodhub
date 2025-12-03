@@ -180,7 +180,9 @@ chico sundermann">
                         {% else %}
                         <div style="display: flex;">
                             <div style="margin-right: 10px; margin-bottom: 5px; align-self: center;">
-                                <i data-feather="shopping-cart"></i>            
+                                <a href="{{ url_for('shopping_cart.get_shopping_cart_from_current_user') }}">
+                                    <i data-feather="shopping-cart"></i>            
+                                </a>
                             </div>
 
                             <div>

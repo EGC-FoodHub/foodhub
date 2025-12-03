@@ -8,3 +8,6 @@ class ShoppingCartRepository(BaseRepository):
         
     def get_by_user(self, user_id):
         return ShoppingCart.query.filter_by(user_id=user_id).first()
+
+    def get_all_datasets_from_cart(self, user_id):
+        return ShoppingCart.query.filter_by(user_id=user_id).first().data_sets
