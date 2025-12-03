@@ -118,7 +118,7 @@ function send_query() {
                                             <a href="/dataset/download/${dataset.id}" class="btn btn-outline-primary btn-sm" id="search" style="border-radius: 5px;">
                                                 Download (${dataset.total_size_in_human_format})
                                             </a>
-                                            <a href="" class="btn btn-outline-primary btn-sm" style="border-radius: 5px;"> 
+                                            <a href="/shopping_cart/add/${dataset.id}" class="btn btn-outline-primary btn-sm" style="border-radius: 5px;"> 
                                                 Add to cart
                                             </a>
                                         </div>
