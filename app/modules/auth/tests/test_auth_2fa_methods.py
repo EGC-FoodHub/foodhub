@@ -105,4 +105,26 @@ class TestAuth2FAMethods:
 
                 assert result is True
 
+    def test_check_2fa_is_enabled_true(self, auth_service):
+        email = "email@email.com"
+        mock_user = Mock()
+        mock_user.is_authenticated = True
+        mock_user.email = email
+        mock_user.twofa_key = "Secret key"
 
+        auth_service.repository = Mock()
+        auth_service.repository.get_by_email.return_value = mock_user
+        result = auth_service.check_2FA_is_enabled(email)
+        assert result is True
+
+    def test_check_2fa_is_enabled_false(self, auth_service):
+        email = "email@email.com"
+        mock_user = Mock()
+        mock_user.is_authenticated = True
+        mock_user.email = email
+        mock_user.twofa_key = None
+
+        auth_service.repository = Mock()
+        auth_service.repository.get_by_email.return_value = mock_user
+        result = auth_service.check_2FA_is_enabled(email)
+        assert result is False
