@@ -21,6 +21,14 @@ class FoodDataset(BaseDataset):
         "polymorphic_identity": "food_dataset",
     }
 
+    def get_file_total_size(self) -> int:
+        """Calcula el tamaño total de todos los archivos del dataset."""
+        total_size = 0
+        for food_model in self.files:  # self.files son FoodModels
+            for hubfile in food_model.files:  # food_model.files son Hubfiles
+                total_size += hubfile.size
+        return total_size
+
     def __repr__(self):
         return f"<FoodDataset {self.id}>"
 

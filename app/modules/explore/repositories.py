@@ -51,7 +51,7 @@ class ExploreRepository(BaseRepository):
             datasets = datasets.filter(or_(*filters))
 
         # Exclude datasets without DOI
-        datasets = datasets.filter(BaseDSMetaData.dataset_doi.isnot(None))
+        # datasets = datasets.filter(BaseDSMetaData.dataset_doi.isnot(None))  # Comentado para mostrar también datasets no sincronizados
 
         # Filtro específico por Autor (query completa)
         if author_query:
