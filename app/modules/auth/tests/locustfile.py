@@ -47,6 +47,7 @@ class LoginBehavior(TaskSet):
         if response.status_code != 200:
             print(f"Login failed: {response.status_code}")
 
+
 class Enable2FABehaviour(TaskSet):
     def on_start(self):
         self.ensure_logged_in()
@@ -58,8 +59,8 @@ class Enable2FABehaviour(TaskSet):
             print("Not logged in, redirecting to login")
             csrf_token = get_csrf_token(response)
             response = self.client.post(
-            "/login", data={"email": "user2@example.com", "password": "1234", "csrf_token": csrf_token}
-        )
+                "/login", data={"email": "user2@example.com", "password": "1234", "csrf_token": csrf_token}
+            )
             if response.status_code != 200:
                 print(f"Login failed: {response.status_code}")
 
@@ -69,21 +70,20 @@ class Enable2FABehaviour(TaskSet):
         if response.status_code != 200:
             response.failure(f"Rendering failed: {response.status_code}")
 
-    
     @task
     def add_failing_code(self):
         response = self.client.get("/enable_2fa")
         if response.status_code == 200:
             csrf_token = get_csrf_token(response)
-            with self.client.post("/enable_2fa", data={"code": 999999, "csrf_token":csrf_token}, catch_response=True) as resp:
+            with self.client.post(
+                "/enable_2fa", data={"code": 999999, "csrf_token": csrf_token}, catch_response=True
+            ) as resp:
                 if resp.status_code == 200 and "Incorrect 2FA code" in resp.text:
                     resp.success()
                 elif resp.status_code == 302:
                     resp.failure("Invalid code was accepted - should have failed")
                 else:
                     resp.failure(f"Unexpected response: {resp.status_code}")
-
-      
 
 
 class AuthUser(HttpUser):
