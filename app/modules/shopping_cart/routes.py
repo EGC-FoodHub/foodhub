@@ -12,7 +12,7 @@ dataset_service = DataSetService()
 @shopping_cart_bp.route('/shopping_cart', methods=['GET'])
 @login_required
 def get_shopping_cart_from_current_user():
-    cart = shopping_cart_service.get_by_user(current_user.id)
+    cart = shopping_cart_service.show_by_user(current_user.id)
 
     return render_template('shopping_cart/index.html', cart=cart)
 

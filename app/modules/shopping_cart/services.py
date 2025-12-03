@@ -15,6 +15,14 @@ class ShoppingCartService(BaseService):
     def get_by_user(self, user_id):
         return self.repository.get_by_user(user_id)
 
+    def show_by_user(self, user_id):
+        cart = self.get_by_user(user_id)
+        if cart == None:
+            cart = self.create()
+
+        return cart
+
+
     def create(self):
         return self.repository.create(user_id = current_user.id, data_sets = [])
 
