@@ -171,7 +171,7 @@ class AuthenticationService(BaseService):
 
     def validate_2fa_code(self, code: int, email=None):
 
-        if getattr(current_user, "is_authenticated"):
+        if getattr(current_user, "is_authenticated", None):
             user = current_user
         elif email is not None:
             user = self.repository.get_by_email(email)

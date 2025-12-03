@@ -38,7 +38,8 @@ class TestAuth2FAMethods:
     def test_confirm_and_add_2fa_success(self, auth_service):
         mock_user = Mock()
         mock_user.is_authenticated = True
-
+        auth_service.repository = Mock()
+        auth_service.repository.update.return_value = Mock(twofa_key="encripted_key")
         with patch("app.modules.auth.services.current_user", mock_user):
             with patch("app.modules.auth.services.verify", return_value=True) as mock_verify:
                 result = auth_service.confirm_and_add_2fa("encrypted_key", "123456")
@@ -68,14 +69,63 @@ class TestAuth2FAMethods:
                 assert result is False
                 mock_verify.assert_not_called()
 
-    def test_confirm_and_add_2fa_persists_key_when_verified(self, auth_service):
+    def test_confirm_and_add_2fa_not_persists_when_incorrect_code(self, auth_service):
         mock_user = Mock()
         mock_user.is_authenticated = True
         mock_user.id = 1
+        auth_service.repository.update = Mock()
+        with patch("app.modules.auth.services.current_user", mock_user):
+            with patch("app.modules.auth.services.verify", return_value=False):
+
+                result = auth_service.confirm_and_add_2fa("encrypted_key", "123456")
+
+                assert result is False
+                auth_service.repository.update.assert_not_called()
+
+    def test_validate_failing_anonymous_2fa_code(self, auth_service):
+        mock_user = Mock()
+        mock_user.is_anonymous = True
+        email = "email@email.com"
+
+        with patch("app.modules.auth.services.current_user", mock_user):
+            with patch("app.modules.auth.services.verify", return_value=False):
+
+                result = auth_service.validate_2fa_code(123456, email)
+
+                assert result is False
+
+    def test_validate_success_anonymous_2fa_code(self, auth_service):
+        mock_user = Mock()
+        mock_user.is_anonymous = True
+        email = "email@email.com"
 
         with patch("app.modules.auth.services.current_user", mock_user):
             with patch("app.modules.auth.services.verify", return_value=True):
 
-                result = auth_service.confirm_and_add_2fa("encrypted_key", "123456")
+                result = auth_service.validate_2fa_code(123456, email)
 
                 assert result is True
+
+    def test_check_2fa_is_enabled_true(self, auth_service):
+        email = "email@email.com"
+        mock_user = Mock()
+        mock_user.is_authenticated = True
+        mock_user.email = email
+        mock_user.twofa_key = "Secret key"
+
+        auth_service.repository = Mock()
+        auth_service.repository.get_by_email.return_value = mock_user
+        result = auth_service.check_2FA_is_enabled(email)
+        assert result is True
+
+    def test_check_2fa_is_enabled_false(self, auth_service):
+        email = "email@email.com"
+        mock_user = Mock()
+        mock_user.is_authenticated = True
+        mock_user.email = email
+        mock_user.twofa_key = None
+
+        auth_service.repository = Mock()
+        auth_service.repository.get_by_email.return_value = mock_user
+        result = auth_service.check_2FA_is_enabled(email)
+        assert result is False
