@@ -23,6 +23,13 @@ class AuthSeeder(BaseSeeder):
                 is_email_verified=True,
                 email_verification_token=None,
             ),
+            User(
+                email="user3@example.com",
+                password="1234",
+                is_email_verified=True,
+                email_verification_token=None,
+                twofa_key="gAAAAABpMdv6Anu0b37433nNL_HofqZwdzCJsik1c-fX4RT-490kZUphRzWk_f_0lt2GMwyMKkUQvaCeexE1PoRRxxhvvlIePamRsmv1TgjZACEd_0FBe0sG_6-Ka91AeHnJhWSXheV7",
+            ),
         ]
 
         # Inserted users with their assigned IDs are returned by `self.seed`.
