@@ -9,6 +9,7 @@ load_dotenv()
 BREVO_API_KEY = os.getenv("BREVO_API_KEY")
 SENDER_EMAIL = os.getenv("SENDER_EMAIL")
 SENDER_NAME = os.getenv("SENDER_NAME", "FoodHub")
+BASE_URL = os.getenv("DOMAIN")
 
 
 def send_email_verification(user: User):
@@ -20,8 +21,7 @@ def send_email_verification(user: User):
         print("Error: SENDER_EMAIL no está configurada")
         return False
 
-    base_url = "http://localhost:5000"  # update to your production URL if needed
-    verification_link = f"{base_url}/verify/{user.email_verification_token}"
+    verification_link = f"{BASE_URL}/verify/{user.email_verification_token}"
 
     html_template = f"""
     <!DOCTYPE html>
