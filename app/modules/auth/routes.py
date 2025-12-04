@@ -47,7 +47,7 @@ def login():
             authentication_service.login(form.email.data, form.password.data)
             return redirect(url_for("public.index"))
         except Exception as e:
-          return render_template("auth/login_form.html", form=form, error=f"Login error: {str(e)}")
+            return render_template("auth/login_form.html", form=form, error=f"Login error: {str(e)}")
 
     return render_template("auth/login_form.html", form=form)
 

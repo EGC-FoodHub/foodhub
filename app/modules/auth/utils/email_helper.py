@@ -1,6 +1,7 @@
 import os
-from dotenv import load_dotenv
+
 import requests
+from dotenv import load_dotenv
 
 from app.modules.auth.models import User
 
@@ -65,17 +66,13 @@ def send_email_verification(user: User):
     """
 
     url = "https://api.brevo.com/v3/smtp/email"
-    headers = {
-        "accept": "application/json",
-        "api-key": BREVO_API_KEY,
-        "content-type": "application/json"
-    }
+    headers = {"accept": "application/json", "api-key": BREVO_API_KEY, "content-type": "application/json"}
 
     data = {
         "sender": {"name": SENDER_NAME, "email": SENDER_EMAIL},
         "to": [{"email": user.email}],
         "subject": "Verify your FoodHub account",
-        "htmlContent": html_template
+        "htmlContent": html_template,
     }
 
     try:
