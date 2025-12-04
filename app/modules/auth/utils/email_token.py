@@ -12,7 +12,7 @@ def generate_verification_token(email):
 
 
 def confirm_verification_token(token, expiration=3600):
-    s = URLSafeTimedSerializer(os.getenv("EMAIL_VERIFICATION_KEY"))
+    s = URLSafeTimedSerializer(os.getenv("EMAIL_VERIFICATION_KEY","default-secret-key"))
     try:
         email = s.loads(token, salt="email-confirm-salt", max_age=expiration)
     except Exception:
