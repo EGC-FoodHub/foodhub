@@ -40,9 +40,6 @@ class AuthenticationService(BaseService):
             return False
 
         if not user.is_email_verified:
-            from flask import flash
-
-            flash("Please verify your email before logging in.", "warning")
             return False
 
         login_user(user, remember=remember)
