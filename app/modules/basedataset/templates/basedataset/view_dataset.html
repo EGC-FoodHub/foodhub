@@ -294,9 +294,10 @@
                 let html = `<h4>Total Calories: <b>${data.total_calories} kcal</b></h4>`;
                 html += `<p>Valid Files: ${data.valid_files} / ${data.total_files}</p><hr>`;
                 data.details.forEach(f => {
+                    console.log(f);
                     let color = f.valid ? 'success' : 'danger';
                     html += `<div class="mb-2 p-2 border-start border-4 border-${color} bg-white">
-                                <strong>${f.filename}</strong>: ${f.valid ? (f.data.calories || 'No cal info') : f.error}
+                                <strong>${f.filename}</strong>: ${f.valid ? (f.data.calories || 'No kcal info') : 'Invalid file'}
                              </div>`;
                 });
                 showModal(html);
@@ -305,10 +306,9 @@
 
     function renderCheckerResult(data) {
         if (!data.valid) {
-            showModal(`<div class="alert alert-danger">${data.error}</div>`);
+            showModal(`<div class="alert alert-danger">Invalid file</div>`);
             return;
         }
-        // Renderizar bonito los datos del .food
         let d = data.data;
         let html = `<div class="card p-3">
                         <h3>${d.name} <span class="badge bg-success float-end">${d.type}</span></h3>
