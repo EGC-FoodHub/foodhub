@@ -5,4 +5,4 @@ class FoodCheckerSeeder(BaseSeeder):
 
     def run(self):
 
-       pass
+        pass
