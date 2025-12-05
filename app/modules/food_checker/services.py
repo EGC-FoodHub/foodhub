@@ -1,7 +1,6 @@
 import logging
 import os
 
-from app.modules.food_checker.repositories import FoodCheckerRepository
 from app.modules.hubfile.services import HubfileService
 from core.services.BaseService import BaseService
 
