@@ -34,19 +34,15 @@ class AuthenticationService(BaseService):
     def login(self, email, password, remember=True):
         user = self.repository.get_by_email(email)
         if user is None:
-            return False
+            raise Exception("There is no user with that email")
 
         if not user.check_password(password):
-            return False
+            raise Exception("Password or email is incorrect")
 
         if not user.is_email_verified:
-            from flask import flash
-
-            flash("Please verify your email before logging in.", "warning")
-            return False
+            raise Exception("Please verify your email")
 
         login_user(user, remember=remember)
-        return True
 
     def check_password(self, email, password, remember=True):
         user = self.repository.get_by_email(email)

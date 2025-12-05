@@ -1,6 +1,6 @@
 import os
 
-from flask import Blueprint, jsonify, render_template, request
+from flask import Blueprint, jsonify, request
 from flask_login import current_user, login_required
 
 from app.modules.basedataset.services import BaseDatasetService
