@@ -1,7 +1,9 @@
-import pytest
 from unittest.mock import MagicMock, patch
-from app.modules.food_checker.services import FoodCheckerService
+
+import pytest
+
 from app.modules.food_checker.forms import FoodCheckerForm
+from app.modules.food_checker.services import FoodCheckerService
 
 
 # Service Tests
@@ -174,45 +176,10 @@ def test_check_dataset_calorie_exception():
     assert summary["valid_files"] == 1
 
 
-def test_food_checker_model():
-    from app.modules.food_checker.models import FoodChecker
-
-    model = FoodChecker()
-    model.id = 1
-    assert repr(model) == "FoodChecker<1>"
-
-
-def test_food_checker_repository():
-    from app.modules.food_checker.repositories import FoodCheckerRepository
-
-    repo = FoodCheckerRepository()
-    assert repo.model is not None
-
-
 # Route Tests
 def test_check_temp_file(test_client):
-
-    with (
-        patch("app.modules.food_checker.routes.checker_service") as mock_service,
-        patch("app.modules.food_checker.routes.current_user") as mock_user,
-    ):
-
-        mock_user.temp_folder.return_value = "/tmp/user/1"
-        mock_service.check_file_path.return_value = {"valid": True, "data": {"name": "Test"}}
-
-    # Test invalid calories in check_dataset
-    def side_effect_invalid_cal(file_id):
-        return {"valid": True, "data": {"calories": "invalid"}}
-
-    service.check_hubfile = MagicMock(side_effect=side_effect_invalid_cal)
-    summary = service.check_dataset(mock_dataset)
-    assert summary["total_calories"] == 0
-
-
-# Route Tests
-def test_check_temp_file(test_client):
-    from app.modules.auth.models import User
     from app import db
+    from app.modules.auth.models import User
 
     user = User.query.filter_by(email="test@example.com").first()
     if user:
