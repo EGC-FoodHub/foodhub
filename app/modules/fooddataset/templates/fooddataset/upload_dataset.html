@@ -1,0 +1,241 @@
+{% extends "base_template.html" %}
+
+{% block title %}Upload Food Dataset{% endblock %}
+
+{% block content %}
+
+    <h1 class="h2 mb-3"><b>Upload</b> Food Dataset</h1>
+
+    <div class="row">
+        <div class="col-12 mb-3">
+            <div class="alert alert-warning" role="alert" id="test_zenodo_connection_error" style="display: none">
+                <div class="alert-message">
+                    <h4 class="alert-heading"><i class="align-middle" data-feather="alert-triangle"></i> Zenodo Connection Issue</h4>
+                    <p class="p-0 m-0">
+                        There seems to be a problem with the Zenodo API. We will save your files locally and synchronize later.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-xl-6 col-lg-12 col-md-12 col-sm-12">
+            <div id="basic_info_form">
+                {{ form.hidden_tag() }}
+                
+                <div class="row">
+                    <div class="col-12">
+                        <h1 class="h3 mb-3">Basic info</h1>
+                        <div class="row" style="padding-left: 2rem">
+                            
+                            <div class="col-12 mb-3">
+                                {{ form.title.label(class="form-label") }} *
+                                {{ form.title(class="form-control") }}
+                            </div>
+
+                            <div class="col-12 mb-3">
+                                {{ form.desc.label(class="form-label") }} *
+                                {{ form.desc(rows=4, class="form-control") }}
+                            </div>
+
+                            <div class="col-6 mb-3">
+                                {{ form.publication_type.label(class="form-label") }}
+                                {{ form.publication_type(class="form-control") }}
+                            </div>
+
+                            <div class="col-6 mb-3">
+                                {{ form.publication_doi.label(class="form-label") }}
+                                {{ form.publication_doi(class="form-control") }}
+                            </div>
+
+                            <div class="col-12 mb-3">
+                                {{ form.tags.label(class="form-label") }}
+                                {{ form.tags(class="form-control") }}
+                            </div>
+                        </div>
+
+                        <h1 class="h3 mb-3 mt-4">Authors</h1>
+                        <div class="row" style="padding-left: 2rem">
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Main Author (You)</label>
+                                <input class="form-control" disabled value="{{ current_user.profile.surname }}, {{ current_user.profile.name }}">
+                            </div>
+                            
+                            <div class="col-12">
+                                <div id="authors"></div>
+                                <button type="button" class="btn btn-secondary mt-2" id="add_author">Add author</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-6 col-lg-12 col-md-12 col-sm-12">
+            <h1 class="h3 mb-3 mt-2">Food Models (.food)</h1>
+            <div id="uploaded_models_form" style="padding-left: 2rem">
+                
+                <form action="{{ url_for('fooddataset.upload_file_temp') }}" class="dropzone" id="myDropzone">
+                    <div class="dz-message" data-dz-message><span>Drop .food files here to upload</span></div>
+                </form>
+                
+                <span class="text-danger" id="alerts" style="display: none"></span>
+                <ul class="mt-2" id="file-list" style="list-style: none; padding: 0;"></ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="row" id="upload_dataset" style="display: none">
+        <div class="col-12">
+            <hr>
+            <div style="padding-left: 2rem">
+                <label class="form-check mb-3">
+                    <input id="agreeCheckbox" class="form-check-input" type="checkbox">
+                    <span class="form-check-label">
+                        I agree to upload my food models to Zenodo (Open Science).
+                    </span>
+                </label>
+
+                <button id="upload_button" class="btn btn-primary" disabled>
+                    <i data-feather="upload" class="me-1"></i> Upload Dataset
+                </button>
+                
+                <div id="loading" style="display: none" class="mt-2">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                    Uploading dataset, please wait...
+                </div>
+                
+                <div id="upload_error" class="text-danger mt-2" style="display: none"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        Dropzone.options.myDropzone = {
+            url: "{{ url_for('fooddataset.upload_file_temp') }}",
+            paramName: 'file',
+            maxFilesize: 10,
+            acceptedFiles: '.food',
+            init: function () {
+                let fileList = document.getElementById('file-list');
+                let alerts = document.getElementById('alerts');
+
+                this.on('success', function (file, response) {
+                    show_upload_dataset(); 
+
+                    let formUniqueId = generateIncrementalId(); 
+
+                    let listItem = document.createElement('li');
+                    listItem.className = "mb-3 p-3 border rounded bg-light";
+                    
+                    let header = document.createElement('div');
+                    header.className = "d-flex justify-content-between align-items-center mb-2";
+                    
+                    let leftContainer = document.createElement('div');
+                    leftContainer.className = "d-flex align-items-center";
+                    
+                    let title = document.createElement('strong');
+                    title.textContent = response.filename;
+                    
+                    let statusSpan = document.createElement('span');
+                    statusSpan.id = `check_status_${formUniqueId}`;
+                    statusSpan.className = "ms-3";
+                    
+                    leftContainer.appendChild(title);
+                    leftContainer.appendChild(statusSpan);
+
+                    let btnGroup = document.createElement('div');
+                    
+                    let toggleBtn = document.createElement('button');
+                    toggleBtn.className = "btn btn-sm btn-outline-secondary me-2";
+                    toggleBtn.innerHTML = "Edit Metadata";
+                    toggleBtn.type = "button";
+                    
+                    let deleteBtn = document.createElement('button');
+                    deleteBtn.className = "btn btn-sm btn-outline-danger";
+                    deleteBtn.innerHTML = "Delete";
+                    deleteBtn.type = "button";
+
+                    btnGroup.appendChild(toggleBtn);
+                    btnGroup.appendChild(deleteBtn);
+
+                    header.appendChild(leftContainer);
+                    header.appendChild(btnGroup);
+
+                    let metaForm = document.createElement('div');
+                    metaForm.style.display = "none";
+                    metaForm.className = "mt-2 pt-2 border-top";
+                    
+                    metaForm.innerHTML = `
+                        <input type="hidden" name="food_models-${formUniqueId}-filename" value="${response.filename}">
+                        
+                        <div class="mb-2">
+                            <label class="form-label small">Title</label>
+                            <input type="text" class="form-control form-control-sm" name="food_models-${formUniqueId}-title">
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small">Description</label>
+                            <textarea class="form-control form-control-sm" rows="2" name="food_models-${formUniqueId}-description"></textarea>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small">Tags</label>
+                            <input type="text" class="form-control form-control-sm" name="food_models-${formUniqueId}-tags">
+                        </div>
+                        
+                        <div class="mb-2">
+                            <label class="form-label small">Authors</label>
+                            <div id="food_models-${formUniqueId}-authors_container"></div>
+                            <button type="button" class="btn btn-sm btn-secondary add_author_to_file"
+                                    data-container="food_models-${formUniqueId}-authors_container"
+                                    data-prefix="food_models-${formUniqueId}-">
+                                Add Author
+                            </button>
+                        </div>
+                    `;
+
+                    toggleBtn.addEventListener('click', () => {
+                        metaForm.style.display = metaForm.style.display === "none" ? "block" : "none";
+                    });
+
+                    deleteBtn.addEventListener('click', () => {
+                        fetch("{{ url_for('fooddataset.delete_file_temp') }}", {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({file: response.filename})
+                        });
+                        listItem.remove();
+                        this.removeFile(file);
+                        if (this.files.length === 0) {
+                            document.getElementById("upload_dataset").style.display = "none";
+                        }
+                    });
+                    
+                    listItem.appendChild(header);
+                    listItem.appendChild(metaForm);
+                    fileList.appendChild(listItem);
+
+                    if (typeof validateTempFile === 'function') {
+                        validateTempFile(response.filename, `check_status_${formUniqueId}`);
+                    }
+                });
+
+                this.on('error', function (file, response) {
+                    let p = document.createElement('p');
+                    p.textContent = "Error: " + (response.message || file.name);
+                    alerts.appendChild(p);
+                    alerts.style.display = 'block';
+                });
+            }
+        };
+
+        document.getElementById('agreeCheckbox').addEventListener('change', function() {
+            document.getElementById('upload_button').disabled = !this.checked;
+        });
+    </script>
+
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('fooddataset.scripts') }}"></script>
+{% endblock %}
