@@ -1,22 +1,16 @@
-from locust import HttpUser, TaskSet, task
-
-from core.environment.host import get_host_for_locust_testing
-
-
-class FoodCheckerBehavior(TaskSet):
-    def on_start(self):
-        self.index()
-
-    @task
-    def index(self):
-        response = self.client.get("/food_checker")
-
-        if response.status_code != 200:
-            print(f"FoodChecker index failed: {response.status_code}")
+from locust import HttpUser, between, task
 
 
 class FoodCheckerUser(HttpUser):
-    tasks = [FoodCheckerBehavior]
-    min_wait = 5000
-    max_wait = 9000
-    host = get_host_for_locust_testing()
+    host = "http://localhost:5000"
+    wait_time = between(1, 5)
+
+    @task
+    def check_dataset(self):
+        # Assuming dataset 1 exists, or we might get 404 which is fine for load testing the path
+        self.client.get("/api/food_checker/check/dataset/1")
+
+    @task
+    def check_file(self):
+        # Assuming file 1 exists
+        self.client.get("/api/food_checker/check/file/1")
