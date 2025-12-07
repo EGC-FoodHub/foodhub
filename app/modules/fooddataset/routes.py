@@ -25,16 +25,13 @@ def scripts():
 @fooddataset_bp.route("/dataset/upload", methods=["GET", "POST"])
 @login_required
 def create_dataset():
-    """
-    Ruta para subir un nuevo Food Dataset.
-    """
     form = FoodDatasetForm()
 
     if request.method == "POST":
         dataset = None
 
         if not form.validate_on_submit():
-            return jsonify({"message": form.errors}), 400
+            return jsonify({"message": str(form.errors)}), 400
 
         try:
             logger.info("Creating food dataset...")
@@ -43,7 +40,7 @@ def create_dataset():
 
         except Exception as exc:
             logger.exception(f"Exception creating local dataset: {exc}")
-            return jsonify({"error": str(exc)}), 400
+            return jsonify({"message": str(exc)}), 400
 
         zenodo_service = ZenodoService()
 
@@ -84,9 +81,6 @@ def create_dataset():
 @fooddataset_bp.route("/dataset/file/upload", methods=["POST"])
 @login_required
 def upload_file_temp():
-    """
-    Sube un archivo temporal (.food) al servidor antes de crear el dataset.
-    """
     file = request.files.get("file")
     if not file:
         return jsonify({"message": "No file provided"}), 400
