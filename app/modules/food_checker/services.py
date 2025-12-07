@@ -90,7 +90,7 @@ class FoodCheckerService:
                     try:
                         cal_str = result["data"].get("calories", "0").split()[0]
                         summary["total_calories"] += int(cal_str)
-                    except:
+                    except Exception:
                         pass
 
                 summary["details"].append(info)

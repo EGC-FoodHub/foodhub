@@ -7,7 +7,6 @@ from app.modules.basedataset.services import BaseDatasetService
 from app.modules.food_checker import food_checker_bp
 from app.modules.food_checker.services import FoodCheckerService
 
-food_checker_bp = Blueprint("food_checker", __name__, url_prefix="/api/food_checker")
 checker_service = FoodCheckerService()
 dataset_service = BaseDatasetService()
 

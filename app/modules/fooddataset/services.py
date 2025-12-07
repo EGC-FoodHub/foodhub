@@ -79,9 +79,7 @@ class FoodDatasetService(BaseDatasetService):
                 self.repository.session.flush()
 
                 for author_data in food_model_form.get_authors():
-                    author = self.author_repository.create(
-                        commit=False, food_meta_data_id=food_metadata.id, **author_data
-                    )
+                    self.author_repository.create(commit=False, food_meta_data_id=food_metadata.id, **author_data)
 
                 food_model = FoodModel(dataset=dataset, food_meta_data_id=food_metadata.id)
 
