@@ -2,7 +2,7 @@ import os
 import uuid
 from datetime import datetime, timezone
 
-from flask import Blueprint, current_app, jsonify, make_response, request, send_from_directory
+from flask import current_app, jsonify, make_response, request, send_from_directory
 from flask_login import current_user
 
 from app import db
