@@ -13,14 +13,12 @@ dataset_service = DataSetService()
 @login_required
 def get_shopping_cart_from_current_user():
     cart = shopping_cart_service.show_by_user(current_user.id)
-
     return render_template('shopping_cart/index.html', cart=cart)
 
 @shopping_cart_bp.route('/shopping_cart/add/<int:dataset_id>', methods=['GET', 'POST'])
 @login_required
 def add_dataset_to_cart(dataset_id):
     shopping_cart_service.add_to_cart(current_user.id, dataset_id)
-    cart = shopping_cart_service.get_by_user(current_user.id)
     return redirect(request.referrer or '/')
 
 @shopping_cart_bp.route('/shopping_cart/remove/<int:dataset_id>', methods=['GET', 'POST'])
