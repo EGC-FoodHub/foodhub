@@ -1,5 +1,7 @@
 from app import db
 from app.modules.basedataset.models import BaseDataset, BaseDSMetaData
+from datetime import datetime, timedelta
+from sqlalchemy import func, and_
 
 
 class FoodDataset(BaseDataset):
@@ -16,6 +18,9 @@ class FoodDataset(BaseDataset):
     )
 
     files = db.relationship("FoodModel", back_populates="dataset", cascade="all, delete-orphan")
+    
+
+
 
     __mapper_args__ = {
         "polymorphic_identity": "food_dataset",
@@ -71,3 +76,18 @@ class FoodNutritionalValue(db.Model):
             "name": self.name,
             "value": self.value,
         }
+
+
+class FoodDatasetActivity(db.Model):
+
+    __tablename__ = "food_dataset_activity"
+    
+    id = db.Column(db.Integer, primary_key=True)
+    dataset_id = db.Column(db.Integer, db.ForeignKey("food_dataset.id"), nullable=False, index=True)
+    activity_type = db.Column(db.String(20), nullable=False, index=True)  
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now, index=True)
+    
+    dataset = db.relationship("FoodDataset", back_populates="activity_logs")
+    
+    def __repr__(self):
+        return f"<FoodDatasetActivity {self.activity_type} on dataset {self.dataset_id}>"
