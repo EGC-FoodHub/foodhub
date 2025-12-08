@@ -18,12 +18,12 @@ class TestAuthLogin:
 
         with patch.object(auth_service.repository, "get_by_email", return_value=mock_user):
             with patch("app.modules.auth.services.login_user") as mock_login:
-                result = auth_service.login("test@example.com", "password")
+                auth_service.login("test@example.com", "password")
 
                 mock_login.assert_called_once_with(mock_user, remember=True)
 
     def test_login_user_not_found(self, auth_service):
-        with pytest.raises(Exception,match="There is no user with that email"):
+        with pytest.raises(Exception, match="There is no user with that email"):
             with patch.object(auth_service.repository, "get_by_email", return_value=None):
                 result = auth_service.login("nonexistent@example.com", "password")
                 assert result is False
@@ -35,7 +35,6 @@ class TestAuthLogin:
         with pytest.raises(Exception, match="Password or email is incorrect"):
             with patch.object(auth_service.repository, "get_by_email", return_value=mock_user):
                 auth_service.login("test@example.com", "wrong_password")
-
 
     def test_check_password_success(self, auth_service):
         mock_user = Mock()
