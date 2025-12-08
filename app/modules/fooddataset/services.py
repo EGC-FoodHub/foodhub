@@ -115,3 +115,14 @@ class FoodDatasetService(BaseDatasetService):
                 src_file = os.path.join(source_dir, file.name)
                 if os.path.exists(src_file):
                     shutil.move(src_file, dest_dir)
+
+    def increment_view_count(self, dataset_id: int) -> bool:
+
+        logger.info(f"Incrementing view count for dataset {dataset_id}")
+        return self.repository.increment_view_count(dataset_id)
+
+    def increment_download_count(self, dataset_id: int) -> bool:
+
+        logger.info(f"Incrementing download count for dataset {dataset_id}")
+        return self.repository.increment_download_count(dataset_id)
+
