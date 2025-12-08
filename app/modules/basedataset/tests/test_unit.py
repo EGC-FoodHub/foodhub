@@ -1,4 +1,3 @@
-import uuid
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -12,7 +11,7 @@ from app.modules.basedataset.models import (
     BasePublicationType,
 )
 from app.modules.basedataset.services import BaseDatasetService, BaseDSViewRecordService
-from app.modules.conftest import login, logout
+from app.modules.conftest import login
 
 
 # --- Concrete implementation for Abstract BaseDataset for testing ---
