@@ -1,10 +1,11 @@
 import logging
-from typing import Optional
+from typing import Optional, List
+from datetime import datetime, timedelta
 
-from sqlalchemy import desc
+from sqlalchemy import desc, func, and_
 
 from app.modules.basedataset.repositories import BaseDatasetRepository
-from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData
+from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData, FoodDatasetActivity
 
 logger = logging.getLogger(__name__)
 
@@ -55,3 +56,34 @@ class FoodDatasetRepository(BaseDatasetRepository):
             .limit(5)
             .all()
         )
+
+    def increment_view_count(self, dataset_id: int) -> bool:
+        try:
+            dataset = self.model.query.get(dataset_id)
+            if dataset:
+                dataset.increment_view()
+                self.session.commit()
+                logger.info(f"View count incremented for dataset {dataset_id}")
+                return True
+            logger.warning(f"Dataset {dataset_id} not found")
+            return False
+        except Exception as e:
+            logger.error(f"Error incrementing view count for dataset {dataset_id}: {e}")
+            self.session.rollback()
+            return False
+
+    def increment_download_count(self, dataset_id: int) -> bool:
+        try:
+            dataset = self.model.query.get(dataset_id)
+            if dataset:
+                dataset.increment_download()
+                self.session.commit()
+                logger.info(f"Download count incremented for dataset {dataset_id}")
+                return True
+            logger.warning(f"Dataset {dataset_id} not found")
+            return False
+        except Exception as e:
+            logger.error(f"Error incrementing download count for dataset {dataset_id}: {e}")
+            self.session.rollback()
+            return False
+
