@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from app.modules.auth.models import User
 from app.modules.basedataset.models import BaseAuthor, BasePublicationType
 from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData, FoodNutritionalValue
-from app.modules.foodmodel.models import FoodModel, FoodMetaData
+from app.modules.foodmodel.models import FoodMetaData, FoodModel
 from app.modules.hubfile.models import Hubfile
 from core.seeders.BaseSeeder import BaseSeeder
 
