@@ -1,13 +1,15 @@
-import pytest
 import uuid
 from unittest.mock import MagicMock, patch
+
+import pytest
+
 from app import db
 from app.modules.basedataset.models import (
+    BaseAuthor,
     BaseDataset,
     BaseDatasetVersion,
     BaseDSMetaData,
     BasePublicationType,
-    BaseAuthor,
 )
 from app.modules.basedataset.services import BaseDatasetService, BaseDSViewRecordService
 from app.modules.conftest import login, logout
