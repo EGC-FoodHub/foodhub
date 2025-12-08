@@ -126,3 +126,40 @@ class FoodDatasetService(BaseDatasetService):
         logger.info(f"Incrementing download count for dataset {dataset_id}")
         return self.repository.increment_download_count(dataset_id)
 
+    def get_trending_datasets(self, period_days: int = 7, limit: int = 10):
+
+        logger.info(f"Getting trending datasets for period {period_days} days, limit {limit}")
+        return self.repository.get_trending_datasets(period_days=period_days, limit=limit)
+
+    def get_trending_weekly(self, limit: int = 10):
+
+        logger.info(f"Getting weekly trending datasets, limit {limit}")
+        return self.repository.get_trending_weekly(limit=limit)
+
+    def get_trending_monthly(self, limit: int = 10):
+
+        logger.info(f"Getting monthly trending datasets, limit {limit}")
+        return self.repository.get_trending_monthly(limit=limit)
+
+    def get_most_viewed_datasets(self, limit: int = 10):
+
+        logger.info(f"Getting most viewed datasets, limit {limit}")
+        return self.repository.get_most_viewed_datasets(limit=limit)
+
+    def get_most_downloaded_datasets(self, limit: int = 10):
+
+        logger.info(f"Getting most downloaded datasets, limit {limit}")
+        return self.repository.get_most_downloaded_datasets(limit=limit)
+
+    def get_dataset_stats(self, dataset_id: int):
+
+        logger.info(f"Getting stats for dataset {dataset_id}")
+        return self.repository.get_dataset_stats(dataset_id)
+
+    def register_dataset_view(self, dataset_id: int) -> bool:
+
+        return self.increment_view_count(dataset_id)
+
+    def register_dataset_download(self, dataset_id: int) -> bool:
+
+        return self.increment_download_count(dataset_id)
