@@ -4,6 +4,8 @@ import os
 import shutil
 from typing import List, Optional, Dict, Any, Union
 
+from sqlalchemy import func
+
 from app.modules.basedataset.services import BaseDatasetService
 from app.modules.basedataset.repositories import BaseAuthorRepository, BaseDSMetaDataRepository
 from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData
@@ -142,41 +144,33 @@ class FoodDatasetService(BaseDatasetService):
         logger.info(f"Getting trending datasets for period {period_days} days, limit {limit}")
         return self.repository.get_trending_datasets(period_days=period_days, limit=limit)
 
-    def get_trending_weekly(self, limit: int = 10):
-
+    def get_trending_weekly(self, limit: int = 10) -> List[Dict[str, Any]]:
         logger.info(f"Getting weekly trending datasets, limit {limit}")
         return self.repository.get_trending_weekly(limit=limit)
 
-    def get_trending_monthly(self, limit: int = 10):
-
+    def get_trending_monthly(self, limit: int = 10) -> List[Dict[str, Any]]:
         logger.info(f"Getting monthly trending datasets, limit {limit}")
         return self.repository.get_trending_monthly(limit=limit)
 
-    def get_most_viewed_datasets(self, limit: int = 10):
-
+    def get_most_viewed_datasets(self, limit: int = 10) -> List[Dict[str, Any]]:
         logger.info(f"Getting most viewed datasets, limit {limit}")
         return self.repository.get_most_viewed_datasets(limit=limit)
 
-    def get_most_downloaded_datasets(self, limit: int = 10):
-
+    def get_most_downloaded_datasets(self, limit: int = 10) -> List[Dict[str, Any]]:
         logger.info(f"Getting most downloaded datasets, limit {limit}")
         return self.repository.get_most_downloaded_datasets(limit=limit)
 
-    def get_dataset_stats(self, dataset_id: int):
-
+    def get_dataset_stats(self, dataset_id: int) -> Optional[Dict[str, Any]]:
         logger.info(f"Getting stats for dataset {dataset_id}")
         return self.repository.get_dataset_stats(dataset_id)
 
     def register_dataset_view(self, dataset_id: int) -> bool:
-
         return self.increment_view_count(dataset_id)
 
     def register_dataset_download(self, dataset_id: int) -> bool:
-
         return self.increment_download_count(dataset_id)
 
     def get_trending_stats(self) -> Dict[str, Any]:
-
         logger.info("Obtaining statistics")
         
         try:
@@ -216,7 +210,6 @@ class FoodDatasetService(BaseDatasetService):
         logger.info("Generating resume")
         
         try:
-
             top_weekly = self.get_trending_weekly(limit=3)
             top_monthly = self.get_trending_monthly(limit=3)
             
@@ -257,3 +250,69 @@ class FoodDatasetService(BaseDatasetService):
                 'total_active_datasets': 0,
                 'error': str(e)
             }
+
+    def total_dataset_downloads(self) -> int:
+        try:
+            total = self.repository.session.query(
+                func.sum(FoodDataset.download_count)
+            ).scalar()
+            return total or 0
+        except Exception as e:
+            logger.error(f"Error getting total downloads: {e}")
+            return 0
+
+    def total_dataset_views(self) -> int:
+        try:
+            total = self.repository.session.query(
+                func.sum(FoodDataset.view_count)
+            ).scalar()
+            return total or 0
+        except Exception as e:
+            logger.error(f"Error getting total views: {e}")
+            return 0
+
+    def total_feature_model_downloads(self) -> int:
+        try:
+            from app.modules.foodmodel.models import FoodModel
+            total = self.repository.session.query(
+                func.sum(FoodModel.download_count)
+            ).scalar()
+            return total or 0
+        except Exception as e:
+            logger.error(f"Error getting total feature model downloads: {e}")
+            return 0
+
+    def total_feature_model_views(self) -> int:
+        try:
+            from app.modules.foodmodel.models import FoodModel
+            total = self.repository.session.query(
+                func.sum(FoodModel.view_count)
+            ).scalar()
+            return total or 0
+        except Exception as e:
+            logger.error(f"Error getting total feature model views: {e}")
+            return 0
+
+    def count_feature_models(self) -> int:
+        try:
+            from app.modules.foodmodel.models import FoodModel
+            total = self.repository.session.query(FoodModel).count()
+            return total or 0
+        except Exception as e:
+            logger.error(f"Error counting feature models: {e}")
+            return 0
+
+    def get_all_statistics(self) -> Dict[str, Any]:
+        return {
+            'datasets_counter': self.count_synchronized_datasets(),
+            'feature_models_counter': self.count_feature_models(),
+            'total_dataset_downloads': self.total_dataset_downloads(),
+            'total_dataset_views': self.total_dataset_views(),
+            'total_feature_model_downloads': self.total_feature_model_downloads(),
+            'total_feature_model_views': self.total_feature_model_views(),
+            'trending_weekly': self.get_trending_weekly(limit=3),
+            'trending_monthly': self.get_trending_monthly(limit=3),
+            'most_viewed': self.get_most_viewed_datasets(limit=5),
+            'most_downloaded': self.get_most_downloaded_datasets(limit=5),
+            'timestamp': os.getenv("SERVER_TIMESTAMP", "N/A")
+        }
