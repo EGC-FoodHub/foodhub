@@ -87,3 +87,100 @@ class FoodDatasetRepository(BaseDatasetRepository):
             self.session.rollback()
             return False
 
+    def get_trending_datasets(self, period_days: int = 7, limit: int = 10) -> List[dict]:
+        try:
+            cutoff_date = datetime.now() - timedelta(days=period_days)
+            
+            downloads_subquery = self.session.query(
+                FoodDatasetActivity.dataset_id,
+                func.count(FoodDatasetActivity.id).label('recent_downloads')
+            ).filter(
+                and_(
+                    FoodDatasetActivity.activity_type == 'download',
+                    FoodDatasetActivity.timestamp >= cutoff_date
+                )
+            ).group_by(FoodDatasetActivity.dataset_id).subquery()
+            
+            views_subquery = self.session.query(
+                FoodDatasetActivity.dataset_id,
+                func.count(FoodDatasetActivity.id).label('recent_views')
+            ).filter(
+                and_(
+                    FoodDatasetActivity.activity_type == 'view',
+                    FoodDatasetActivity.timestamp >= cutoff_date
+                )
+            ).group_by(FoodDatasetActivity.dataset_id).subquery()
+            
+            trending_datasets = self.session.query(
+                self.model,
+                func.coalesce(downloads_subquery.c.recent_downloads, 0).label('recent_downloads'),
+                func.coalesce(views_subquery.c.recent_views, 0).label('recent_views')
+            ).outerjoin(
+                downloads_subquery, self.model.id == downloads_subquery.c.dataset_id
+            ).outerjoin(
+                views_subquery, self.model.id == views_subquery.c.dataset_id
+            ).order_by(
+                (func.coalesce(downloads_subquery.c.recent_downloads, 0) * 2 + 
+                 func.coalesce(views_subquery.c.recent_views, 0)).desc()
+            ).limit(limit).all()
+            
+
+            result = []
+            for dataset, recent_downloads, recent_views in trending_datasets:
+                trending_dict = dataset.to_trending_dict()
+                trending_dict['recent_downloads'] = recent_downloads
+                trending_dict['recent_views'] = recent_views
+                result.append(trending_dict)
+            
+            logger.info(f"Retrieved {len(result)} trending datasets for period {period_days} days")
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error getting trending datasets: {e}")
+            return []
+
+    def get_trending_weekly(self, limit: int = 10) -> List[dict]:
+        return self.get_trending_datasets(period_days=7, limit=limit)
+
+    def get_trending_monthly(self, limit: int = 10) -> List[dict]:
+        return self.get_trending_datasets(period_days=30, limit=limit)
+
+    def get_most_viewed_datasets(self, limit: int = 10) -> List[dict]:
+        try:
+            datasets = (
+                self.model.query
+                .filter(self.model.view_count > 0)
+                .order_by(desc(self.model.view_count))
+                .limit(limit)
+                .all()
+            )
+            
+            return [dataset.to_trending_dict() for dataset in datasets]
+        except Exception as e:
+            logger.error(f"Error getting most viewed datasets: {e}")
+            return []
+
+    def get_most_downloaded_datasets(self, limit: int = 10) -> List[dict]:
+        try:
+            datasets = (
+                self.model.query
+                .filter(self.model.download_count > 0)
+                .order_by(desc(self.model.download_count))
+                .limit(limit)
+                .all()
+            )
+            
+            return [dataset.to_trending_dict() for dataset in datasets]
+        except Exception as e:
+            logger.error(f"Error getting most downloaded datasets: {e}")
+            return []
+
+    def get_dataset_stats(self, dataset_id: int) -> Optional[dict]:
+        try:
+            dataset = self.model.query.get(dataset_id)
+            if dataset:
+                return dataset.to_trending_dict()
+            return None
+        except Exception as e:
+            logger.error(f"Error getting dataset stats for {dataset_id}: {e}")
+            return None
