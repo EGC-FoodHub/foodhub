@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import func, and_
 
 
+
 class FoodDataset(BaseDataset):
     __tablename__ = "food_dataset"
 
@@ -13,21 +14,27 @@ class FoodDataset(BaseDataset):
         db.Integer, db.ForeignKey("food_ds_meta_data.id", use_alter=True, name="fk_food_dataset_ds_metadata")
     )
 
+
+    view_count = db.Column(db.Integer, default=0, nullable=False)
+    download_count = db.Column(db.Integer, default=0, nullable=False)
+    last_viewed_at = db.Column(db.DateTime, nullable=True)
+    last_downloaded_at = db.Column(db.DateTime, nullable=True)
+
     ds_meta_data = db.relationship(
         "FoodDSMetaData", back_populates="dataset", uselist=False, foreign_keys=[ds_meta_data_id]
     )
 
     files = db.relationship("FoodModel", back_populates="dataset", cascade="all, delete-orphan")
     
-
-
+    activity_logs = db.relationship(
+        "FoodDatasetActivity", 
+        back_populates="dataset", 
+        cascade="all, delete-orphan"
+    )
 
     __mapper_args__ = {
         "polymorphic_identity": "food_dataset",
     }
-
-    def __repr__(self):
-        return f"<FoodDataset {self.id}>"
 
 
 class FoodDSMetaData(BaseDSMetaData):
