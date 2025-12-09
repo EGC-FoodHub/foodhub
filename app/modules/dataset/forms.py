@@ -2,7 +2,6 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
 from wtforms import FieldList, FormField, SelectField, StringField, SubmitField, TextAreaField
 from wtforms.validators import URL, DataRequired, Optional
-import re
 
 from app.modules.dataset.models import PublicationType
 
@@ -14,7 +13,7 @@ class AuthorForm(FlaskForm):
     gnd = StringField("GND")
 
     class Meta:
-        csrf = False 
+        csrf = False
 
     def get_author(self):
         return {
@@ -79,7 +78,7 @@ class DataSetForm(FlaskForm):
         choices=[('manual', 'Manual'), ('zip', 'ZIP')],
         default='manual'
     )
-    
+
     # --- Campo para subir el ZIP ---
     zip_file = FileField(
         'ZIP Archive',
@@ -88,7 +87,7 @@ class DataSetForm(FlaskForm):
             FileAllowed(['zip'], 'Only .zip files are allowed!')
         ]
     )
-    
+
     def validate(self, extra_validators=None):
         if not super(DataSetForm, self).validate(extra_validators):
             return False
@@ -100,12 +99,11 @@ class DataSetForm(FlaskForm):
             if not any(fm.uvl_filename.data for fm in self.feature_models):
                 self.feature_models.errors.append('At least one UVL file is required for manual upload.')
                 is_valid = False
-        
         elif method == 'zip':
             if not self.zip_file.data:
                 self.zip_file.errors.append('A ZIP file is required for this import method.')
                 is_valid = False
-        
+
         return is_valid
 
     submit = SubmitField("Submit")

@@ -6,9 +6,6 @@ import tempfile
 import uuid
 from datetime import datetime, timezone
 from zipfile import ZipFile
-import io
-import urllib.request
-import urllib.error
 
 from flask import abort, jsonify, make_response, redirect, render_template, request, send_from_directory, url_for
 from flask_login import current_user, login_required

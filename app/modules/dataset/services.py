@@ -3,13 +3,11 @@ import logging
 import os
 import shutil
 import uuid
+import zipfile
 from typing import Optional
 
 from flask import request
-import requests
 from zipfile import ZipFile
-import tempfile
-
 
 from app.modules.auth.services import AuthenticationService
 from app.modules.dataset.models import DataSet, DSMetaData, DSViewRecord
@@ -176,11 +174,11 @@ class DataSetService(BaseService):
         """
         temp_folder = current_user.temp_folder()
         os.makedirs(temp_folder, exist_ok=True)
-        
+
         zip_file_obj.seek(0)
         if not zipfile.is_zipfile(zip_file_obj):
             raise ValueError("File is not a valid ZIP archive.")
-        
+
         files_count = 0
         with ZipFile(zip_file_obj, 'r') as zip_ref:
             for file_path in zip_ref.namelist():
@@ -216,14 +214,14 @@ class DataSetService(BaseService):
 
         if files_count == 0:
             logger.warning(f"No .food files found in the provided ZIP archive for dataset {dataset.id}.")
-    
+
     def _create_dataset_shell(self, form, current_user) -> DataSet:
         """
         Crea la entidad DataSet y sus metadatos/autores principales.
         """
         logger.info(f"Creating dsmetadata...: {form.get_dsmetadata()}")
         dsmetadata = self.dsmetadata_repository.create(**form.get_dsmetadata())
-        
+
         main_author = {
             "name": f"{current_user.profile.surname}, {current_user.profile.name}",
             "affiliation": current_user.profile.affiliation,
@@ -235,19 +233,19 @@ class DataSetService(BaseService):
 
         dataset = self.create(commit=False, user_id=current_user.id, ds_meta_data_id=dsmetadata.id)
         return dataset
-        
+
     def create_from_zip(self, form, current_user) -> DataSet:
         """
         Procesa la subida de archivos CSV desde un archivo ZIP.
         """
         try:
             dataset = self._create_dataset_shell(form, current_user)
-            
+
             zip_file = form.zip_file.data
             self._process_zip_file(dataset, zip_file, current_user)
-            
+
             self.repository.session.commit()
-            
+
         except Exception as exc:
             logger.exception(f"Exception creating dataset from ZIP...: {exc}")
             self.repository.session.rollback()
