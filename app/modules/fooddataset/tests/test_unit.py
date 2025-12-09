@@ -4,11 +4,11 @@ import pytest
 
 from app import db
 from app.modules.auth.models import User
-from app.modules.basedataset.models import BasePublicationType, BaseAuthor
+from app.modules.basedataset.models import BaseAuthor, BasePublicationType
 from app.modules.fooddataset.models import (
     FoodDataset,
-    FoodDSMetaData,
     FoodDatasetActivity,
+    FoodDSMetaData,
     FoodNutritionalValue,
 )
 
@@ -374,8 +374,9 @@ def test_route_dataset_upload_post_success(test_client):
 
 
 def test_route_file_upload(test_client):
-    from app.modules.conftest import login
     from io import BytesIO
+
+    from app.modules.conftest import login
 
     login(test_client, "test_food@example.com", "test1234")
 
