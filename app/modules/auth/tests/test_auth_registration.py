@@ -7,7 +7,7 @@ from app.modules.auth.services import AuthenticationService
 
 class TestAuthRegistration:
 
-    @pytest.fixture
+    @pytest.fixture(scope="module")
     def auth_service(self):
         return AuthenticationService()
 
@@ -32,21 +32,24 @@ class TestAuthRegistration:
                             mock_profile_create.assert_called_once_with(user_id=1, name="John", surname="Doe")
                             mock_send_email.assert_called_once_with(mock_user)
 
-    def test_create_with_profile_missing_email(self, auth_service):
-        with pytest.raises(ValueError, match="Email is required."):
-            auth_service.create_with_profile(password="pass", name="John", surname="Doe")
+    def test_create_with_profile_missing_email(self, auth_service, test_client):
+        with test_client.application.app_context():
+            with pytest.raises(ValueError, match="Email is required."):
+                auth_service.create_with_profile(password="pass", name="John", surname="Doe")
 
-    def test_create_with_profile_missing_password(self, auth_service):
-        with pytest.raises(ValueError, match="Password is required."):
-            auth_service.create_with_profile(email="test@example.com", name="John", surname="Doe")
+    def test_create_with_profile_missing_password(self, auth_service, test_client):
+        with test_client.application.app_context():
+            with pytest.raises(ValueError, match="Password is required."):
+                auth_service.create_with_profile(email="test@example.com", name="John", surname="Doe")
 
     def test_create_with_profile_missing_name(self, auth_service):
         with pytest.raises(ValueError, match="Name is required."):
             auth_service.create_with_profile(email="test@example.com", password="pass", surname="Doe")
 
-    def test_create_with_profile_missing_surname(self, auth_service):
-        with pytest.raises(ValueError, match="Surname is required."):
-            auth_service.create_with_profile(email="test@example.com", password="pass", name="John")
+    def test_create_with_profile_missing_surname(self, auth_service, test_client):
+        with test_client.application.app_context():
+            with pytest.raises(ValueError, match="Surname is required."):
+                auth_service.create_with_profile(email="test@example.com", password="pass", name="John")
 
     def test_create_with_profile_rollback_on_error(self, auth_service):
         user_data = {"email": "new@example.com", "password": "password123", "name": "John", "surname": "Doe"}
