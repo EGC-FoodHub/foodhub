@@ -101,8 +101,8 @@
 
                             <h1 class="h3 mb-3 mt-4">
                             Authors
-                            <a href="#" data-toggle="modal" data-target="#infoModal">
-                                <i data-feather="info"></i> <!-- Usamos "info" porque Feather no tiene un ícono específico llamado "feather" para más info -->
+                            <a href="#" data-bs-toggle="modal" data-bs-target="#infoModal">
+                                <i data-feather="info"></i>
                             </a>
                             </h1>
 
@@ -112,15 +112,13 @@
                                 <div class="modal-content">
                                 <div class="modal-header">
                                     <h5 class="modal-title" id="infoModalLabel">Información Importante</h5>
-                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                    </button>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
                                 <div class="modal-body">
-                                    ¡Cuidado! Los autores no se pueden editar una vez que el dataset se haya subido a UVLHub. Esta funcionalidad estará disponible para futuras versiones.
+                                    Attention! Authors cannot be edited once the dataset has been uploaded to FoodHub. This feature will be available in future versions.
                                 </div>
                                 <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                                 </div>
                                 </div>
                             </div>
@@ -212,7 +210,7 @@
 
         <div class="col-xl-6 col-lg-12 col-md-12 col-sm-12">
 
-            <h1 class="h3 mb-3 mt-2">UVL models</h1>
+            <h1 class="h3 mb-3 mt-2">Food models</h1>
 
             <div id="uploaded_models_form" style="padding-left: 2rem">
 
@@ -230,7 +228,7 @@
                         url: "/dataset/file/upload",
                         paramName: 'file',
                         maxFilesize: 10,
-                        acceptedFiles: '.uvl',
+                        acceptedFiles: '.food',
                         init: function () {
 
                             let fileList = document.getElementById('file-list');
@@ -239,8 +237,8 @@
 
                             this.on('addedfile', function (file) {
 
-                                let ext = file.name.split('.').pop();
-                                if (ext !== 'uvl') {
+                                let ext = file.name.split('.').pop().toLowerCase();
+                                if (ext !== 'uvl' && ext !== 'food') {
                                     this.removeFile(file);
 
                                     let alert = document.createElement('p');
@@ -432,7 +430,7 @@
                             this.on('error', function (file, response) {
                                 console.error("Error uploading file: ", response);
                                 let alert = document.createElement('p');
-                                alert.textContent = 'UVL not valid: ' + file.name;
+                                alert.textContent = '.food not valid: ' + file.name;
                                 alerts.appendChild(alert);
                                 alerts.style.display = 'block';
                             });

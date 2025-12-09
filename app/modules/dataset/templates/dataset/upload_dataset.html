@@ -100,8 +100,8 @@
 
                         <h1 class="h3 mb-3 mt-4">
                           Authors
-                          <a href="#" data-toggle="modal" data-target="#infoModal">
-                            <i data-feather="info"></i> <!-- Usamos "info" porque Feather no tiene un ícono específico llamado "feather" para más info -->
+                        <a href="#" data-bs-toggle="modal" data-bs-target="#infoModal">
+                            <i data-feather="info"></i> 
                           </a>
                         </h1>
 
@@ -110,16 +110,14 @@
                           <div class="modal-dialog" role="document">
                             <div class="modal-content">
                               <div class="modal-header">
-                                <h5 class="modal-title" id="infoModalLabel">Información Importante</h5>
-                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                  <span aria-hidden="true">&times;</span>
-                                </button>
+                                <h5 class="modal-title" id="infoModalLabel">Important Information</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                               </div>
                               <div class="modal-body">
-                                ¡Cuidado! Los autores no se pueden editar una vez que el dataset se haya subido a UVLHub. Esta funcionalidad estará disponible para futuras versiones.
+                                Attention! Authors cannot be edited once the dataset has been uploaded to FoodHub. This feature will be available in future versions.
                               </div>
                               <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                               </div>
                             </div>
                           </div>
@@ -214,238 +212,357 @@
 
         <div class="col-xl-6 col-lg-12 col-md-12 col-sm-12">
 
-            <h1 class="h3 mb-3 mt-2">UVL models</h1>
 
-            <div id="uploaded_models_form" style="padding-left: 2rem">
+            <h1 class="h3 mb-3 mt-2">Food models</h1>
 
-                <form action="{{ url_for('dataset.upload') }}" class="dropzone" id="myDropzone">
-                    <div id="dropzone-text"></div>
-                </form>
+            <ul class="nav nav-tabs" id="uploadTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <a class="nav-link active" id="local-tab" data-bs-toggle="tab" href="#local_tab" role="tab" aria-controls="local_tab" aria-selected="true">Local file</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" id="zip-tab" data-bs-toggle="tab" href="#zip_tab" role="tab" aria-controls="zip_tab" aria-selected="false">From ZIP</a>
+            </li>
+            </ul>
 
-                <span class="text-danger" id="alerts" style="display: none">
-                    </span>
+            <div class="tab-content mt-3">
 
-                <ul class="mt-2" id="file-list"></ul>
+            <!-- LOCAL FILE -->
+            <div class="tab-pane fade show active" id="local_tab" role="tabpanel" aria-labelledby="local-tab">
+                <div id="uploaded_models_form" style="padding-left: 2rem">
 
-                <script>
-                    let dropzone = Dropzone.options.myDropzone = {
-                        url: "/dataset/file/upload",
-                        paramName: 'file',
-                        maxFilesize: 10,
-                        acceptedFiles: '.uvl',
-                        init: function () {
+                    <form action="{{ url_for('dataset.upload') }}" class="dropzone" id="myDropzone">
+                        <div id="dropzone-text">Drop your .food files here</div>
+                    </form>
 
-                            let fileList = document.getElementById('file-list');
-                            let dropzoneText = document.getElementById('dropzone-text');
-                            let alerts = document.getElementById('alerts');
+                    <span class="text-danger" id="alerts" style="display: none"></span>
 
-                            this.on('addedfile', function (file) {
+                    <ul class="mt-2" id="file-list"></ul>
 
-                                let ext = file.name.split('.').pop();
-                                if (ext !== 'uvl') {
-                                    this.removeFile(file);
+                </div>
+            </div>
 
-                                    let alert = document.createElement('p');
-                                    alert.textContent = 'Invalid file extension: ' + file.name;
-                                    alerts.appendChild(alert);
-                                    alerts.style.display = 'block';
-                                }
+            <!-- ZIP -->
+            <div class="tab-pane fade" id="zip_tab" role="tabpanel" aria-labelledby="zip-tab">
 
-                            });
-
-                            this.on('success', function (file, response) {
-
-                                let dropzone = this;
-
-                                show_upload_dataset();
-
-                                console.log("File uploaded: ", response);
-                                // actions when UVL model is uploaded
-                                let listItem = document.createElement('li');
-                                let h4Element = document.createElement('h4');
-                                h4Element.textContent = response.filename;
-                                listItem.appendChild(h4Element);
-
-                                // generate incremental id for form
-                                let formUniqueId = generateIncrementalId();
-
-                                /*
-                                    ##########################################
-                                    FORM BUTTON
-                                    ##########################################
-                                */
-                                let formButton = document.createElement('button');
-                                formButton.innerHTML = 'Show info';
-                                formButton.classList.add('info-button', 'btn', 'btn-outline-secondary', "btn-sm");
-                                formButton.style.borderRadius = '5px';
-                                formButton.id = formUniqueId + "_button";
-
-                                formButton.addEventListener('click', function () {
-                                    if (formContainer.style.display === "none") {
-                                        formContainer.style.display = "block";
-                                        formButton.innerHTML = 'Hide info';
-                                    } else {
-                                        formContainer.style.display = "none";
-                                        formButton.innerHTML = 'Add info';
-                                    }
-                                });
-
-                                // append space
-                                let space = document.createTextNode(" ");
-                                listItem.appendChild(space);
-
-                                /*
-                                    ##########################################
-                                    REMOVE BUTTON
-                                    ##########################################
-                                */
-
-                                // remove button
-                                let removeButton = document.createElement('button');
-                                removeButton.innerHTML = 'Delete model';
-                                removeButton.classList.add("remove-button", "btn", "btn-outline-danger", "btn-sm", "remove-button");
-                                removeButton.style.borderRadius = '5px';
-
-                                // append space
-                                space = document.createTextNode(" ");
-                                listItem.appendChild(space);
-
-                                removeButton.addEventListener('click', function () {
-                                    fileList.removeChild(listItem);
-                                    this.removeFile(file);
-
-                                    // Ajax request
-                                    let xhr = new XMLHttpRequest();
-                                    xhr.open('POST', '/dataset/file/delete', true);
-                                    xhr.setRequestHeader('Content-Type', 'application/json');
-                                    xhr.onload = function () {
-                                        if (xhr.status === 200) {
-                                            console.log('Deleted file from server');
-
-                                            if (dropzone.files.length === 0) {
-                                                document.getElementById("upload_dataset").style.display = "none";
-                                                clean_upload_errors();
-                                            }
-
-                                        }
-                                    };
-                                    xhr.send(JSON.stringify({file: file.name}));
-                                }.bind(this));
-
-                                /*
-                                    ##########################################
-                                    APPEND BUTTONS
-                                    ##########################################
-                                */
-                                listItem.appendChild(formButton);
-                                listItem.appendChild(removeButton);
-
-                                /*
-                                    ##########################################
-                                    UVL FORM
-                                    ##########################################
-                                */
-
-                                // create specific form for UVL
-                                let formContainer = document.createElement('div');
-                                formContainer.id = formUniqueId + "_form";
-                                formContainer.classList.add('uvl_form', "mt-3");
-                                formContainer.style.display = "none";
-
-                                formContainer.innerHTML = `
-                                    <div class="row">
-                                        <input type="hidden" value="${response.filename}" name="feature_models-${formUniqueId}-uvl_filename">
-                                        <div class="col-12">
-                                            <div class="row">
-                                                <div class="col-12">
-                                                    <div class="mb-3">
-                                                        <label class="form-label">Title</label>
-                                                        <input type="text" class="form-control" name="feature_models-${formUniqueId}-title">
-                                                    </div>
-                                                </div>
-                                                <div class="col-12">
-                                                    <div class="mb-3">
-                                                        <label class="form-label">Description</label>
-                                                        <textarea rows="4" class="form-control" name="feature_models-${formUniqueId}-desc"></textarea>
-                                                    </div>
-                                                </div>
-                                                <div class="col-lg-6 col-12">
-                                                    <div class="mb-3">
-                                                        <label class="form-label" for="publication_type">Publication type</label>
-                                                        <select class="form-control" name="feature_models-${formUniqueId}-publication_type">
-                                                            <option value="none">None</option>
-                                                            <option value="annotationcollection">Annotation Collection</option>
-                                                            <option value="book">Book</option>
-                                                            <option value="section">Book Section</option>
-                                                            <option value="conferencepaper">Conference Paper</option>
-                                                            <option value="datamanagementplan">Data Management Plan</option>
-                                                            <option value="article">Journal Article</option>
-                                                            <option value="patent">Patent</option>
-                                                            <option value="preprint">Preprint</option>
-                                                            <option value="deliverable">Project Deliverable</option>
-                                                            <option value="milestone">Project Milestone</option>
-                                                            <option value="proposal">Proposal</option>
-                                                            <option value="report">Report</option>
-                                                            <option value="softwaredocumentation">Software Documentation</option>
-                                                            <option value="taxonomictreatment">Taxonomic Treatment</option>
-                                                            <option value="technicalnote">Technical Note</option>
-                                                            <option value="thesis">Thesis</option>
-                                                            <option value="workingpaper">Working Paper</option>
-                                                            <option value="other">Other</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                                <div class="col-lg-6 col-6">
-                                                    <div class="mb-3">
-                                                        <label class="form-label" for="publication_doi">Publication DOI</label>
-                                                        <input class="form-control" name="feature_models-${formUniqueId}-publication_doi" type="text" value="">
-                                                    </div>
-                                                </div>
-                                                <div class="col-6">
-                                                    <div class="mb-3">
-                                                        <label class="form-label">Tags (separated by commas)</label>
-                                                        <input type="text" class="form-control" name="feature_models-${formUniqueId}-tags">
-                                                    </div>
-                                                </div>
-                                                <div class="col-6">
-                                                    <div class="mb-3">
-                                                        <label class="form-label">UVL version</label>
-                                                        <input type="text" class="form-control" name="feature_models-${formUniqueId}-uvl_version">
-                                                    </div>
-                                                </div>
-                                                <div class="col-12">
-                                                    <div class="mb-3">
-                                                        <label class="form-label">Authors</label>
-                                                        <div id="` + formContainer.id + `_authors">
-                                                        </div>
-                                                        <button type="button" class="add_author_to_uvl btn btn-secondary" id="` + formContainer.id + `_authors_button">Add author</button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    `;
-
-                                listItem.appendChild(formContainer);
-                                fileList.appendChild(listItem);
-
-                            });
-
-                            this.on('error', function (file, response) {
-                                console.error("Error uploading file: ", response);
-                                let alert = document.createElement('p');
-                                alert.textContent = 'UVL not valid: ' + file.name;
-                                alerts.appendChild(alert);
-                                alerts.style.display = 'block';
-                            });
-
-                        }
-                    };
-
-
-                </script>
+                {% include "dataset/_upload_zip.html" %}
 
             </div>
+
+            </div>
+
+
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha512-Ho8qGg5k9GkQmAl9fY2Gxg9rXkqM3nI/6s4k3q5uQ5r3a9Vxjz9u0YwK2N6m9RpXq2zGx9X0cG9Kz7TgGk4h2Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+            <script>
+
+            let incrementalIdCounter = 0;
+            function generateIncrementalId() {
+                return incrementalIdCounter++;
+            }
+
+            function processUploadedUVL(filename, fileObj=null) {
+                function findFileListContainer() {
+                    const activePane = document.querySelector('.tab-pane.show.active');
+                    if (activePane) {
+                        // look for a list specifically in the active pane (local or zip)
+                        const fl = activePane.querySelector('#file-list') || activePane.querySelector('#file-list-zip');
+                        if (fl) return fl;
+                    }
+                    // fallback to any existing lists on the page
+                    return document.getElementById('file-list') || document.getElementById('file-list-zip');
+                }
+
+                let fileList = findFileListContainer();
+
+                // actions when UVL model is uploaded
+                let listItem = document.createElement('li');
+                let h4Element = document.createElement('h4');
+                h4Element.textContent = filename;
+                listItem.appendChild(h4Element);
+
+                // generate incremental id for form
+                let formUniqueId = generateIncrementalId();
+
+                /*
+                    FORM BUTTON
+                */
+                let formButton = document.createElement('button');
+                formButton.innerHTML = 'Show info';
+                formButton.classList.add('info-button', 'btn', 'btn-outline-secondary', "btn-sm");
+                formButton.style.borderRadius = '5px';
+                formButton.id = formUniqueId + "_button";
+
+                // create specific form for UVL
+                let formContainer = document.createElement('div');
+                formContainer.id = formUniqueId + "_form";
+                formContainer.classList.add('uvl_form', "mt-3");
+                formContainer.style.display = "none";
+
+                formButton.addEventListener('click', function () {
+                    if (formContainer.style.display === "none") {
+                        formContainer.style.display = "block";
+                        formButton.innerHTML = 'Hide info';
+                    } else {
+                        formContainer.style.display = "none";
+                        formButton.innerHTML = 'Add info';
+                    }
+                });
+
+                // remove button
+                let removeButton = document.createElement('button');
+                removeButton.innerHTML = 'Delete model';
+                removeButton.classList.add("remove-button", "btn", "btn-outline-danger", "btn-sm");
+                removeButton.style.borderRadius = '5px';
+
+                removeButton.addEventListener('click', function () {
+                    fileList.removeChild(listItem);
+
+                    fetch('/dataset/file/delete', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ file: filename })
+                    })
+                    .then(r => {
+                        if (r.ok) {
+                            console.log('Deleted file from server');
+                            if (!document.querySelector('#file-list li')) {
+                                document.getElementById("upload_dataset").style.display = "none";
+                            }
+                        }
+                    })
+                    .catch(e => console.warn('Error deleting file:', e));
+                });
+
+                // append space, buttons and form
+                listItem.appendChild(document.createTextNode(" "));
+                listItem.appendChild(formButton);
+                listItem.appendChild(removeButton);
+
+                formContainer.innerHTML = `
+                    <div class="row">
+                        <input type="hidden" value="${filename}" name="feature_models-${formUniqueId}-uvl_filename">
+                        <div class="col-12">
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="mb-3">
+                                        <label class="form-label">Title</label>
+                                        <input type="text" class="form-control" name="feature_models-${formUniqueId}-title">
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="mb-3">
+                                        <label class="form-label">Description</label>
+                                        <textarea rows="4" class="form-control" name="feature_models-${formUniqueId}-desc"></textarea>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 col-12">
+                                    <div class="mb-3">
+                                        <label class="form-label" for="publication_type">Publication type</label>
+                                        <select class="form-control" name="feature_models-${formUniqueId}-publication_type">
+                                            <option value="none">None</option>
+                                            <option value="annotationcollection">Annotation Collection</option>
+                                            <option value="book">Book</option>
+                                            <option value="section">Book Section</option>
+                                            <option value="conferencepaper">Conference Paper</option>
+                                            <option value="datamanagementplan">Data Management Plan</option>
+                                            <option value="article">Journal Article</option>
+                                            <option value="patent">Patent</option>
+                                            <option value="preprint">Preprint</option>
+                                            <option value="deliverable">Project Deliverable</option>
+                                            <option value="milestone">Project Milestone</option>
+                                            <option value="proposal">Proposal</option>
+                                            <option value="report">Report</option>
+                                            <option value="softwaredocumentation">Software Documentation</option>
+                                            <option value="taxonomictreatment">Taxonomic Treatment</option>
+                                            <option value="technicalnote">Technical Note</option>
+                                            <option value="thesis">Thesis</option>
+                                            <option value="workingpaper">Working Paper</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-lg-6 col-6">
+                                    <div class="mb-3">
+                                        <label class="form-label" for="publication_doi">Publication DOI</label>
+                                        <input class="form-control" name="feature_models-${formUniqueId}-publication_doi" type="text" value="">
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Tags (separated by commas)</label>
+                                        <input type="text" class="form-control" name="feature_models-${formUniqueId}-tags">
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">UVL version</label>
+                                        <input type="text" class="form-control" name="feature_models-${formUniqueId}-uvl_version">
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="mb-3">
+                                        <label class="form-label">Authors</label>
+                                        <div id="${formUniqueId}_authors"></div>
+                                        <button type="button" class="add_author_to_uvl btn btn-secondary" id="${formUniqueId}_authors_button">Add author</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                listItem.appendChild(formContainer);
+                fileList.appendChild(listItem);
+
+                document.getElementById("upload_dataset").style.display = "block";
+            }
+            
+
+            /* ---------- Dropzone config  ---------- */
+
+            if (typeof Dropzone !== 'undefined') {
+                Dropzone.autoDiscover = false;
+
+                Dropzone.options.myDropzone = {
+                    url: "/dataset/file/upload",
+                    paramName: 'file',
+                    maxFilesize: 10,
+                    acceptedFiles: '.food',
+                    init: function () {
+                        let alerts = document.getElementById('alerts');
+                        this.on('addedfile', function (file) {
+                            alerts.innerHTML = '';
+                            alerts.style.display = 'none';
+                        });
+
+                        this.on('success', function (file, response) {
+                            console.log("File uploaded via Dropzone: ", response);
+                            if (response && response.filename) {
+                                processUploadedUVL(response.filename, file);
+                            } else if (response && response.files) {
+                                response.files.forEach(fn => processUploadedUVL(fn));
+                            } else {
+                                processUploadedUVL(file.name, file);
+                            }
+                        });
+
+                        this.on('error', function (file, response) {
+                            console.error("Error uploading file: ", response);
+                            let alert = document.createElement('p');
+                            alert.textContent = '.food not valid: ' + file.name;
+                            alerts.appendChild(alert);
+                            alerts.style.display = 'block';
+                        });
+                    }
+                };
+
+                document.addEventListener('DOMContentLoaded', function () {
+                    let dzEl = document.getElementById('myDropzone');
+                    if (dzEl && !dzEl.dropzone) {
+                        new Dropzone(dzEl, Dropzone.options.myDropzone);
+                    }
+                });
+            }
+
+            /* ---------- ZIP import ---------- */
+            // Helper to dynamically load a script and return a Promise that resolves when loaded
+            function loadScript(url) {
+                return new Promise(function (resolve, reject) {
+                    const s = document.createElement('script');
+                    s.src = url;
+                    s.async = true;
+                    s.onload = () => resolve();
+                    s.onerror = (e) => reject(new Error('Failed to load script ' + url));
+                    document.head.appendChild(s);
+                });
+            }
+
+            document.getElementById("upload_zip_btn").addEventListener("click", function (e) {
+                e.preventDefault();
+                const input = document.getElementById("zip_input");
+                const status = document.getElementById("zip_status");
+                if (!input.files || !input.files[0]) {
+                    status.style.display = "block";
+                    status.innerHTML = "<span class='text-danger'>Please select a ZIP file first</span>";
+                    return;
+                }
+
+                const proceed = function() {
+                    const zipFile = input.files[0];
+                    status.style.display = "block";
+                    status.innerHTML = "Please select a ZIP file first";
+
+                    const jszip = new JSZip();
+                    jszip.loadAsync(zipFile).then(zip => {
+                        const uvlEntries = [];
+                        zip.forEach((relativePath, zipEntry) => {
+                            if (!zipEntry.dir && (relativePath.endsWith('.food'))) {
+                                uvlEntries.push(zipEntry);
+                            }
+                        });
+
+                        if (uvlEntries.length === 0) {
+                            status.innerHTML = "<span class='text-warning'>No .food files found in the ZIP</span>";
+                            return;
+                        }
+
+                        status.innerHTML = `Found ${uvlEntries.length} files. Uploading...`;
+                        let uploaded = 0;
+
+                        uvlEntries.forEach(entry => {
+                            entry.async('blob').then(blob => {
+                                const fileName = entry.name.split('/').pop();
+                                const file = new File([blob], fileName, { type: 'application/octet-stream' });
+                                const form = new FormData();
+                                form.append('file', file);
+
+                                    return fetch('/dataset/file/upload', {
+                                        method: 'POST',
+                                        body: form
+                                    });
+                                })
+                                .then(r => {
+                                    if (!r.ok) return r.text().then(t => { throw new Error(t || ('Server error ' + r.status)); });
+                                    const ct = r.headers.get('content-type') || '';
+                                    if (ct.indexOf('application/json') === -1) return r.text().then(t => { throw new Error(t || 'Invalid JSON response'); });
+                                    return r.json();
+                                })
+                                .then(resp => {
+                                    if (resp && resp.filename) {
+                                        processUploadedUVL(resp.filename);
+                                    } else {
+                                        processUploadedUVL(entry.name.split('/').pop());
+                                    }
+                                    uploaded++;
+                                    status.innerHTML = `${uploaded}/${uvlEntries.length} uploaded`;
+                                })
+                                .catch(err => {
+                                    console.error('Error subiendo entry', entry.name, err);
+                                    status.innerHTML = "<span class='text-danger'>Error subiendo " + entry.name + ": " + err.message + "</span>";
+                                });
+                        });
+                    }).catch(err => {
+                        console.error('Error leyendo ZIP', err);
+                        status.innerHTML = "<span class='text-danger'>Error leyendo ZIP: " + err.message + "</span>";
+                    });
+                };
+
+                // Ensure JSZip is available; if not, load it dynamically
+                if (typeof JSZip === 'undefined') {
+                    loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js')
+                        .then(() => proceed())
+                        .catch(err => {
+                            console.error('Error cargando JSZip', err);
+                            status.style.display = 'block';
+                            status.innerHTML = "<span class='text-danger'>JSZip library could not be loaded</span>";
+                        });
+                } else {
+                    proceed();
+                }
+            });
+
+            </script>
+
         </div>
 
     </div>
@@ -463,9 +580,9 @@
                 <label class="form-check">
                     <input id="agreeCheckbox" class="form-check-input" type="checkbox" value="">
                     <span class="form-check-label" style="font-size: 15px">
-                                I agree to have my feature models automatically uploaded to Zenodo and made available to the public according to the <a
-                            href="https://en.wikipedia.org/wiki/Open_science" target="_blank">Open Science</a> manifesto
-                            </span>
+                            I agree to have my feature models automatically uploaded to Zenodo and made available to the public according to the <a
+                        href="https://en.wikipedia.org/wiki/Open_science" target="_blank">Open Science</a> manifesto
+                    </span>
                 </label>
 
                 <button id="upload_button" class="btn btn-primary mt-2" disabled>
@@ -514,53 +631,15 @@
                     });
                 </script>
 
-               
-
             </div>
 
+
+
+
         </div>
 
     </div>
-    <div class="row mt-4">
-        <div class="col-12 text-end">
-            <button id="save_as_draft_button" class="btn btn-outline-secondary">
-                <i data-feather="save"></i>
-                Save as draft
-            </button>
-        </div>
-    </div>
 
-     <script>
-        document.getElementById('save_as_draft_button').addEventListener('click', function () {
-            const formData = new FormData();
-
-            const form = document.querySelector('#basic_info_form form') || document.querySelector('#basic_info_form');
-            if (form) {
-                const inputs = form.querySelectorAll('input, select, textarea');
-                inputs.forEach(input => {
-                    if (input.name && !input.disabled) {
-                        formData.append(input.name, input.value);
-                    }
-                });
-            }
-            fetch("/dataset/save_as_draft", {
-                method: "POST",
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.message) {
-                    window.location.href = "/dataset/list";
-                } else {
-                    alert("⚠️ Something went wrong: " + JSON.stringify(data));
-                }
-            })
-            .catch(error => {
-                console.error("Error saving draft:", error);
-                alert("❌ Error saving draft: " + error);
-            });
-        });
-    </script>   
 
 {% endblock %}
 

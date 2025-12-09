@@ -144,9 +144,22 @@ var currentId = 0;
                     // process data form
                     const formData = {};
 
-                    ["basic_info_form", "uploaded_models_form"].forEach((formId) => {
-                        const form = document.getElementById(formId);
-                        const inputs = form.querySelectorAll('input, select, textarea');
+                    // Collect inputs from the basic info form and from all tab panes (local, ZIP)
+                    const basic = document.getElementById('basic_info_form');
+                    if (basic) {
+                        const inputs = basic.querySelectorAll('input, select, textarea');
+                        inputs.forEach(input => {
+                            if (input.name) {
+                                formData[input.name] = formData[input.name] || [];
+                                formData[input.name].push(input.value);
+                            }
+                        });
+                    }
+
+                    // collect inputs from every tab-pane (so dynamically added feature model fields in any tab are included)
+                    const panes = document.querySelectorAll('.tab-pane');
+                    panes.forEach(pane => {
+                        const inputs = pane.querySelectorAll('input, select, textarea');
                         inputs.forEach(input => {
                             if (input.name) {
                                 formData[input.name] = formData[input.name] || [];
@@ -155,6 +168,15 @@ var currentId = 0;
                         });
                     });
 
+                        // set import_method based on active tab
+                        const activePane = document.querySelector('.tab-pane.show.active');
+                        let importMethod = 'manual';
+                        if (activePane) {
+                            if (activePane.id === 'zip_tab') importMethod = 'zip';
+                            else importMethod = 'manual';
+                        }
+                        formData['import_method'] = [importMethod];
+
                     let formDataJson = JSON.stringify(formData);
                     console.log(formDataJson);
 
@@ -162,10 +184,30 @@ var currentId = 0;
                     const formUploadData = new FormData();
                     formUploadData.append('csrf_token', csrfToken);
 
+                    // Append all collected form fields. If a field has multiple values (array),
+                    // append each value separately so Flask's request.form.getlist() receives them.
                     for (let key in formData) {
-                        if (formData.hasOwnProperty(key)) {
-                            formUploadData.set(key, formData[key]);
+                        if (!formData.hasOwnProperty(key)) continue;
+                        const val = formData[key];
+                        if (Array.isArray(val)) {
+                            // append each value individually
+                            val.forEach(v => formUploadData.append(key, v));
+                        } else {
+                            formUploadData.append(key, val);
                         }
+                    }
+
+                    // If the user used the ZIP import method, include the actual ZIP file in the multipart
+                    // so WTForms FileField (zip_file) receives it.
+                    try {
+                        if (importMethod === 'zip') {
+                            const zipInput = document.getElementById('zip_input');
+                            if (zipInput && zipInput.files && zipInput.files[0]) {
+                                formUploadData.append('zip_file', zipInput.files[0]);
+                            }
+                        }
+                    } catch (err) {
+                        console.warn('Could not append zip file to form data', err);
                     }
 
                     let checked_orcid = true;
