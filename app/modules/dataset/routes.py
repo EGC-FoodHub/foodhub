@@ -6,6 +6,9 @@ import tempfile
 import uuid
 from datetime import datetime, timezone
 from zipfile import ZipFile
+import io
+import urllib.request
+import urllib.error
 
 from flask import abort, jsonify, make_response, redirect, render_template, request, send_from_directory, url_for
 from flask_login import current_user, login_required
@@ -179,7 +182,17 @@ def upload():
     file = request.files["file"]
     temp_folder = current_user.temp_folder()
 
-    if not file or not file.filename.endswith(".uvl"):
+    if not file:
+        return jsonify({"message": "No file provided"}), 400
+
+    filename = file.filename or ""
+    lower = filename.lower()
+
+    # If the uploaded file is a ZIP, delegate to upload_zip
+    if lower.endswith('.zip'):
+        return upload_zip()
+
+    if not (lower.endswith(".food")):
         return jsonify({"message": "No valid file"}), 400
 
     # create temp folder
@@ -214,6 +227,65 @@ def upload():
         200,
     )
 
+
+@dataset_bp.route("/dataset/file/upload_zip", methods=["POST"])
+@login_required
+def upload_zip():
+    """Accept a ZIP file upload, extract files into the user's temp folder and
+    return a list of saved filenames. Only regular files are extracted; directories
+    are skipped. Collisions are resolved by appending ` (n)` like the single file upload.
+    """
+    if "file" not in request.files:
+        return jsonify({"message": "No file provided"}), 400
+
+    file = request.files["file"]
+    if not file or not file.filename.lower().endswith(".zip"):
+        return jsonify({"message": "No valid zip file"}), 400
+
+    temp_folder = current_user.temp_folder()
+    os.makedirs(temp_folder, exist_ok=True)
+
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".zip")
+    try:
+        file.save(tmp.name)
+
+        saved_files = []
+        with ZipFile(tmp.name, "r") as z:
+            for member in z.namelist():
+                if member.endswith("/"):
+                    continue
+
+                member_basename = os.path.basename(member)
+                if not member_basename:
+                    continue
+
+                dest_path = os.path.join(temp_folder, member_basename)
+
+                base_name, extension = os.path.splitext(member_basename)
+                i = 1
+                while os.path.exists(dest_path):
+                    dest_path = os.path.join(temp_folder, f"{base_name} ({i}){extension}")
+                    i += 1
+
+                # Extract member to the destination
+                with z.open(member) as src, open(dest_path, "wb") as dst:
+                    shutil.copyfileobj(src, dst)
+
+                saved_files.append(os.path.basename(dest_path))
+
+        if not saved_files:
+            return jsonify({"message": "No files extracted from the ZIP"}), 400
+
+        return jsonify({"message": "ZIP extracted successfully", "filenames": saved_files}), 200
+    except Exception as e:
+        logger.exception("Error extracting zip file: %s", e)
+        return jsonify({"message": str(e)}), 500
+    finally:
+        try:
+            tmp.close()
+            os.unlink(tmp.name)
+        except Exception:
+            pass
 
 @dataset_bp.route("/dataset/file/delete", methods=["POST"])
 def delete():

@@ -6,6 +6,10 @@ import uuid
 from typing import Optional
 
 from flask import request
+import requests
+from zipfile import ZipFile
+import tempfile
+
 
 from app.modules.auth.services import AuthenticationService
 from app.modules.dataset.models import DataSet, DSMetaData, DSViewRecord
@@ -164,6 +168,91 @@ class DataSetService(BaseService):
 
         return updated_instance, None
 
+    def _process_zip_file(self, dataset, zip_file_obj, current_user):
+        """
+        Procesa un objeto 'file-like' de ZIP.
+        Extrae los archivos .uvl al temp_folder y los registra como FeatureModel + HubFile.
+        NO hace commit.
+        """
+        temp_folder = current_user.temp_folder()
+        os.makedirs(temp_folder, exist_ok=True)
+        
+        zip_file_obj.seek(0)
+        if not zipfile.is_zipfile(zip_file_obj):
+            raise ValueError("File is not a valid ZIP archive.")
+        
+        files_count = 0
+        with ZipFile(zip_file_obj, 'r') as zip_ref:
+            for file_path in zip_ref.namelist():
+                # accept both .uvl and .food files inside ZIP
+                if (file_path.endswith('.food')) and not file_path.startswith('__MACOSX'):
+                    filename = os.path.basename(file_path)
+                    if not filename:
+                        continue
+
+                    try:
+                        file_content = zip_ref.read(file_path)
+                        temp_file_path = os.path.join(temp_folder, filename)
+
+                        with open(temp_file_path, 'wb') as f:
+                            f.write(file_content)
+
+                        fmmetadata = self.fmmetadata_repository.create(commit=False, uvl_filename=filename)
+                        fm = self.feature_model_repository.create(commit=False, data_set_id=dataset.id, fm_meta_data_id=fmmetadata.id)
+
+                        checksum, size = calculate_checksum_and_size(temp_file_path)
+                        hubfile = self.hubfilerepository.create(
+                            commit=False,
+                            name=filename,
+                            checksum=checksum,
+                            size=size,
+                            feature_model_id=fm.id
+                        )
+                        fm.files.append(hubfile)
+
+                        files_count += 1
+                    except Exception as e:
+                        logger.warning(f"Failed to process file '{filename}' from ZIP: {e}")
+
+        if files_count == 0:
+            logger.warning(f"No .food files found in the provided ZIP archive for dataset {dataset.id}.")
+    
+    def _create_dataset_shell(self, form, current_user) -> DataSet:
+        """
+        Crea la entidad DataSet y sus metadatos/autores principales.
+        """
+        logger.info(f"Creating dsmetadata...: {form.get_dsmetadata()}")
+        dsmetadata = self.dsmetadata_repository.create(**form.get_dsmetadata())
+        
+        main_author = {
+            "name": f"{current_user.profile.surname}, {current_user.profile.name}",
+            "affiliation": current_user.profile.affiliation,
+            "orcid": current_user.profile.orcid,
+        }
+        for author_data in [main_author] + form.get_authors():
+            author = self.author_repository.create(commit=False, ds_meta_data_id=dsmetadata.id, **author_data)
+            dsmetadata.authors.append(author)
+
+        dataset = self.create(commit=False, user_id=current_user.id, ds_meta_data_id=dsmetadata.id)
+        return dataset
+        
+    def create_from_zip(self, form, current_user) -> DataSet:
+        """
+        Procesa la subida de archivos CSV desde un archivo ZIP.
+        """
+        try:
+            dataset = self._create_dataset_shell(form, current_user)
+            
+            zip_file = form.zip_file.data
+            self._process_zip_file(dataset, zip_file, current_user)
+            
+            self.repository.session.commit()
+            
+        except Exception as exc:
+            logger.exception(f"Exception creating dataset from ZIP...: {exc}")
+            self.repository.session.rollback()
+            raise exc
+        return dataset
 
 class AuthorService(BaseService):
     def __init__(self):
