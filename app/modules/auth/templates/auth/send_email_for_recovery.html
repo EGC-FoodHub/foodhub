@@ -1,0 +1,62 @@
+{% extends "base_template.html" %}
+
+{% block title %}Give Email for recovery{% endblock %}
+
+{% block content %}
+
+<h1 class="h2 mb-3">
+    <b>Enter your email</b>
+    <h5>Please, enter your account email to change your password</h5>
+</h1>
+
+<div class="row">
+    <div class="col-12">
+
+        <form action="" method="post" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <div class="row">
+
+                        <div class="col-md-6 col-lg-6 col-xs-12">
+                            <div class="mb-3">
+                                {{ form.email.label(class="form-label") }}
+                                {{ form.email(class="form-control",placeholder="Enter email") }}
+                                {% for error in form.email.errors %}
+                                <span style="color: red;">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="row">
+
+                        <div class="col-lg-6 col-12">
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+
+                    </div>
+
+                    <div class="row">
+
+                        {% if error %}
+
+                        <div class="mt-3 col-lg-6 col-12">
+                            <span style="color: red;">{{ error }}</span>
+                        </div>
+
+                        {% endif %}
+
+                    </div>
+
+                </form>
+
+    </div>
+</div>
+
+
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('auth.scripts') }}"></script>
+{% endblock %}
