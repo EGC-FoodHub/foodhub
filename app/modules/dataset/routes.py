@@ -48,7 +48,7 @@ def create_dataset():
         dataset = None
 
         if not form.validate_on_submit():
-            return jsonify({"message": form.errors}), 400
+            return jsonify({"message": "Please upload a .food file"}), 400
 
         try:
             logger.info("Creating dataset...")
@@ -195,7 +195,7 @@ def upload():
         return upload_zip()
 
     if not (lower.endswith(".food")):
-        return jsonify({"message": "No valid file"}), 400
+        return jsonify({"message": "Please upload a .food file"}), 400
 
     # create temp folder
     if not os.path.exists(temp_folder):
