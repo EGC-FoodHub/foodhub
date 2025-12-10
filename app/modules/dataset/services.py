@@ -5,9 +5,9 @@ import shutil
 import uuid
 import zipfile
 from typing import Optional
+from zipfile import ZipFile
 
 from flask import request
-from zipfile import ZipFile
 
 from app.modules.auth.services import AuthenticationService
 from app.modules.dataset.models import DataSet, DSMetaData, DSViewRecord
