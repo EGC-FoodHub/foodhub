@@ -114,7 +114,6 @@ def send_password_change_email(user: User):
           </p>
 
           <p style="color:#555; font-size:15px; line-height:1.6; text-align:center;">
-            If the button above doesn’t work, copy and paste this link into your browser:<br>
             <a style="color:#0366d6; word-break: break-all;">{token}</a>
           </p>
 
