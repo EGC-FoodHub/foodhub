@@ -45,10 +45,6 @@ class FoodDatasetService(BaseDatasetService):
     def count_unsynchronized_datasets(self):
         return self.repository.count_unsynchronized_datasets()
 
-    def get_uvlhub_doi(self, dataset: FoodDataset) -> str:
-        domain = os.getenv("DOMAIN", "localhost")
-        return f"http://{domain}/doi/{dataset.ds_meta_data.dataset_doi}"
-
     def create_from_form(self, form, current_user) -> FoodDataset:
         main_author = {
             "name": f"{current_user.profile.surname}, {current_user.profile.name}",

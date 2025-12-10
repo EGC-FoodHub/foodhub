@@ -24,6 +24,7 @@ from app.modules.basedataset.services import (
     BaseDSMetaDataService,
     BaseDSViewRecordService,
 )
+from app import db
 
 logger = logging.getLogger(__name__)
 
@@ -138,7 +139,18 @@ def subdomain_index(doi):
     if not ds_meta_data:
         abort(404)
 
-    dataset = ds_meta_data.dataset
+    # Try to find the dataset via FoodDSMetaData (subclass) since BaseDSMetaData doesn't have the relationship
+    # We must expunge the base object from session to avoid Identity Map collision preventing the subclass load
+    db.session.expunge(ds_meta_data)
+
+    from app.modules.fooddataset.models import FoodDSMetaData
+
+    food_meta_data = FoodDSMetaData.query.get(ds_meta_data.id)
+
+    dataset = food_meta_data.dataset if food_meta_data else None
+
+    if not dataset:
+        abort(404)
 
     user_cookie = ds_view_record_service.create_cookie(dataset=dataset)
 
