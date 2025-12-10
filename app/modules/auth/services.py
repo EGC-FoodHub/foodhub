@@ -9,7 +9,7 @@ from app import db
 from app.modules.auth.models import User
 from app.modules.auth.repositories import UserRepository
 from app.modules.auth.twofa import generate_key, generate_qr, verify
-from app.modules.auth.utils.email_helper import send_email_verification
+from app.modules.auth.utils.email_helper import send_email_verification, send_password_change_email
 from app.modules.auth.utils.email_token import confirm_verification_token, generate_verification_token
 from app.modules.profile.models import UserProfile
 from app.modules.profile.repositories import UserProfileRepository
@@ -119,24 +119,8 @@ class AuthenticationService(BaseService):
         return None
 
     def send_recover_email(self, email):
-        resend.api_key = self.RESEND_API_KEY
-        token = secrets.token_hex(6)
-
-        os.environ["TOKEN_KEY"] = token
-
-        params = {
-            "from": "Acme <onboarding@resend.dev>",
-            "to": [email],
-            "subject": "FoodHub password change",
-            "html": """
-                <p>This is the your key for changing your password</p>
-                <p><strong>{token}</strong></p>
-                """.format(
-                token=token
-            ),
-        }
-
-        email = resend.Emails.send(params)
+        user = self.repository.get_by_email(email)
+        send_password_change_email(user)
 
     def validate_recovery(self, token, new_password, confirm_password):
         return token == os.getenv("TOKEN_KEY") and new_password == confirm_password

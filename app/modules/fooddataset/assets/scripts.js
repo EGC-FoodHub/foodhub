@@ -213,3 +213,65 @@ function validateTempFile(filename, statusElementId) {
         statusEl.innerHTML = `<span class="badge bg-warning">Check Failed</span>`;
     });
 }
+
+document.addEventListener('click', function(e) {
+
+    if (e.target.closest('.trending-view-link')) {
+        e.preventDefault();
+        var link = e.target.closest('.trending-view-link');
+        var datasetId = link.getAttribute('data-dataset-id');
+        var datasetUrl = link.getAttribute('href');
+
+        fetch('/food/dataset/' + datasetId + '/view', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(function(response) { 
+            return response.json(); 
+        })
+        .then(function(data) {
+            if (!data.success) {
+                console.error('Error registering view:', data.message);
+            }
+            window.location.href = datasetUrl;
+        })
+        .catch(function(error) { 
+            console.error('Error:', error);
+            // Redirigir de todos modos
+            window.location.href = datasetUrl;
+        });
+    }
+
+    if (e.target.closest('.trending-download-link')) {
+        e.preventDefault();
+        var link = e.target.closest('.trending-download-link');
+        var datasetId = link.getAttribute('data-dataset-id');
+        var downloadUrl = link.getAttribute('href');
+        
+        fetch('/food/dataset/' + datasetId + '/download', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(function(response) { 
+            return response.json(); 
+        })
+        .then(function(data) {
+            if (!data.success) {
+                console.error('Error registering download:', data.message);
+                alert('Error: ' + data.message);
+            } else {
+                window.location.href = downloadUrl;
+            }
+        })
+        .catch(function(error) { 
+            console.error('Error:', error);
+            alert('Error registering download');
+        });
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+});
