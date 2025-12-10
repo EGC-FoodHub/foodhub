@@ -6,7 +6,6 @@ import tempfile
 import uuid
 from datetime import datetime, timezone
 from zipfile import ZipFile
-import io
 import urllib.request
 import urllib.error
 
