@@ -133,3 +133,58 @@ def delete_file_temp():
         return jsonify({"message": "File deleted successfully"})
 
     return jsonify({"error": "File not found"})
+
+@fooddataset_bp.route("/dataset/trending", methods=["GET"])
+def trending_datasets():
+    try:
+        period = request.args.get("period", "week")
+        limit = request.args.get("limit", 10, type=int)
+        
+        limit = min(limit, 50)
+        
+        if period == "month":
+            trending = food_service.get_trending_monthly(limit=limit)
+            period_label = "This Month"
+        else:
+            trending = food_service.get_trending_weekly(limit=limit)
+            period_label = "This Week"
+        
+        return render_template(
+            "fooddataset/trending.html",
+            trending=trending,
+            period=period,
+            period_label=period_label
+        )
+    except Exception as e:
+        logger.error(f"Error getting trending datasets: {e}")
+        return render_template("fooddataset/trending.html", trending=[], error=str(e))
+
+
+@fooddataset_bp.route("/dataset/<int:dataset_id>/view", methods=["POST"])
+def register_view(dataset_id):
+    try:
+        success = food_service.register_dataset_view(dataset_id)
+        
+        if success:
+            return jsonify({"success": True, "message": "View registered"}), 200
+        else:
+            return jsonify({"success": False, "message": "Dataset not found"}), 404
+            
+    except Exception as e:
+        logger.error(f"Error registering view for dataset {dataset_id}: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@fooddataset_bp.route("/dataset/<int:dataset_id>/download", methods=["POST"])
+def register_download(dataset_id):
+    try:
+        success = food_service.register_dataset_download(dataset_id)
+        
+        if success:
+            return jsonify({"success": True, "message": "Download registered"}), 200
+        else:
+            return jsonify({"success": False, "message": "Dataset not found"}), 404
+            
+    except Exception as e:
+        logger.error(f"Error registering download for dataset {dataset_id}: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
