@@ -33,15 +33,6 @@ class FooddatasetSeeder(BaseSeeder):
         # List all .food files
         food_files = [f for f in os.listdir(src_folder) if f.endswith(".food")]
 
-        # We will create one dataset per user, or distribute them.
-        # Let's create two datasets, one for each user, and distribute the files.
-        # But per the plan, we might want to be simpler.
-        # Let's iterate through files and create a dataset for each, or group them.
-        # The prompt says: "genera un archivo seeders ... parecido al que hay en legacy_code/dataset"
-        # In legacy_code/dataset/seeders.py, it creates 4 datasets.
-
-        # Let's create a few datasets and assign food models to them.
-
         datasets_to_create = 4
         seeded_datasets = []
         seeded_ds_meta_data = []
@@ -85,9 +76,6 @@ class FooddatasetSeeder(BaseSeeder):
             dataset = self.seed([dataset])[0]
             seeded_datasets.append(dataset)
 
-            # Assign dataset back to metadata (if needed by relation, but usually done via ID)
-            # The relationship is already set via ds_meta_data_id in FoodDataset
-
         # 2. Assign Food Models (.food files) to Datasets
         # We distribute the found files among the created datasets
 
@@ -95,9 +83,7 @@ class FooddatasetSeeder(BaseSeeder):
             # Round robin assignment
             dataset_idx = idx % datasets_to_create
             dataset = seeded_datasets[dataset_idx]
-            user_id = (
-                dataset.user_id
-            )  # Re-fetch if needed, but we have it from user object used above? No, dataset.user_id is int.
+            user_id = dataset.user_id
 
             # Name without extension
             base_name = os.path.splitext(file_name)[0]
@@ -113,11 +99,8 @@ class FooddatasetSeeder(BaseSeeder):
             )
             food_meta_data = self.seed([food_meta_data])[0]
 
-            # Create Author for Food Model (Optional, but legacy had authors for models too?)
-            # Legacy FeatureModel didn't have specific authors in the example, but FMMetaData did.
-            # FoodMetaData has authors relationship.
+            # Create Author for Food Model
 
-            # Let's look up the user again
             user = user1 if dataset.user_id == user1.id else user2
             author_name = user.profile.name if user.profile and user.profile.name else "Unknown"
             author_surname = user.profile.surname if user.profile and user.profile.surname else "Author"
@@ -153,15 +136,19 @@ class FooddatasetSeeder(BaseSeeder):
             )
             self.seed([hubfile])
 
-            # Create default dummy nutritional values for the dataset metadata (since it's a FoodDataset)
-            # Or maybe we should parse the .food file? The prompt didn't ask for parsing, just "using the files".
-            # The legacy seeders didn't parse UVL either really.
+            # Parse the .food file to get calories
+            calories_value = "0 kcal"  # Default
+            try:
+                with open(src_file_path, "r") as f:
+                    for line in f:
+                        if line.strip().startswith("calories:"):
+                            calories_value = line.split(":", 1)[1].strip()
+                            break
+            except Exception as e:
+                print(f"Error parsing {file_name}: {e}")
 
-            # Add some dummy nutritional values to the DATASET metadata (FoodDSMetaData)
-            # (Note: FoodNutritionalValue links to FoodDSMetaData, not FoodModel/FoodMetaData)
-            # This seems to be part of the dataset summary maybe?
-
-            # Let's add just one random value per dataset if it doesn't exist yet
-            if not FoodNutritionalValue.query.filter_by(ds_meta_data_id=dataset.ds_meta_data_id).first():
-                nutval = FoodNutritionalValue(ds_meta_data_id=dataset.ds_meta_data_id, name="Energy", value="100 kcal")
-                self.seed([nutval])
+            # Add nutritional value to the DATASET metadata
+            nutval = FoodNutritionalValue(
+                ds_meta_data_id=dataset.ds_meta_data_id, name=f"Energy ({title})", value=calories_value
+            )
+            self.seed([nutval])
