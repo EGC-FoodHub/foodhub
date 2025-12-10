@@ -1,16 +1,17 @@
 import io
 import logging
+import uuid
 import zipfile
 from types import SimpleNamespace
-import uuid
 from unittest.mock import MagicMock
 
 import pytest
+
 from app import create_app
 from app.modules.dataset.services import DataSetService
 
-
 # ------------------ FIXTURES ------------------
+
 
 @pytest.fixture(scope="module")
 def test_client():
@@ -35,6 +36,7 @@ def mock_user():
 
 # ------------------ HELPERS ------------------
 
+
 def create_test_zip(files: dict) -> io.BytesIO:
     """Crea un zip en memoria con archivos dados."""
     zip_bytes = io.BytesIO()
@@ -46,6 +48,7 @@ def create_test_zip(files: dict) -> io.BytesIO:
 
 
 # ------------------ FAKE REPOS ------------------
+
 
 class FakeRepo:
     def __init__(self):
@@ -85,6 +88,7 @@ class FakeHubFileRepo:
 
 
 # ------------------ UNIT TESTS ------------------
+
 
 def test_process_zip_extracts_food_files_only(tmp_path):
     """_process_zip_file extrae solo archivos .food y los registra en hubfilerepository"""
@@ -151,6 +155,7 @@ def test_process_zip_no_matching_files_logs_warning(tmp_path, caplog):
 
 # ------------------ INTEGRATION TESTS ------------------
 
+
 def test_upload_zip_valid(test_client, mock_user, monkeypatch):
     # Mock usuario actual
     monkeypatch.setattr("app.modules.dataset.routes.current_user", mock_user, raising=False)
@@ -208,17 +213,15 @@ def test_create_dataset_from_zip(tmp_path, mock_user):
 
     service = DataSetService()
     service.author_repository = FakeRepo()
-    service.dsmetadata_repository.create = MagicMock(
-        return_value=SimpleNamespace(id=1, authors=[]))
-    service.create = MagicMock(
-        return_value=SimpleNamespace(id=1, feature_models=[]))
+    service.dsmetadata_repository.create = MagicMock(return_value=SimpleNamespace(id=1, authors=[]))
+    service.create = MagicMock(return_value=SimpleNamespace(id=1, feature_models=[]))
 
     service.fmmetadata_repository.create = MagicMock(
-        side_effect=lambda **kwargs: SimpleNamespace(
-            id=uuid.uuid4().int, authors=[]))
+        side_effect=lambda **kwargs: SimpleNamespace(id=uuid.uuid4().int, authors=[])
+    )
     service.feature_model_repository.create = MagicMock(
-        side_effect=lambda **kwargs: SimpleNamespace(
-            id=uuid.uuid4().int, files=[]))
+        side_effect=lambda **kwargs: SimpleNamespace(id=uuid.uuid4().int, files=[])
+    )
     service.hubfilerepository.create = FakeHubFileRepo().create
 
     dataset = service.create_from_zip(form, mock_user)

@@ -3,11 +3,11 @@ import logging
 import os
 import shutil
 import tempfile
+import urllib.error
+import urllib.request
 import uuid
 from datetime import datetime, timezone
 from zipfile import ZipFile
-import urllib.request
-import urllib.error
 
 from flask import abort, jsonify, make_response, redirect, render_template, request, send_from_directory, url_for
 from flask_login import current_user, login_required
@@ -188,7 +188,7 @@ def upload():
     lower = filename.lower()
 
     # If the uploaded file is a ZIP, delegate to upload_zip
-    if lower.endswith('.zip'):
+    if lower.endswith(".zip"):
         # emulate request.files for upload_zip by temporarily setting file in request
         # but simplest is to call the upload_zip logic directly
         return upload_zip()
@@ -320,7 +320,7 @@ def upload_github():
     try:
         # download the zip
         with urllib.request.urlopen(zip_url) as resp:
-            if getattr(resp, 'status', None) and resp.status >= 400:
+            if getattr(resp, "status", None) and resp.status >= 400:
                 return jsonify({"message": f"Failed to download zip: HTTP {resp.status}"}), 400
             with open(tmp.name, "wb") as out:
                 shutil.copyfileobj(resp, out)

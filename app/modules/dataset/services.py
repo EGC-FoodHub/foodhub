@@ -7,11 +7,10 @@ import uuid
 import zipfile
 from typing import Optional
 from urllib.parse import urlparse
-
-from flask import request
-import requests
 from zipfile import ZipFile
 
+import requests
+from flask import request
 
 from app.modules.auth.services import AuthenticationService
 from app.modules.dataset.models import DataSet, DSMetaData, DSViewRecord
@@ -184,10 +183,10 @@ class DataSetService(BaseService):
             raise ValueError("File is not a valid ZIP archive.")
 
         files_count = 0
-        with ZipFile(zip_file_obj, 'r') as zip_ref:
+        with ZipFile(zip_file_obj, "r") as zip_ref:
             for file_path in zip_ref.namelist():
                 # accept both .uvl and .food files inside ZIP
-                if (file_path.endswith('.uvl') or file_path.endswith('.food')) and not file_path.startswith('__MACOSX'):
+                if (file_path.endswith(".uvl") or file_path.endswith(".food")) and not file_path.startswith("__MACOSX"):
                     filename = os.path.basename(file_path)
                     if not filename:
                         continue
@@ -196,22 +195,17 @@ class DataSetService(BaseService):
                         file_content = zip_ref.read(file_path)
                         temp_file_path = os.path.join(temp_folder, filename)
 
-                        with open(temp_file_path, 'wb') as f:
+                        with open(temp_file_path, "wb") as f:
                             f.write(file_content)
 
-                        fmmetadata = self.fmmetadata_repository.create(
-                            commit=False, uvl_filename=filename)
+                        fmmetadata = self.fmmetadata_repository.create(commit=False, uvl_filename=filename)
                         fm = self.feature_model_repository.create(
-                            commit=False, data_set_id=dataset.id,
-                            fm_meta_data_id=fmmetadata.id)
+                            commit=False, data_set_id=dataset.id, fm_meta_data_id=fmmetadata.id
+                        )
 
                         checksum, size = calculate_checksum_and_size(temp_file_path)
                         hubfile = self.hubfilerepository.create(
-                            commit=False,
-                            name=filename,
-                            checksum=checksum,
-                            size=size,
-                            feature_model_id=fm.id
+                            commit=False, name=filename, checksum=checksum, size=size, feature_model_id=fm.id
                         )
                         fm.files.append(hubfile)
 
@@ -269,22 +263,22 @@ class DataSetService(BaseService):
             repo_url = form.github_url.data
 
             parsed_url = urlparse(repo_url)
-            path_parts = parsed_url.path.strip('/').split('/')
+            path_parts = parsed_url.path.strip("/").split("/")
 
-            if parsed_url.hostname != 'github.com' or len(path_parts) < 2:
+            if parsed_url.hostname != "github.com" or len(path_parts) < 2:
                 raise ValueError("Invalid GitHub URL.")
 
             user_name, repo_name = path_parts[0], path_parts[1]
 
             api_url = f"https://api.github.com/repos/{user_name}/{repo_name}"
-            headers = {'Accept': 'application/vnd.github.v3+json'}
+            headers = {"Accept": "application/vnd.github.v3+json"}
             try:
                 repo_info = requests.get(api_url, headers=headers)
                 repo_info.raise_for_status()
-                default_branch = repo_info.json().get('default_branch', 'main')
+                default_branch = repo_info.json().get("default_branch", "main")
             except requests.RequestException as e:
                 logger.warning(f"Could not fetch repo info from GitHub API: {e}. Defaulting to 'main' branch.")
-                default_branch = 'main'
+                default_branch = "main"
 
             zip_url = f"https://github.com/{user_name}/{repo_name}/archive/refs/heads/{default_branch}.zip"
             logger.info(f"Downloading repo from {zip_url}")

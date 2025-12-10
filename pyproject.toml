@@ -33,7 +33,7 @@ packages = ["rosemary"]
 
 [tool.black]
 line-length = 120
-target-version = ["py313"]
+target-version = ["py312"]
 
 [tool.isort]
 line_length = 120
