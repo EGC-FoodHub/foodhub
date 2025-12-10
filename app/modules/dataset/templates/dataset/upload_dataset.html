@@ -499,7 +499,7 @@
 
                 fetch(treesUrl)
                 .then(r => {
-                    if (!r.ok) throw new Error("Could not access GitHub API (public repo?). Status: " + r.status);
+                    if (!r.ok) throw new Error("GitHub repository or Branch not found");
                     return r.json();
                 })
                 .then(data => {

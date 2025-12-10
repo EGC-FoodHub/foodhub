@@ -296,7 +296,7 @@ class DataSetService(BaseService):
         except requests.RequestException as e:
             logger.exception(f"Exception downloading from GitHub: {e}")
             self.repository.session.rollback()
-            raise ValueError(f"Could not download repository from GitHub: {e}")
+            raise ValueError("GitHub repository or Branch not found")
         except Exception as exc:
             logger.exception(f"Exception creating dataset from GitHub...: {exc}")
             self.repository.session.rollback()

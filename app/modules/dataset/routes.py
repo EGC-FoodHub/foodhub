@@ -354,7 +354,10 @@ def upload_github():
         return jsonify({"message": "GitHub repo extracted successfully", "filenames": saved_files}), 200
     except urllib.error.HTTPError as he:
         logger.exception("HTTPError downloading GitHub zip: %s", he)
-        return jsonify({"message": f"HTTP error: {he.code}"}), 400
+        if he.code == 404:
+            return jsonify({"message": "GitHub repository or Branch not found"}), 400
+        else:
+            return jsonify({"message": f"HTTP error: {he.code}"}), 400
     except Exception as e:
         logger.exception("Error downloading/extracting GitHub zip: %s", e)
         return jsonify({"message": str(e)}), 500
