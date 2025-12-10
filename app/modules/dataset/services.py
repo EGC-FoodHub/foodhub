@@ -180,10 +180,10 @@ class DataSetService(BaseService):
             raise ValueError("File is not a valid ZIP archive.")
 
         files_count = 0
-        with ZipFile(zip_file_obj, 'r') as zip_ref:
+        with ZipFile(zip_file_obj, "r") as zip_ref:
             for file_path in zip_ref.namelist():
                 # accept both .uvl and .food files inside ZIP
-                if (file_path.endswith('.food')) and not file_path.startswith('__MACOSX'):
+                if (file_path.endswith(".food")) and not file_path.startswith("__MACOSX"):
                     filename = os.path.basename(file_path)
                     if not filename:
                         continue
@@ -192,20 +192,17 @@ class DataSetService(BaseService):
                         file_content = zip_ref.read(file_path)
                         temp_file_path = os.path.join(temp_folder, filename)
 
-                        with open(temp_file_path, 'wb') as f:
+                        with open(temp_file_path, "wb") as f:
                             f.write(file_content)
 
                         fmmetadata = self.fmmetadata_repository.create(commit=False, uvl_filename=filename)
                         fm = self.feature_model_repository.create(
-                            commit=False, data_set_id=dataset.id, fm_meta_data_id=fmmetadata.id)
+                            commit=False, data_set_id=dataset.id, fm_meta_data_id=fmmetadata.id
+                        )
 
                         checksum, size = calculate_checksum_and_size(temp_file_path)
                         hubfile = self.hubfilerepository.create(
-                            commit=False,
-                            name=filename,
-                            checksum=checksum,
-                            size=size,
-                            feature_model_id=fm.id
+                            commit=False, name=filename, checksum=checksum, size=size, feature_model_id=fm.id
                         )
                         fm.files.append(hubfile)
 

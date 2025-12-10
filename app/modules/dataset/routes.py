@@ -186,7 +186,7 @@ def upload():
     lower = filename.lower()
 
     # If the uploaded file is a ZIP, delegate to upload_zip
-    if lower.endswith('.zip'):
+    if lower.endswith(".zip"):
         return upload_zip()
 
     if not (lower.endswith(".food")):
