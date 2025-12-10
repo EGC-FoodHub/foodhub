@@ -284,6 +284,7 @@ def upload_zip():
         except Exception:
             pass
 
+
 @dataset_bp.route("/dataset/file/delete", methods=["POST"])
 def delete():
     data = request.get_json()

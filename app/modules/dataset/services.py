@@ -196,7 +196,8 @@ class DataSetService(BaseService):
                             f.write(file_content)
 
                         fmmetadata = self.fmmetadata_repository.create(commit=False, uvl_filename=filename)
-                        fm = self.feature_model_repository.create(commit=False, data_set_id=dataset.id, fm_meta_data_id=fmmetadata.id)
+                        fm = self.feature_model_repository.create(
+                            commit=False, data_set_id=dataset.id, fm_meta_data_id=fmmetadata.id)
 
                         checksum, size = calculate_checksum_and_size(temp_file_path)
                         hubfile = self.hubfilerepository.create(
@@ -251,6 +252,7 @@ class DataSetService(BaseService):
             self.repository.session.rollback()
             raise exc
         return dataset
+
 
 class AuthorService(BaseService):
     def __init__(self):
