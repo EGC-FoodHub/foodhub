@@ -483,6 +483,13 @@
                 const urlInput = document.getElementById("gh_url").value.trim();
                 let branch = document.getElementById("gh_branch").value.trim() || 'main';
                 const status = document.getElementById("gh_status");
+                
+                // Clear previous search results
+                const fileListGh = document.getElementById("file-list-gh");
+                if (fileListGh) {
+                    fileListGh.innerHTML = "";
+                }
+                
                 status.style.display = "block";
                 status.innerHTML = "Analyzing repo...";
 
