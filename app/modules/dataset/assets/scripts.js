@@ -144,7 +144,7 @@ var currentId = 0;
                     // process data form
                     const formData = {};
 
-                    // Collect inputs from the basic info form and from all tab panes (local, ZIP)
+                    // Collect inputs from the basic info form and from all tab panes (local, GitHub, ZIP)
                     const basic = document.getElementById('basic_info_form');
                     if (basic) {
                         const inputs = basic.querySelectorAll('input, select, textarea');
@@ -172,7 +172,8 @@ var currentId = 0;
                         const activePane = document.querySelector('.tab-pane.show.active');
                         let importMethod = 'manual';
                         if (activePane) {
-                            if (activePane.id === 'zip_tab') importMethod = 'zip';
+                            if (activePane.id === 'github_tab') importMethod = 'github';
+                            else if (activePane.id === 'zip_tab') importMethod = 'zip';
                             else importMethod = 'manual';
                         }
                         formData['import_method'] = [importMethod];

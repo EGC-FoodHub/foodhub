@@ -6,6 +6,9 @@ import tempfile
 import uuid
 from datetime import datetime, timezone
 from zipfile import ZipFile
+import io
+import urllib.request
+import urllib.error
 
 from flask import abort, jsonify, make_response, redirect, render_template, request, send_from_directory, url_for
 from flask_login import current_user, login_required
@@ -186,7 +189,9 @@ def upload():
     lower = filename.lower()
 
     # If the uploaded file is a ZIP, delegate to upload_zip
-    if lower.endswith(".zip"):
+    if lower.endswith('.zip'):
+        # emulate request.files for upload_zip by temporarily setting file in request
+        # but simplest is to call the upload_zip logic directly
         return upload_zip()
 
     if not (lower.endswith(".food")):
@@ -276,6 +281,82 @@ def upload_zip():
         return jsonify({"message": "ZIP extracted successfully", "filenames": saved_files}), 200
     except Exception as e:
         logger.exception("Error extracting zip file: %s", e)
+        return jsonify({"message": str(e)}), 500
+    finally:
+        try:
+            tmp.close()
+            os.unlink(tmp.name)
+        except Exception:
+            pass
+
+
+@dataset_bp.route("/dataset/file/upload_github", methods=["POST"])
+@login_required
+def upload_github():
+    """Download a GitHub repository as a ZIP and extract files into the user's temp folder.
+
+    Accepts form/json params:
+      - repo: "owner/repo" (optional if zip_url provided)
+      - branch: branch name (optional, defaults to 'main')
+      - zip_url: full URL to a zip (optional, overrides repo/branch)
+    Returns JSON with list of saved filenames.
+    """
+    data = request.form.to_dict() or (request.get_json(silent=True) or {})
+    repo = data.get("repo")
+    branch = data.get("branch") or "main"
+    zip_url = data.get("zip_url")
+
+    if not zip_url:
+        if not repo:
+            return jsonify({"message": "Provide 'repo' (owner/repo) or 'zip_url'"}), 400
+        zip_url = f"https://github.com/{repo}/archive/refs/heads/{branch}.zip"
+
+    if "github.com" not in zip_url:
+        return jsonify({"message": "Only GitHub zip URLs are supported"}), 400
+
+    temp_folder = current_user.temp_folder()
+    os.makedirs(temp_folder, exist_ok=True)
+
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".zip")
+    try:
+        # download the zip
+        with urllib.request.urlopen(zip_url) as resp:
+            if getattr(resp, 'status', None) and resp.status >= 400:
+                return jsonify({"message": f"Failed to download zip: HTTP {resp.status}"}), 400
+            with open(tmp.name, "wb") as out:
+                shutil.copyfileobj(resp, out)
+
+        # extract files as in upload_zip
+        saved_files = []
+        with ZipFile(tmp.name, "r") as z:
+            for member in z.namelist():
+                if member.endswith("/"):
+                    continue
+                member_basename = os.path.basename(member)
+                if not member_basename:
+                    continue
+
+                dest_path = os.path.join(temp_folder, member_basename)
+                base_name, extension = os.path.splitext(member_basename)
+                i = 1
+                while os.path.exists(dest_path):
+                    dest_path = os.path.join(temp_folder, f"{base_name} ({i}){extension}")
+                    i += 1
+
+                with z.open(member) as src, open(dest_path, "wb") as dst:
+                    shutil.copyfileobj(src, dst)
+
+                saved_files.append(os.path.basename(dest_path))
+
+        if not saved_files:
+            return jsonify({"message": "No files extracted from the GitHub ZIP"}), 400
+
+        return jsonify({"message": "GitHub repo extracted successfully", "filenames": saved_files}), 200
+    except urllib.error.HTTPError as he:
+        logger.exception("HTTPError downloading GitHub zip: %s", he)
+        return jsonify({"message": f"HTTP error: {he.code}"}), 400
+    except Exception as e:
+        logger.exception("Error downloading/extracting GitHub zip: %s", e)
         return jsonify({"message": str(e)}), 500
     finally:
         try:

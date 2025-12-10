@@ -102,7 +102,7 @@
                             <h1 class="h3 mb-3 mt-4">
                             Authors
                             <a href="#" data-bs-toggle="modal" data-bs-target="#infoModal">
-                                <i data-feather="info"></i>
+                                <i data-feather="info"></i> <!-- Usamos "info" porque Feather no tiene un ícono específico llamado "feather" para más info -->
                             </a>
                             </h1>
 
@@ -115,7 +115,7 @@
                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
                                 <div class="modal-body">
-                                    Attention! Authors cannot be edited once the dataset has been uploaded to FoodHub. This feature will be available in future versions.
+                                    ¡Cuidado! Los autores no se pueden editar una vez que el dataset se haya subido a UVLHub. Esta funcionalidad estará disponible para futuras versiones.
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
@@ -210,7 +210,7 @@
 
         <div class="col-xl-6 col-lg-12 col-md-12 col-sm-12">
 
-            <h1 class="h3 mb-3 mt-2">Food models</h1>
+            <h1 class="h3 mb-3 mt-2">UVL models</h1>
 
             <div id="uploaded_models_form" style="padding-left: 2rem">
 
@@ -430,7 +430,7 @@
                             this.on('error', function (file, response) {
                                 console.error("Error uploading file: ", response);
                                 let alert = document.createElement('p');
-                                alert.textContent = '.food not valid: ' + file.name;
+                                alert.textContent = 'UVL not valid: ' + file.name;
                                 alerts.appendChild(alert);
                                 alerts.style.display = 'block';
                             });

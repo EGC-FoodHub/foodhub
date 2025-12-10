@@ -1,7 +1,8 @@
 from flask_wtf import FlaskForm
-from flask_wtf.file import FileAllowed, FileField
+from flask_wtf.file import FileField, FileAllowed
 from wtforms import FieldList, FormField, SelectField, StringField, SubmitField, TextAreaField
 from wtforms.validators import URL, DataRequired, Optional
+import re
 
 from app.modules.dataset.models import PublicationType
 
@@ -13,7 +14,7 @@ class AuthorForm(FlaskForm):
     gnd = StringField("GND")
 
     class Meta:
-        csrf = False
+        csrf = False  # disable CSRF because is subform
 
     def get_author(self):
         return {
@@ -72,12 +73,32 @@ class DataSetForm(FlaskForm):
     tags = StringField("Tags (separated by commas)")
     authors = FieldList(FormField(AuthorForm))
     feature_models = FieldList(FormField(FeatureModelForm), min_entries=1)
-    # method of import: manual (uploaded) or zip
-    import_method = SelectField("Import method", choices=[("manual", "Manual"), ("zip", "ZIP")], default="manual")
-
+    # method of import: manual (uploaded), github, or zip
+    import_method = SelectField(
+        "Import method",
+        choices=[('manual', 'Manual'), ('github', 'GitHub'), ('zip', 'ZIP')],
+        default='manual'
+    )
+    
     # --- Campo para subir el ZIP ---
-    zip_file = FileField("ZIP Archive", validators=[Optional(), FileAllowed(["zip"], "Only .zip files are allowed!")])
-
+    zip_file = FileField(
+        'ZIP Archive',
+        validators=[
+            Optional(),
+            FileAllowed(['zip'], 'Only .zip files are allowed!')
+        ]
+    )
+    
+    # --- Campo para la URL de GitHub ---
+    github_url = StringField(
+        'GitHub Repository URL',
+        validators=[
+            Optional(),
+            URL()
+        ],
+        render_kw={"placeholder": "https://github.com/user/repo"}
+    )
+    
     def validate(self, extra_validators=None):
         if not super(DataSetForm, self).validate(extra_validators):
             return False
@@ -85,15 +106,24 @@ class DataSetForm(FlaskForm):
         is_valid = True
         method = self.import_method.data
 
-        if method == "manual":
+        if method == 'manual':
             if not any(fm.uvl_filename.data for fm in self.feature_models):
-                self.feature_models.errors.append("At least one UVL file is required for manual upload.")
+                self.feature_models.errors.append('At least one UVL file is required for manual upload.')
                 is_valid = False
-        elif method == "zip":
+        
+        elif method == 'zip':
             if not self.zip_file.data:
-                self.zip_file.errors.append("A ZIP file is required for this import method.")
+                self.zip_file.errors.append('A ZIP file is required for this import method.')
                 is_valid = False
 
+        elif method == 'github':
+            if not self.github_url.data:
+                self.github_url.errors.append('A GitHub URL is required for this import method.')
+                is_valid = False
+            elif not re.match(r'^https://github\.com/[^/]+/[^/]+/?$', self.github_url.data):
+                self.github_url.errors.append('Invalid GitHub URL. Must be like https://github.com/user/repo')
+                is_valid = False
+        
         return is_valid
 
     submit = SubmitField("Submit")

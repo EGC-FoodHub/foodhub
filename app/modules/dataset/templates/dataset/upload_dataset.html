@@ -101,7 +101,7 @@
                         <h1 class="h3 mb-3 mt-4">
                           Authors
                         <a href="#" data-bs-toggle="modal" data-bs-target="#infoModal">
-                            <i data-feather="info"></i> 
+                            <i data-feather="info"></i> <!-- Usamos "info" porque Feather no tiene un ícono específico llamado "feather" para más info -->
                           </a>
                         </h1>
 
@@ -114,7 +114,7 @@
                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                               </div>
                               <div class="modal-body">
-                                Attention! Authors cannot be edited once the dataset has been uploaded to FoodHub. This feature will be available in future versions.
+                                Attention! Authors cannot be edited once the dataset has been uploaded to UVLHub. This feature will be available in future versions.
                               </div>
                               <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -213,11 +213,14 @@
         <div class="col-xl-6 col-lg-12 col-md-12 col-sm-12">
 
 
-            <h1 class="h3 mb-3 mt-2">Food models</h1>
+            <h1 class="h3 mb-3 mt-2">UVL models</h1>
 
             <ul class="nav nav-tabs" id="uploadTabs" role="tablist">
             <li class="nav-item" role="presentation">
                 <a class="nav-link active" id="local-tab" data-bs-toggle="tab" href="#local_tab" role="tab" aria-controls="local_tab" aria-selected="true">Local file</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" id="github-tab" data-bs-toggle="tab" href="#github_tab" role="tab" aria-controls="github_tab" aria-selected="false">From GitHub repo</a>
             </li>
             <li class="nav-item" role="presentation">
                 <a class="nav-link" id="zip-tab" data-bs-toggle="tab" href="#zip_tab" role="tab" aria-controls="zip_tab" aria-selected="false">From ZIP</a>
@@ -241,6 +244,15 @@
                 </div>
             </div>
 
+            <!-- GITHUB REPO -->
+            <div class="tab-pane fade" id="github_tab" role="tabpanel" aria-labelledby="github-tab">
+
+                {% include "dataset/_upload_github.html" %}
+
+                <div id="gh_status" class="mt-3" style="display:none"></div>
+            </div>
+
+
             <!-- ZIP -->
             <div class="tab-pane fade" id="zip_tab" role="tabpanel" aria-labelledby="zip-tab">
 
@@ -250,7 +262,9 @@
 
             </div>
 
+            {# --- SCRIPTS: Dropzone + GitHub + ZIP (JSZip CDN incluido) --- #}
 
+            {# Asegúrate de que Dropzone y jQuery/Bootstrap JS ya están cargados en tu base template. #}
             <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha512-Ho8qGg5k9GkQmAl9fY2Gxg9rXkqM3nI/6s4k3q5uQ5r3a9Vxjz9u0YwK2N6m9RpXq2zGx9X0cG9Kz7TgGk4h2Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
             <script>
@@ -261,15 +275,16 @@
             }
 
             function processUploadedUVL(filename, fileObj=null) {
+                // Find the file list inside the active tab (so GitHub uploads show in the GitHub tab)
                 function findFileListContainer() {
                     const activePane = document.querySelector('.tab-pane.show.active');
                     if (activePane) {
-                        // look for a list specifically in the active pane (local or zip)
-                        const fl = activePane.querySelector('#file-list') || activePane.querySelector('#file-list-zip');
+                        // look for a list specifically in the active pane (local, github, or zip)
+                        const fl = activePane.querySelector('#file-list') || activePane.querySelector('#file-list-gh') || activePane.querySelector('#file-list-zip');
                         if (fl) return fl;
                     }
                     // fallback to any existing lists on the page
-                    return document.getElementById('file-list') || document.getElementById('file-list-zip');
+                    return document.getElementById('file-list') || document.getElementById('file-list-gh') || document.getElementById('file-list-zip');
                 }
 
                 let fileList = findFileListContainer();
@@ -449,7 +464,7 @@
                         this.on('error', function (file, response) {
                             console.error("Error uploading file: ", response);
                             let alert = document.createElement('p');
-                            alert.textContent = '.food not valid: ' + file.name;
+                            alert.textContent = 'UVL not valid: ' + file.name;
                             alerts.appendChild(alert);
                             alerts.style.display = 'block';
                         });
@@ -463,6 +478,87 @@
                     }
                 });
             }
+
+            /* ---------- GitHub import ---------- */
+
+            document.getElementById("import_repo_btn").addEventListener("click", function (e) {
+                e.preventDefault();
+                const urlInput = document.getElementById("gh_url").value.trim();
+                let branch = document.getElementById("gh_branch").value.trim() || 'main';
+                const status = document.getElementById("gh_status");
+                status.style.display = "block";
+                status.innerHTML = "Analyzing repo...";
+
+                const m = urlInput.match(/github\.com\/([^\/]+)\/([^\/]+)(?:\/|$)/i);
+                if (!m) {
+                    status.innerHTML = "<span class='text-danger'>Invalid GitHub URL</span>";
+                    return;
+                }
+                const owner = m[1];
+                const repo = m[2];
+
+                // Usar API Git trees para listar ficheros (recursivo)
+                const treesUrl = `https://api.github.com/repos/${owner}/${repo}/git/trees/${encodeURIComponent(branch)}?recursive=1`;
+
+                fetch(treesUrl)
+                .then(r => {
+                    if (!r.ok) throw new Error("Could not access GitHub API (public repo?). Status: " + r.status);
+                    return r.json();
+                })
+                .then(data => {
+                    if (!data.tree) throw new Error("Unexpected response from GitHub API");
+                    const uvlFiles = data.tree.filter(item => item.type === 'blob' && (item.path.endsWith('.food')));
+                    if (uvlFiles.length === 0) {
+                        status.innerHTML = "<span class='text-warning'>No .food files found in the repository</span>";
+                        return;
+                    }
+                    status.innerHTML = `Found ${uvlFiles.length} files. Downloading and uploading...`;
+
+                    let uploaded = 0;
+                    uvlFiles.forEach(item => {
+                        const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${item.path}`;
+                        fetch(rawUrl)
+                        .then(r => {
+                            if (!r.ok) throw new Error("Could not be download: " + item.path);
+                            return r.blob();
+                        })
+                        .then(blob => {
+                            const file = new File([blob], item.path.split('/').pop(), { type: 'application/octet-stream' });
+                            const form = new FormData();
+                            form.append('file', file);
+
+                            return fetch('/dataset/file/upload', {
+                                method: 'POST',
+                                body: form
+                            });
+                        })
+                        .then(r => {
+                            if (!r.ok) return r.text().then(t => { throw new Error(t || ('Server error ' + r.status)); });
+                            const ct = r.headers.get('content-type') || '';
+                            if (ct.indexOf('application/json') === -1) return r.text().then(t => { throw new Error(t || 'Invalid JSON response'); });
+                            return r.json();
+                        })
+                        .then(resp => {
+                            if (resp && resp.filename) {
+                                processUploadedUVL(resp.filename);
+                            } else {
+                                processUploadedUVL(item.path.split('/').pop());
+                            }
+                            uploaded++;
+                            status.innerHTML = `${uploaded}/${uvlFiles.length} uploaded`;
+                        })
+                        .catch(err => {
+                            console.error('Error procesando', item.path, err);
+                            status.innerHTML = "<span class='text-danger'>Error uploading " + item.path + ": " + err.message + "</span>";
+                        });
+                    });
+                })
+                .catch(err => {
+                    console.error(err);
+                    status.innerHTML = "<span class='text-danger'>Error importing repository: " + err.message + "</span>";
+                });
+            });
+
 
             /* ---------- ZIP import ---------- */
             // Helper to dynamically load a script and return a Promise that resolves when loaded
@@ -580,9 +676,9 @@
                 <label class="form-check">
                     <input id="agreeCheckbox" class="form-check-input" type="checkbox" value="">
                     <span class="form-check-label" style="font-size: 15px">
-                            I agree to have my feature models automatically uploaded to Zenodo and made available to the public according to the <a
-                        href="https://en.wikipedia.org/wiki/Open_science" target="_blank">Open Science</a> manifesto
-                    </span>
+                                I agree to have my feature models automatically uploaded to Zenodo and made available to the public according to the <a
+                            href="https://en.wikipedia.org/wiki/Open_science" target="_blank">Open Science</a> manifesto
+                            </span>
                 </label>
 
                 <button id="upload_button" class="btn btn-primary mt-2" disabled>
