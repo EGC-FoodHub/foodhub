@@ -317,12 +317,6 @@
                                     xhr.onload = function () {
                                         if (xhr.status === 200) {
                                             console.log('Deleted file from server');
-
-                                            if (dropzone.files.length === 0) {
-                                                document.getElementById("upload_dataset").style.display = "none";
-                                                clean_upload_errors();
-                                            }
-
                                         }
                                     };
                                     xhr.send(JSON.stringify({file: file.name}));

@@ -340,9 +340,6 @@
                     .then(r => {
                         if (r.ok) {
                             console.log('Deleted file from server');
-                            if (!document.querySelector('#file-list li')) {
-                                document.getElementById("upload_dataset").style.display = "none";
-                            }
                         }
                     })
                     .catch(e => console.warn('Error deleting file:', e));
