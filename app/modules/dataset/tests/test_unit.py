@@ -211,9 +211,15 @@ def test_create_dataset_from_zip(tmp_path, mock_user):
     service.dsmetadata_repository.create = MagicMock(return_value=SimpleNamespace(id=1, authors=[]))
     service.create = MagicMock(return_value=SimpleNamespace(id=1, feature_models=[]))
 
-    service.fmmetadata_repository.create = MagicMock(side_effect=lambda **kwargs: SimpleNamespace(id=uuid.uuid4().int, authors=[]))
-    service.feature_model_repository.create = MagicMock(side_effect=lambda **kwargs: SimpleNamespace(id=uuid.uuid4().int, files=[]))
-    service.hubfilerepository.create = FakeHubFileRepo().create  
+    def _make_fm_meta(**kwargs):
+        return SimpleNamespace(id=uuid.uuid4().int, authors=[])
+
+    def _make_fm_obj(**kwargs):
+        return SimpleNamespace(id=uuid.uuid4().int, files=[])
+
+    service.fmmetadata_repository.create = MagicMock(side_effect=_make_fm_meta)
+    service.feature_model_repository.create = MagicMock(side_effect=_make_fm_obj)
+    service.hubfilerepository.create = FakeHubFileRepo().create
 
     dataset = service.create_from_zip(form, mock_user)
     assert dataset is not None
