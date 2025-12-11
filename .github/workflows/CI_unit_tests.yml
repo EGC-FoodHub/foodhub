@@ -14,7 +14,9 @@ jobs:
       MARIADB_PASSWORD: testpassword
       MARIADB_ROOT_PASSWORD: rootpassword
       MARIADB_HOSTNAME: 127.0.0.1
-      MARIADB_PORT: 3306
+      # The MariaDB container maps container:3306 to host:3307 (see services.ports).
+      # CI processes should connect to the host port (3307) on 127.0.0.1.
+      MARIADB_PORT: 3307
       FLASK_ENV: testing
 
     services:
