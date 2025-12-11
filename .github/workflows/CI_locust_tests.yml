@@ -92,7 +92,8 @@ jobs:
 
       - name: Run load tests with Locust
         run: |
-          locust --host=http://localhost:5000 \
+          # Point Locust at the directory containing locustfiles under app/modules
+          locust -f app/modules --host=http://localhost:5000 \
                  --users 50 \
                  --spawn-rate 5 \
                  --run-time 60s \
