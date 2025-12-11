@@ -1,4 +1,7 @@
+
 import pytest
+
+pytestmark = pytest.mark.unit
 
 
 @pytest.fixture(scope="module")

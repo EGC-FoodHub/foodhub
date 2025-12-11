@@ -10,6 +10,8 @@ import pytest
 from app import create_app
 from app.modules.dataset.services import DataSetService
 
+pytestmark = pytest.mark.unit
+
 # ------------------ FIXTURES ------------------
 
 

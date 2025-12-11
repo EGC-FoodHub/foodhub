@@ -4,6 +4,8 @@ import pytest
 
 from app import create_app
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.fixture(scope="module")
 def test_client():

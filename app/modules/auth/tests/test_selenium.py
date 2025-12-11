@@ -1,4 +1,5 @@
 import time
+import pytest
 
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
@@ -8,7 +9,9 @@ from core.environment.host import get_host_for_selenium_testing
 from core.selenium.common import close_driver, initialize_driver
 
 
+@pytest.mark.selenium
 def test_login_and_check_element():
+    """Selenium E2E: open login page, submit, and check for dashboard heading."""
 
     driver = initialize_driver()
 
@@ -35,18 +38,10 @@ def test_login_and_check_element():
         time.sleep(4)
 
         try:
-
             driver.find_element(By.XPATH, "//h1[contains(@class, 'h2 mb-3') and contains(., 'Latest datasets')]")
-            print("Test passed!")
-
         except NoSuchElementException:
-            raise AssertionError("Test failed!")
+            pytest.fail("Expected dashboard heading not found after login")
 
     finally:
-
         # Close the browser
         close_driver(driver)
-
-
-# Call the test function
-test_login_and_check_element()

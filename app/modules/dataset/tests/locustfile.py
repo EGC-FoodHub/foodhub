@@ -1,7 +1,10 @@
 from locust import HttpUser, TaskSet, task
+import pytest
 
 from core.environment.host import get_host_for_locust_testing
 from core.locust.common import get_csrf_token
+
+pytestmark = pytest.mark.load
 
 
 class DatasetBehavior(TaskSet):

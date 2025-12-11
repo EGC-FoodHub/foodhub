@@ -1,9 +1,12 @@
+
 import pytest
 
 from app import db
 from app.modules.auth.models import User
 from app.modules.conftest import login, logout
 from app.modules.profile.models import UserProfile
+
+pytestmark = pytest.mark.unit
 
 
 @pytest.fixture(scope="module")

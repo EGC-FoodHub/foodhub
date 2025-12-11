@@ -1,5 +1,6 @@
 import os
 import time
+import pytest
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -26,6 +27,7 @@ def count_datasets(driver, host):
     return amount_datasets
 
 
+@pytest.mark.selenium
 def test_upload_dataset():
     driver = initialize_driver()
 
@@ -127,10 +129,5 @@ def test_upload_dataset():
         print("Test passed!")
 
     finally:
-
         # Close the browser
         close_driver(driver)
-
-
-# Call the test function
-test_upload_dataset()
