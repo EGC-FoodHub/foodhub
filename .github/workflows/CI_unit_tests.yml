@@ -1,0 +1,83 @@
+name: Tests Unitarios
+
+on:
+  push:
+
+jobs:
+  tests-unitarios:
+    name: Pytest
+    runs-on: ubuntu-24.04
+
+    env:
+      MARIADB_DATABASE: foodhub_test
+      MARIADB_USER: test
+      MARIADB_PASSWORD: testpassword
+      MARIADB_ROOT_PASSWORD: rootpassword
+      MARIADB_HOSTNAME: 127.0.0.1
+      MARIADB_PORT: 3306
+      FLASK_ENV: testing
+
+    services:
+      mariadb:
+        image: mariadb:11.3
+        env:
+          MARIADB_ROOT_PASSWORD: ${{ env.MARIADB_ROOT_PASSWORD }}
+          MARIADB_DATABASE: ${{ env.MARIADB_DATABASE }}
+          MARIADB_USER: ${{ env.MARIADB_USER }}
+          MARIADB_PASSWORD: ${{ env.MARIADB_PASSWORD }}
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -u$$MARIADB_USER -p$$MARIADB_PASSWORD"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+
+      - name: Obtener código
+        uses: actions/checkout@v5
+
+      - name: Configurar Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Eliminar rosemary en modo editable
+        run: sed -i '/rosemary @ file:\/\/\/app/d' requirements.txt
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Esperar a que MariaDB esté listo
+        run: |
+          for i in {1..30}; do
+            if mysqladmin ping -h"$MARIADB_HOSTNAME" -u"$MARIADB_USER" -p"$MARIADB_PASSWORD" --silent; then
+              echo "MariaDB está listo"
+              break
+            fi
+            echo "Esperando a MariaDB ($i/30)..."
+            sleep 2
+          done
+
+      - name: Ejecutar tests unitarios
+        run: pytest -m unit -v --cov=app --cov-report=term-missing --cov-report=xml --cov-report=html --cov-fail-under=25
+
+      - name: Subir reporte HTML de cobertura
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reporte-cobertura-unitarios-${{ github.sha }}
+          path: htmlcov/
+          retention-days: 30
+
+      - name: Resumen de cobertura
+        if: always()
+        run: |
+          echo "## 📊 Reporte de Cobertura - Tests Unitarios" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          coverage report >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
