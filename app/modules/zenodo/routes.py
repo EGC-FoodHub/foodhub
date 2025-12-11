@@ -12,4 +12,5 @@ def index():
 @zenodo_bp.route("/zenodo/test", methods=["GET"])
 def zenodo_test() -> dict:
     service = ZenodoService()
-    return service.test_full_connection()
+    print(service.test_connection())
+    return service.test_connection()

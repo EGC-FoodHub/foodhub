@@ -20,8 +20,10 @@ class ZenodoService(BaseService):
 
         self.ZENODO_ACCESS_TOKEN = os.getenv("ZENODO_ACCESS_TOKEN")
         self.ZENODO_API_URL = self.get_zenodo_url()
-        self.headers = {"Content-Type": "application/json"}
-        self.params = {"access_token": self.ZENODO_ACCESS_TOKEN}
+        self.headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.ZENODO_ACCESS_TOKEN}"
+        }
 
     def get_zenodo_url(self):
         FLASK_ENV = os.getenv("FLASK_ENV", "development")
@@ -30,9 +32,6 @@ class ZenodoService(BaseService):
         return os.getenv("ZENODO_API_URL", "https://sandbox.zenodo.org/api/deposit/depositions")
 
     def create_new_deposition(self, dataset: FoodDataset) -> dict:
-        """
-        Crea una nueva deposición en Zenodo usando metadatos de FoodDataset.
-        """
         logger.info("Dataset sending to Zenodo...")
 
         pub_type = "none"
@@ -40,30 +39,39 @@ class ZenodoService(BaseService):
             pub_type = dataset.ds_meta_data.publication_type.value
 
         metadata = {
-            "title": dataset.ds_meta_data.title,
-            "upload_type": "dataset" if pub_type == "none" else "publication",
-            "publication_type": pub_type if pub_type != "none" else None,
-            "description": dataset.ds_meta_data.description,
-            "creators": [
-                {"name": author.name, "affiliation": author.affiliation or "", "orcid": author.orcid or ""}
-                for author in dataset.ds_meta_data.authors
-            ],
-            "keywords": ["foodhub"] + (dataset.ds_meta_data.tags.split(", ") if dataset.ds_meta_data.tags else []),
-            "access_right": "open",
-            "license": "CC-BY-4.0",
+            "metadata": {
+                "title": dataset.ds_meta_data.title,
+                "upload_type": "dataset" if pub_type == "none" else "publication",
+                "publication_type": pub_type if pub_type != "none" else None,
+                "description": dataset.ds_meta_data.description,
+                "creators": [
+                    {"name": author.name, "affiliation": author.affiliation or "", "orcid": author.orcid or ""}
+                    for author in dataset.ds_meta_data.authors
+                ],
+                "keywords": ["foodhub"] + (
+                    dataset.ds_meta_data.tags.split(", ") if dataset.ds_meta_data.tags else []
+                ),
+                "access_right": "open",
+                "license": "CC-BY-4.0",
+            }
         }
 
         response = requests.post(
-            self.ZENODO_API_URL, params=self.params, json={"metadata": metadata}, headers=self.headers
+            self.ZENODO_API_URL,
+            json=metadata,
+            headers=self.headers
         )
+
         if response.status_code != 201:
-            raise Exception(f"Failed to create deposition: {response.json()}")
+            raise Exception(f"Failed to create deposition: {response.text}")
+
         return response.json()
 
     def upload_file(self, dataset: FoodDataset, deposition_id: int, food_model: FoodModel) -> dict:
         """
         Sube un archivo .food a Zenodo.
         """
+
         filename = food_model.food_meta_data.food_filename
         user_id = dataset.user_id
 
@@ -72,32 +80,59 @@ class ZenodoService(BaseService):
         if not os.path.exists(file_path):
             raise Exception(f"File not found at {file_path}")
 
+        # Zenodo requiere multipart/form-data → NO usar json
         files = {"file": open(file_path, "rb")}
-        publish_url = f"{self.ZENODO_API_URL}/{deposition_id}/files"
 
-        response = requests.post(publish_url, params=self.params, data={"name": filename}, files=files)
+        upload_url = f"{self.ZENODO_API_URL}/{deposition_id}/files"
+
+        response = requests.post(
+            upload_url,
+            headers={"Authorization": f"Bearer {self.ZENODO_ACCESS_TOKEN}"},  # Token correcto
+            data={"name": filename},
+            files=files
+        )
+
         files["file"].close()
 
         if response.status_code != 201:
-            raise Exception(f"Failed to upload file: {response.json()}")
+            raise Exception(f"Failed to upload file: {response.text}")
+
         return response.json()
+
+
 
     def publish_deposition(self, deposition_id: int) -> dict:
         publish_url = f"{self.ZENODO_API_URL}/{deposition_id}/actions/publish"
-        response = requests.post(publish_url, params=self.params, headers=self.headers)
+
+        response = requests.post(
+            publish_url,
+            headers={"Authorization": f"Bearer {self.ZENODO_ACCESS_TOKEN}"}
+        )
+
         if response.status_code != 202:
-            raise Exception("Failed to publish deposition")
+            raise Exception(f"Failed to publish deposition: {response.text}")
+
         return response.json()
 
+
+
     def get_deposition(self, deposition_id: int) -> dict:
-        response = requests.get(f"{self.ZENODO_API_URL}/{deposition_id}", params=self.params, headers=self.headers)
+        response = requests.get(
+            f"{self.ZENODO_API_URL}/{deposition_id}",
+            headers={"Authorization": f"Bearer {self.ZENODO_ACCESS_TOKEN}"}
+        )
+
         if response.status_code != 200:
-            raise Exception("Failed to get deposition")
+            raise Exception(f"Failed to get deposition: {response.text}")
+
         return response.json()
 
     def get_doi(self, deposition_id: int) -> str:
         return self.get_deposition(deposition_id).get("doi")
 
     def test_connection(self) -> bool:
-        response = requests.get(self.ZENODO_API_URL, params=self.params, headers=self.headers)
+        response = requests.get(
+            self.ZENODO_API_URL,
+            headers={"Authorization": f"Bearer {self.ZENODO_ACCESS_TOKEN}"}
+        )
         return response.status_code == 200
