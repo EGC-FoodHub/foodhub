@@ -28,14 +28,6 @@ jobs:
         # map container 3306 to a non-standard host port to avoid conflicts on the runner
         ports:
           - 3307:3306
-        # Provide Docker options for the MariaDB service. Avoid placing '#' comment
-        # lines inside the folded scalar below — they become part of the string and
-        # will be passed to `docker create`, which breaks container creation.
-        options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -u root -p$$MARIADB_ROOT_PASSWORD --silent"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
 
     steps:
 
