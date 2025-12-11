@@ -100,8 +100,6 @@ jobs:
                  --headless \
                  --html reports/locust_report.html \
                  --csv reports/locust_stats \
-                 --exit-code-on-error 0
-        continue-on-error: true
 
       - name: Upload Locust HTML report
         uses: actions/upload-artifact@v4
