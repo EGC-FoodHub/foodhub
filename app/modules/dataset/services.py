@@ -172,7 +172,6 @@ class DataSetService(BaseService):
     def _process_zip_file(self, dataset, zip_file_obj, current_user):
         """
         Procesa un objeto 'file-like' de ZIP.
-        Extrae los archivos .uvl al temp_folder y los registra como FeatureModel + HubFile.
         NO hace commit.
         """
         temp_folder = current_user.temp_folder()
@@ -185,8 +184,8 @@ class DataSetService(BaseService):
         files_count = 0
         with ZipFile(zip_file_obj, "r") as zip_ref:
             for file_path in zip_ref.namelist():
-                # accept both .uvl and .food files inside ZIP
-                if (file_path.endswith(".uvl") or file_path.endswith(".food")) and not file_path.startswith("__MACOSX"):
+                # accept only .food files inside ZIP
+                if (file_path.endswith(".food")) and not file_path.startswith("__MACOSX"):
                     filename = os.path.basename(file_path)
                     if not filename:
                         continue
@@ -214,7 +213,7 @@ class DataSetService(BaseService):
                         logger.warning(f"Failed to process file '{filename}' from ZIP: {e}")
 
         if files_count == 0:
-            logger.warning(f"No .uvl files found in the provided ZIP archive for dataset {dataset.id}.")
+            logger.warning(f"No .food files found in the provided ZIP archive for dataset {dataset.id}.")
 
     def _create_dataset_shell(self, form, current_user) -> DataSet:
         """
