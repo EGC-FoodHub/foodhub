@@ -1,0 +1,128 @@
+name: Selenium Tests
+
+on:
+  push:
+
+jobs:
+  tests-e2e:
+    name: Selenium
+    runs-on: ubuntu-24.04
+
+    env:
+      MARIADB_DATABASE: foodhub_test
+      MARIADB_USER: test
+      MARIADB_PASSWORD: testpassword
+      MARIADB_ROOT_PASSWORD: rootpassword
+      MARIADB_HOSTNAME: 127.0.0.1
+      MARIADB_PORT: 3306
+      FLASK_ENV: testing
+      FLASK_APP_NAME: MaterialsHub
+      DOMAIN: localhost
+      SECRET_KEY: test-secret-key-for-ci
+
+    services:
+      mariadb:
+        image: mariadb:11.3
+        env:
+          MARIADB_ROOT_PASSWORD: ${{ env.MARIADB_ROOT_PASSWORD }}
+          MARIADB_DATABASE: ${{ env.MARIADB_DATABASE }}
+          MARIADB_USER: ${{ env.MARIADB_USER }}
+          MARIADB_PASSWORD: ${{ env.MARIADB_PASSWORD }}
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -u$$MARIADB_USER -p$$MARIADB_PASSWORD"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+      chrome:
+        image: selenium/standalone-chrome:latest
+        ports:
+          - 4444:4444
+        options: --shm-size=2g  # Avoid Chrome crashes in CI
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Remove rosemary editable entry
+        run: sed -i '/rosemary @ file:\/\/\/app/d' requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e .
+
+      - name: Wait for MariaDB
+        run: |
+          for i in {1..30}; do
+            if mysqladmin ping -h"$MARIADB_HOSTNAME" -u"$MARIADB_USER" -p"$MARIADB_PASSWORD" --silent; then
+              echo "MariaDB ready"
+              break
+            fi
+            echo "Waiting for MariaDB ($i/30)..."
+            sleep 2
+          done
+
+      - name: Setup database
+        run: |
+          rosemary db:upgrade
+          rosemary db:seed
+
+      - name: Start Flask app
+        run: |
+          flask run --host=0.0.0.0 --port=5000 &
+          echo $! > flask.pid
+          sleep 10
+
+      - name: Health check
+        run: |
+          curl -f http://localhost:5000/ || exit 1
+          echo "Flask running"
+
+      - name: Wait for Selenium
+        run: |
+          timeout 30 bash -c 'until curl -s http://localhost:4444/wd/hub/status | grep -q "ready"; do sleep 1; done'
+          echo "Selenium ready"
+
+      - name: Run interface tests
+        env:
+          SELENIUM_REMOTE_URL: http://localhost:4444/wd/hub
+          BASE_URL: http://host.docker.internal:5000
+        run: |
+          if pytest --collect-only -m selenium 2>&1 | grep -q "no tests ran"; then
+            exit 0
+          else
+            pytest -m selenium -v --tb=short
+          fi
+        continue-on-error: true
+
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: selenium-interface-screenshots-${{ github.sha }}
+          path: |
+            screenshots/
+            test-results/
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Summary
+        if: always()
+        run: echo "## Selenium Interface Tests Results" >> $GITHUB_STEP_SUMMARY
+
+      - name: Stop Flask
+        if: always()
+        run: |
+          if [ -f flask.pid ]; then
+            kill $(cat flask.pid) || true
+          fi
