@@ -275,7 +275,7 @@ class BaseDSViewRecord(db.Model):
 
 class BaseDSMetrics(db.Model):
     __tablename__ = "ds_metrics"
-
+    
     id = db.Column(db.Integer, primary_key=True)
     dataset_id = db.Column(db.Integer, db.ForeignKey("base_dataset.id"))
 

@@ -42,6 +42,7 @@ class Author(db.Model):
 
 
 class DSMetrics(db.Model):
+    __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)
     number_of_models = db.Column(db.String(120))
     number_of_features = db.Column(db.String(120))
@@ -51,6 +52,7 @@ class DSMetrics(db.Model):
 
 
 class DSMetaData(db.Model):
+    __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)
     deposition_id = db.Column(db.Integer)
     title = db.Column(db.String(120), nullable=False)
@@ -65,6 +67,7 @@ class DSMetaData(db.Model):
 
 
 class DataSet(db.Model):
+    __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
 
@@ -132,6 +135,7 @@ class DataSet(db.Model):
 
 
 class DSDownloadRecord(db.Model):
+    __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
     dataset_id = db.Column(db.Integer, db.ForeignKey("data_set.id"))
@@ -148,6 +152,7 @@ class DSDownloadRecord(db.Model):
 
 
 class DSViewRecord(db.Model):
+    __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
     dataset_id = db.Column(db.Integer, db.ForeignKey("data_set.id"))
@@ -159,6 +164,7 @@ class DSViewRecord(db.Model):
 
 
 class DOIMapping(db.Model):
+    __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)
     dataset_doi_old = db.Column(db.String(120))
     dataset_doi_new = db.Column(db.String(120))
