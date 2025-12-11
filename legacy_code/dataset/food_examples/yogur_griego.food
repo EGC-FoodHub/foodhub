@@ -1,0 +1,10 @@
+name: Yogur Griego
+calories: 59 kcal
+type: DAIRY
+nutritional_values:
+  protein: 10g
+  carbohydrates: 3.6g
+  fat: 0.4g
+  calcium: 11%
+  vitamin_b12: 13%
+  probiotics: true

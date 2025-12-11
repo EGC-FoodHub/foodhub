@@ -1,0 +1,33 @@
+<div class="card mb-4 border-info">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0">
+            <i data-feather="map"></i>
+            Food
+        </h5>
+    </div>
+    <div class="card-body">
+        <p class="text-muted">
+            Upload Food files. 
+        </p>
+        
+        <form action="/dataset/file/upload" 
+              class="dropzone dz-clickable" 
+              id="foodDropzone">
+            <div class="dz-message">
+                <div class="dz-message-icon">
+                    <i data-feather="upload-cloud" style="width: 48px; height: 48px;"></i>
+                </div>
+                <div class="dz-message-text">
+                    <h6>Drop Food files here or click to browse</h6>
+                    <span class="note">Allowed: <code>.food</code></span>
+                </div>
+            </div>
+        </form>
+
+        <!-- Lista de archivos subidos -->
+        <ul id="food-file-list" class="list-unstyled mt-3"></ul>
+        
+        <!-- Alertas -->
+        <div id="food-alerts"></div>
+    </div>
+</div>

@@ -1,0 +1,28 @@
+#!/bin/sh
+#
+# An example hook script to verify what is about to be committed.
+# Called by "git commit" with no arguments.  The hook should
+# exit with non-zero status after issuing an appropriate message if
+# it wants to stop the commit.
+#
+# To enable this hook, rename this file to "pre-commit".
+
+# Run import sorter and formatter on project folders before commit.
+# If these tools fail, abort the commit.
+if command -v isort >/dev/null 2>&1
+then
+	echo "Running isort on app rosemary core..."
+	isort app rosemary core || { echo "isort failed. Aborting commit." >&2; exit 1; }
+else
+	echo "isort not found in PATH; skipping isort." >&2
+fi
+
+if command -v black >/dev/null 2>&1
+then
+	echo "Running black on app rosemary core..."
+	black app rosemary core || { echo "black failed. Aborting commit." >&2; exit 1; }
+else
+	echo "black not found in PATH; skipping black." >&2
+fi
+
+# Final whitespace check and exit (use exec so Git sees the correct exit code).

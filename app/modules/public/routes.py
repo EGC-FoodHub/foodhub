@@ -2,8 +2,8 @@ import logging
 
 from flask import render_template
 
-from app.modules.dataset.services import DataSetService
-from app.modules.featuremodel.services import FeatureModelService
+# Usamos el servicio de FoodDataset (que hereda de BaseDataset)
+from app.modules.fooddataset.services import FoodDatasetService
 from app.modules.public import public_bp
 
 logger = logging.getLogger(__name__)
@@ -12,28 +12,27 @@ logger = logging.getLogger(__name__)
 @public_bp.route("/")
 def index():
     logger.info("Access index")
-    dataset_service = DataSetService()
-    feature_model_service = FeatureModelService()
 
-    # Statistics: total datasets and feature models
+    # Usamos FoodDatasetService para obtener datos reales
+    dataset_service = FoodDatasetService()
+
+    # Statistics: total datasets (synchronized)
     datasets_counter = dataset_service.count_synchronized_datasets()
-    feature_models_counter = feature_model_service.count_feature_models()
 
-    # Statistics: total downloads
+    # Statistics: total downloads & views (Genérico para el dataset)
     total_dataset_downloads = dataset_service.total_dataset_downloads()
-    total_feature_model_downloads = feature_model_service.total_feature_model_downloads()
-
-    # Statistics: total views
     total_dataset_views = dataset_service.total_dataset_views()
-    total_feature_model_views = feature_model_service.total_feature_model_views()
+
+    # ELIMINADO: Contadores de FeatureModel (ya no aplican)
 
     return render_template(
         "public/index.html",
         datasets=dataset_service.latest_synchronized(),
         datasets_counter=datasets_counter,
-        feature_models_counter=feature_models_counter,
         total_dataset_downloads=total_dataset_downloads,
-        total_feature_model_downloads=total_feature_model_downloads,
         total_dataset_views=total_dataset_views,
-        total_feature_model_views=total_feature_model_views,
+        # Si la plantilla HTML espera estas variables, pásalas como 0 para no romper el frontend
+        feature_models_counter=0,
+        total_feature_model_downloads=0,
+        total_feature_model_views=0,
     )

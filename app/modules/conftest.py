@@ -28,7 +28,7 @@ def test_client(test_app):
             The test suite always includes the following user in order to avoid repetition
             of its creation
             """
-            user_test = User(email="test@example.com", password="test1234")
+            user_test = User(email="test@example.com", password="test1234", is_email_verified=True)
             db.session.add(user_test)
             db.session.commit()
 
