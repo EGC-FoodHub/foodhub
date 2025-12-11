@@ -118,9 +118,17 @@ class AuthenticationService(BaseService):
             return self.repository.get_by_email(email)
         return None
 
+    def generate_recovery_token(self):
+        token = secrets.token_hex(6)
+        os.environ["TOKEN_KEY"] = token
+        return token
+
     def send_recover_email(self, email):
+        token = self.generate_recovery_token()
         user = self.repository.get_by_email(email)
-        send_password_change_email(user)
+        email = send_password_change_email(user, token)
+        
+        return email
 
     def validate_recovery(self, token, new_password, confirm_password):
         return token == os.getenv("TOKEN_KEY") and new_password == confirm_password

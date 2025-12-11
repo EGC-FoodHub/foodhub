@@ -83,7 +83,7 @@ def send_email_verification(user: User):
     except requests.exceptions.RequestException as e:
         print(f"Error sending verification email: {e}")
 
-def send_password_change_email(user: User):
+def send_password_change_email(user: User, token):
     if not BREVO_API_KEY:
         print("Error: BREVO_API_KEY no está configurada")
         return False
@@ -91,9 +91,6 @@ def send_password_change_email(user: User):
     if not SENDER_EMAIL:
         print("Error: SENDER_EMAIL no está configurada")
         return False
-
-    token = secrets.token_hex(6)
-    os.environ["TOKEN_KEY"] = token
 
     html_template = f"""
     <!DOCTYPE html>
@@ -141,5 +138,6 @@ def send_password_change_email(user: User):
         response = requests.post(url, json=data, headers=headers)
         response.raise_for_status()
         print(f"Verification email sent to {user.email}")
+        return data
     except requests.exceptions.RequestException as e:
         print(f"Error sending verification email: {e}")

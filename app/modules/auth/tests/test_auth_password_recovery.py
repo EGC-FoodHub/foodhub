@@ -1,4 +1,5 @@
 import os
+
 from unittest.mock import Mock, patch
 
 import pytest
@@ -14,22 +15,32 @@ class TestAuthPasswordRecovery:
 
     def test_send_recover_email(self, auth_service):
         """Test envío de email de recuperación"""
-        with patch("app.modules.auth.services.resend.Emails.send") as mock_send:
-            with patch("app.modules.auth.services.secrets.token_hex", return_value="abc123"):
-                # Limpiar variable de entorno si existe
-                if "TOKEN_KEY" in os.environ:
-                    del os.environ["TOKEN_KEY"]
+        # Limpiar variable de entorno si existe
+        
+        mock_user = Mock()
+        mock_user.email="test@example.com"
 
-                auth_service.send_recover_email("test@example.com")
+        with patch.dict(os.environ, {"TOKEN_KEY": ""}, clear=False):
+            with patch.object(auth_service.repository, "get_by_email", return_value=mock_user):
+                with patch("app.modules.auth.services.send_password_change_email") as mock_send:
+                    # Parchar el token
+                    with patch("app.modules.auth.services.secrets.token_hex", return_value="abc123"):
 
-                mock_send.assert_called_once()
-                assert os.environ.get("TOKEN_KEY") == "abc123"
+                        # Llamamos a la función real, NO parcheada
+                        auth_service.send_recover_email(mock_user.email)
 
-                # Verificar parámetros del email
-                call_args = mock_send.call_args[0][0]
-                assert call_args["to"] == ["test@example.com"]
-                assert call_args["subject"] == "FoodHub password change"
-                assert "abc123" in call_args["html"]
+                        # Comprobaciones
+                        mock_send.assert_called_once()
+
+                        # Capturar argumentos de la llamada
+                        args, kwargs = mock_send.call_args
+
+                        user_arg = args[0]
+                        token_arg = args[1]
+
+                        assert user_arg.email == "test@example.com"
+                        assert token_arg == "abc123"
+
 
     def test_validate_recovery_success(self, auth_service):
         """Test validación de recuperación exitosa"""
