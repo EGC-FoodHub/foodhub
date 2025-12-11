@@ -6,7 +6,7 @@ from app import db
 from app.modules.auth.models import User
 from app.modules.conftest import login, logout
 from app.modules.profile.models import UserProfile
-from app.modules.dataset.models import DSMetaData, DataSet, PublicationType
+from app.modules.basedataset.models import BaseDSMetaData, BaseDataset, BasePublicationType
 
 
 @pytest.fixture(scope="module")
@@ -43,18 +43,17 @@ def user_with_datasets(test_client):
         db.session.add(profile)
 
         for i in range(2):
-            meta = DSMetaData(
+            meta = BaseDSMetaData(
                 title=f"Dataset {i}", 
                 description=f"Desc {i}",
-                publication_type=PublicationType.JOURNAL_ARTICLE,
+                publication_type=BasePublicationType.JOURNAL_ARTICLE,
                 tags="test"
             )
             db.session.add(meta)
             db.session.flush() 
 
-            dataset = DataSet(
-                user_id=user_id, 
-                ds_meta_data_id=meta.id, 
+            dataset = BaseDataset(
+                user_id=user_id,  
                 created_at=datetime.utcnow()
             )
             db.session.add(dataset)
@@ -65,7 +64,7 @@ def user_with_datasets(test_client):
 
     with test_client.application.app_context():
         if user_id:
-            DataSet.query.filter_by(user_id=user_id).delete()
+            BaseDataset.query.filter_by(user_id=user_id).delete()
             UserProfile.query.filter_by(user_id=user_id).delete()
             User.query.filter_by(id=user_id).delete()
             db.session.commit()

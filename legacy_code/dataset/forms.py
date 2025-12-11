@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import FieldList, FormField, SelectField, StringField, SubmitField, TextAreaField
 from wtforms.validators import URL, DataRequired, Optional
 
-from app.modules.dataset.models import PublicationType
+from app.modules.basedataset.models import BasePublicationType
 
 
 class AuthorForm(FlaskForm):
@@ -28,7 +28,7 @@ class FeatureModelForm(FlaskForm):
     desc = TextAreaField("Description", validators=[Optional()])
     publication_type = SelectField(
         "Publication type",
-        choices=[(pt.value, pt.name.replace("_", " ").title()) for pt in PublicationType],
+        choices=[(pt.value, pt.name.replace("_", " ").title()) for pt in BasePublicationType],
         validators=[Optional()],
     )
     publication_doi = StringField("Publication DOI", validators=[Optional(), URL()])
@@ -59,7 +59,7 @@ class DataSetForm(FlaskForm):
     desc = TextAreaField("Description", validators=[DataRequired()])
     publication_type = SelectField(
         "Publication type",
-        choices=[(pt.value, pt.name.replace("_", " ").title()) for pt in PublicationType],
+        choices=[(pt.value, pt.name.replace("_", " ").title()) for pt in BasePublicationType],
         validators=[DataRequired()],
     )
     publication_doi = StringField("Publication DOI", validators=[Optional(), URL()])
@@ -84,7 +84,7 @@ class DataSetForm(FlaskForm):
         }
 
     def convert_publication_type(self, value):
-        for pt in PublicationType:
+        for pt in BasePublicationType:
             if pt.value == value:
                 return pt.name
         return "NONE"

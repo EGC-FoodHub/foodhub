@@ -8,8 +8,8 @@ from typing import Optional
 from flask import request
 
 from app.modules.auth.services import AuthenticationService
-from app.modules.dataset.models import DataSet, DSMetaData, DSViewRecord
-from app.modules.dataset.repositories import (
+from app.modules.basedataset.models import BaseDataset, BaseDSMetaData, BaseDSViewRecord
+from app.modules.basedataset.repositories import (
     AuthorRepository,
     DataSetRepository,
     DOIMappingRepository,

@@ -14,7 +14,7 @@ from app.modules.basedataset.models import BaseDSMetaData as DSMetaData
 from app.modules.basedataset.models import BaseDSMetrics as DSMetrics
 from app.modules.basedataset.models import BaseDSViewRecord as DSViewRecord
 from app.modules.basedataset.models import BasePublicationType as PublicationType
-from app.modules.dataset.handlers.food_handler import FoodHandler
+#from app.modules.dataset.handlers.food_handler import FoodHandler
 
 # class PublicationType(Enum):
 #     NONE = "none"

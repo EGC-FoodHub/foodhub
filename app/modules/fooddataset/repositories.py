@@ -50,7 +50,6 @@ class FoodDatasetRepository(BaseDatasetRepository):
     def latest_synchronized(self):
         return (
             self.model.query.join(FoodDSMetaData)
-            .filter(FoodDSMetaData.dataset_doi.isnot(None))
             .order_by(desc(self.model.id))
             .limit(5)
             .all()

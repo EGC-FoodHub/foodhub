@@ -12,10 +12,10 @@ from flask_login import current_user, login_required
 from sqlalchemy.exc import SQLAlchemyError
 
 import app
-from app.modules.dataset import dataset_bp
-from app.modules.dataset.forms import AuthorForm, DataSetForm
-from app.modules.dataset.models import DSDownloadRecord
-from app.modules.dataset.services import (
+from app.modules.basedataset import dataset_bp
+from app.modules.basedataset.forms import AuthorForm, BaseDataSetForm
+from app.modules.basedataset.models import BaseDSDownloadRecord
+from app.modules.basedataset.services import (
     AuthorService,
     DataSetService,
     DOIMappingService,
@@ -41,7 +41,7 @@ ds_view_record_service = DSViewRecordService()
 @dataset_bp.route("/dataset/upload", methods=["GET", "POST"])
 @login_required
 def create_dataset():
-    form = DataSetForm()
+    form = BaseDataSetForm()
     if request.method == "POST":
 
         dataset = None
@@ -104,7 +104,7 @@ def create_dataset():
 @dataset_bp.route("/dataset/save_as_draft", methods=["GET", "POST"])
 @login_required
 def create_dataset_as_draft():
-    form = DataSetForm()
+    form = BaseDataSetForm()
     if request.method == "POST":
 
         dataset = None
@@ -138,8 +138,8 @@ def create_dataset_as_draft():
 def edit_doi_dataset(dataset_id):
     dataset = dataset_service.get_or_404(dataset_id)
 
-    # form = DataSetForm(obj=dataset.ds_meta_data)
-    form = DataSetForm()
+    # form = BaseDataSetForm(obj=dataset.ds_meta_data)
+    form = BaseDataSetForm()
 
     if request.method == "POST":
         result, errors = dataset_service.edit_doi_dataset(dataset, form)
@@ -285,7 +285,7 @@ def download_dataset(dataset_id):
         )
 
     # Check if the download record already exists for this cookie
-    existing_record = DSDownloadRecord.query.filter_by(
+    existing_record = BaseDSDownloadRecord.query.filter_by(
         user_id=current_user.id if current_user.is_authenticated else None,
         dataset_id=dataset_id,
         download_cookie=user_cookie,
@@ -300,7 +300,7 @@ def download_dataset(dataset_id):
             download_cookie=user_cookie,
         )
 
-        logger.info("Created new DSDownloadRecord for dataset=%s cookie=%s", dataset_id, user_cookie)
+        logger.info("Created new BaseDSDownloadRecord for dataset=%s cookie=%s", dataset_id, user_cookie)
 
         # If the user is authenticated, increment their downloaded datasets counter
         try:
@@ -317,7 +317,7 @@ def download_dataset(dataset_id):
             logger.exception("Failed to update user's downloaded_datasets_count")
     else:
         logger.info(
-            "Existing DSDownloadRecord found for dataset=%s cookie=%s user_id=%s",
+            "Existing BaseDSDownloadRecord found for dataset=%s cookie=%s user_id=%s",
             dataset_id,
             user_cookie,
             existing_record.user_id,
@@ -335,7 +335,7 @@ def download_dataset(dataset_id):
                 profile.downloaded_datasets_count = (profile.downloaded_datasets_count or 0) + 1
                 profile.save()
                 logger.info(
-                    "Attached anonymous DSDownloadRecord to user_id=%s and incremented counter to %s",
+                    "Attached anonymous BaseDSDownloadRecord to user_id=%s and incremented counter to %s",
                     current_user.id,
                     profile.downloaded_datasets_count,
                 )

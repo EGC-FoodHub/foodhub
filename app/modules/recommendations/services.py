@@ -1,5 +1,5 @@
 from sqlalchemy import func, or_
-from app.modules.dataset.models import DataSet, DSDownloadRecord, DSMetaData, Author
+from app.modules.basedataset.models import BaseDataset, BaseDSDownloadRecord, BaseDSMetaData, BaseAuthor
 from app import db
 from app.modules.recommendations.similarities import SimilarityService
 import logging
@@ -10,15 +10,15 @@ logger = logging.getLogger(__name__)
 class RecommendationService:
     
     @staticmethod
-    def get_related_datasets(dataset: DataSet, limit: int = 5):
+    def get_related_datasets(dataset: BaseDataset, limit: int = 5):
         tags = dataset.ds_meta_data.tags.split(",") if dataset.ds_meta_data.tags else []
         author_ids = [author.id for author in dataset.ds_meta_data.authors] if dataset.ds_meta_data.authors else []
 
         query = (
             db.session
-            .query(DataSet)
-            .join(DSMetaData)
-            .filter(DataSet.id != dataset.id)
+            .query(BaseDataset)
+            .join(BaseDSMetaData)
+            .filter(BaseDataset.id != dataset.id)
         )
 
         has_tags = bool(tags)
@@ -26,23 +26,23 @@ class RecommendationService:
 
         tag_condition = (
             or_(*[
-                func.lower(DSMetaData.tags).like(f"%{tag.strip().lower()}%")
+                func.lower(BaseDSMetaData.tags).like(f"%{tag.strip().lower()}%")
                 for tag in tags
             ]) if has_tags else None
         )
 
-        author_condition = Author.id.in_(author_ids) if has_authors else None
+        author_condition = BaseAuthor.id.in_(author_ids) if has_authors else None
 
         if has_tags and has_authors:
             query = (
                 query
-                .join(DSMetaData.authors)
+                .join(BaseDSMetaData.authors)
                 .filter(or_(tag_condition, author_condition))
             )
         elif has_tags:
             query = query.filter(tag_condition)
         elif has_authors:
-            query = query.join(DSMetaData.authors).filter(author_condition)
+            query = query.join(BaseDSMetaData.authors).filter(author_condition)
         else:
             logger.info("Dataset sin tags ni autores para recomendaciones")
 

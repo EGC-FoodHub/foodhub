@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from dotenv import load_dotenv
 
 from app.modules.auth.models import User
-from app.modules.dataset.models import Author, DataSet, DSMetaData, DSMetrics, PublicationType
+from app.modules.basedataset.models import BaseAuthor, BaseDataset, BaseDSMetaData, BaseDSMetrics, BasePublicationType
 from app.modules.featuremodel.models import FeatureModel, FMMetaData
 from app.modules.hubfile.models import Hubfile
 from core.seeders.BaseSeeder import BaseSeeder
@@ -24,14 +24,14 @@ class DataSetSeeder(BaseSeeder):
             raise Exception("Users not found. Please seed users first.")
 
         # -------------------------------------------------------------
-        # 1. Crear DSMetaData (SIN ds_metrics_id)
+        # 1. Crear BaseDSMetaData (SIN ds_metrics_id)
         # -------------------------------------------------------------
         ds_meta_data_list = [
-            DSMetaData(
+            BaseDSMetaData(
                 deposition_id=1 + i,
                 title=f"Sample dataset {i+1}",
                 description=f"Description for dataset {i+1}",
-                publication_type=PublicationType.DATA_MANAGEMENT_PLAN,
+                publication_type=BasePublicationType.DATA_MANAGEMENT_PLAN,
                 publication_doi=f"10.1234/dataset{i+1}",
                 dataset_doi=f"10.1234/dataset{i+1}",
                 tags="tag1, tag2",
@@ -42,11 +42,11 @@ class DataSetSeeder(BaseSeeder):
         seeded_ds_meta_data = self.seed(ds_meta_data_list)
 
         # -------------------------------------------------------------
-        # 2. Crear Autores y asociar a DSMetaData
+        # 2. Crear Autores y asociar a BaseDSMetaData
         # -------------------------------------------------------------
         authors = [
-            Author(
-                name=f"Author {i+1}",
+            BaseAuthor(
+                name=f"BaseAuthor {i+1}",
                 affiliation=f"Affiliation {i+1}",
                 orcid=f"0000-0000-0000-000{i}",
                 ds_meta_data_id=seeded_ds_meta_data[i % 4].id,
@@ -56,12 +56,12 @@ class DataSetSeeder(BaseSeeder):
         self.seed(authors)
 
         # -------------------------------------------------------------
-        # 3. Crear DataSet instances
+        # 3. Crear BaseDataset instances
         # -------------------------------------------------------------
-        # Nota: Asumimos que DataSet (BaseDataset) tiene ds_meta_data_id o una relación compatible.
+        # Nota: Asumimos que BaseDataset (BaseDataset) tiene ds_meta_data_id o una relación compatible.
         # Si BaseDataset no tiene esta columna, tendrías que asignar la relación después.
         datasets = [
-            DataSet(
+            BaseDataset(
                 user_id=user1.id if i % 2 == 0 else user2.id,
                 # --- BORRA ESTA LÍNEA ---
                 # ds_meta_data_id=seeded_ds_meta_data[i].id,
@@ -73,13 +73,13 @@ class DataSetSeeder(BaseSeeder):
         seeded_datasets = self.seed(datasets)
 
         # -------------------------------------------------------------
-        # 4. Crear DSMetrics (NUEVA UBICACIÓN)
+        # 4. Crear BaseDSMetrics (NUEVA UBICACIÓN)
         # -------------------------------------------------------------
         # Ahora que tenemos los datasets creados, creamos sus métricas asociadas
 
         ds_metrics_list = []
         for dataset in seeded_datasets:
-            metrics = DSMetrics(
+            metrics = BaseDSMetrics(
                 number_of_models="5",
                 number_of_features="50",
                 dataset_id=dataset.id,  # Vinculamos al ID del dataset creado
@@ -96,7 +96,7 @@ class DataSetSeeder(BaseSeeder):
                 uvl_filename=f"file{i+1}.uvl",
                 title=f"Feature Model {i+1}",
                 description=f"Description for feature model {i+1}",
-                publication_type=PublicationType.SOFTWARE_DOCUMENTATION,
+                publication_type=BasePublicationType.SOFTWARE_DOCUMENTATION,
                 publication_doi=f"10.1234/fm{i+1}",
                 tags="tag1, tag2",
                 uvl_version="1.0",
@@ -105,10 +105,10 @@ class DataSetSeeder(BaseSeeder):
         ]
         seeded_fm_meta_data = self.seed(fm_meta_data_list)
 
-        # Create Author instances and associate with FMMetaData
+        # Create BaseAuthor instances and associate with FMMetaData
         fm_authors = [
-            Author(
-                name=f"Author {i+5}",
+            BaseAuthor(
+                name=f"BaseAuthor {i+5}",
                 affiliation=f"Affiliation {i+5}",
                 orcid=f"0000-0000-0000-000{i+5}",
                 fm_meta_data_id=seeded_fm_meta_data[i].id,

@@ -7,9 +7,9 @@ from dotenv import load_dotenv
 from flask import Response, jsonify
 from flask_login import current_user
 
-from app.modules.dataset.models import DataSet
+from app.modules.basedataset.models import BaseDataset
 from app.modules.fakenodo.repositories import FakenodoRepository
-from app.modules.featuremodel.models import FeatureModel
+#from app.modules.featuremodel.models import FeatureModel
 from core.configuration.configuration import uploads_folder_name
 from core.services.BaseService import BaseService
 
@@ -136,39 +136,39 @@ class FakenodoService(BaseService):
             raise Exception("Failed to get depositions")
         return response.json()
 
-    def create_new_deposition(self, dataset: DataSet) -> dict:
+    def create_new_deposition(self, dataset: BaseDataset) -> dict:
         """
         Create a new deposition in Fakenodo.
 
         Args:
-            dataset (DataSet): The DataSet object containing the metadata of the deposition.
+            dataset (BaseDataset): The BaseDataset object containing the metadata of the deposition.
 
         Returns:
             dict: The response in JSON format with the details of the created deposition.
         """
 
         logger.info("Dataset sending to Fakenodo...")
-        logger.info(f"Publication type...{dataset.ds_meta_data.publication_type.value}")
+        logger.info(f"Publication type...{dataset.basedataset_kind.publication_type.value}")
 
         metadata = {
-            "title": dataset.ds_meta_data.title,
-            "upload_type": "dataset" if dataset.ds_meta_data.publication_type.value == "none" else "publication",
+            "title": dataset.basedataset_kind.title,
+            "upload_type": "dataset" if dataset.basedataset_kind.publication_type.value == "none" else "publication",
             "publication_type": (
-                dataset.ds_meta_data.publication_type.value
-                if dataset.ds_meta_data.publication_type.value != "none"
+                dataset.basedataset_kind.publication_type.value
+                if dataset.basedataset_kind.publication_type.value != "none"
                 else None
             ),
-            "description": dataset.ds_meta_data.description,
+            "description": dataset.basedataset_kind.description,
             "creators": [
                 {
                     "name": author.name,
                     **({"affiliation": author.affiliation} if author.affiliation else {}),
                     **({"orcid": author.orcid} if author.orcid else {}),
                 }
-                for author in dataset.ds_meta_data.authors
+                for author in dataset.basedataset_kind.authors
             ],
             "keywords": (
-                ["uvlhub"] if not dataset.ds_meta_data.tags else dataset.ds_meta_data.tags.split(", ") + ["uvlhub"]
+                ["uvlhub"] if not dataset.basedataset_kind.tags else dataset.basedataset_kind.tags.split(", ") + ["uvlhub"]
             ),
             "access_right": "open",
             "license": "CC-BY-4.0",
@@ -182,7 +182,7 @@ class FakenodoService(BaseService):
             raise Exception(error_message)
         return response.json()
 
-    def upload_file(self, dataset: DataSet, deposition_id: int, feature_model: FeatureModel, user=None) -> dict:
+    def upload_file(self, dataset: BaseDataset, deposition_id: int, user=None) -> dict:
         """
         Upload a file to a deposition in Fakenodo.
 
@@ -194,7 +194,7 @@ class FakenodoService(BaseService):
         Returns:
             dict: The response in JSON format with the details of the uploaded file.
         """
-        uvl_filename = feature_model.fm_meta_data.uvl_filename
+        #uvl_filename = feature_model.fm_meta_data.uvl_filename
         data = {"name": uvl_filename}
         user_id = current_user.id if user is None else user.id
         file_path = os.path.join(uploads_folder_name(), f"user_{str(user_id)}", f"dataset_{dataset.id}/", uvl_filename)

@@ -137,7 +137,7 @@ class BaseDataset(db.Model):
     def get_file_total_size(self) -> int:
         total_size = 0
         for file in self.files:
-            total_size += file.size_in_bytes
+            total_size += file.files[0].size
         return total_size
 
     def get_file_total_size_for_human(self) -> str:

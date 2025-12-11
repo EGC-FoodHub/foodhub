@@ -1,4 +1,4 @@
-from app.modules.dataset.models import DataSet
+from app.modules.basedataset.models import BaseDataset
 from core.resources.generic_resource import create_resource
 from core.serialisers.serializer import Serializer
 
@@ -15,7 +15,7 @@ dataset_fields = {
 
 dataset_serializer = Serializer(dataset_fields, related_serializers={"files": file_serializer})
 
-DataSetResource = create_resource(DataSet, dataset_serializer)
+DataSetResource = create_resource(BaseDataset, dataset_serializer)
 
 
 def init_blueprint_api(api):

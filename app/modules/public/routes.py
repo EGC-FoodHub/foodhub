@@ -25,9 +25,11 @@ def index():
 
     # ELIMINADO: Contadores de FeatureModel (ya no aplican)
 
+
     return render_template(
         "public/index.html",
         datasets=dataset_service.latest_synchronized(),
+        dataset_service = dataset_service,
         datasets_counter=datasets_counter,
         total_dataset_downloads=total_dataset_downloads,
         total_dataset_views=total_dataset_views,

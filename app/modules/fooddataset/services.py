@@ -37,6 +37,7 @@ class FoodDatasetService(BaseDatasetService):
         return self.repository.get_unsynchronized_dataset(current_user_id, dataset_id)
 
     def latest_synchronized(self):
+        print(self.repository.latest_synchronized()[0])
         return self.repository.latest_synchronized()
 
     def count_synchronized_datasets(self):
@@ -47,7 +48,8 @@ class FoodDatasetService(BaseDatasetService):
 
     def get_uvlhub_doi(self, dataset: FoodDataset) -> str:
         domain = os.getenv("DOMAIN", "localhost")
-        return f"http://{domain}/doi/{dataset.ds_meta_data.dataset_doi}"
+        print(dataset.basedataset_kind)
+        return f"http://{domain}/doi/{dataset.ds_meta_data_id}"
 
     def create_from_form(self, form, current_user) -> FoodDataset:
         main_author = {
