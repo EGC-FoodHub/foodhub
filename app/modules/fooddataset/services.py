@@ -46,6 +46,8 @@ class FoodDatasetService(BaseDatasetService):
     def count_unsynchronized_datasets(self):
         return self.repository.count_unsynchronized_datasets()
 
+    def get_dataset_by_
+
     def get_uvlhub_doi(self, dataset: FoodDataset) -> str:
         domain = os.getenv("DOMAIN", "localhost")
         print(dataset.basedataset_kind)

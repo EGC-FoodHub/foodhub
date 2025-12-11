@@ -129,6 +129,7 @@ def download_dataset(dataset_id):
 
 @basedataset_bp.route("/doi/<path:doi>/", methods=["GET"])
 def subdomain_index(doi):
+    print("ENTRAMOS")
     new_doi = doi_mapping_service.get_new_doi(doi)
     if new_doi:
         return redirect(url_for("basedataset.subdomain_index", doi=new_doi), code=302)
@@ -138,7 +139,9 @@ def subdomain_index(doi):
     if not ds_meta_data:
         abort(404)
 
-    dataset = ds_meta_data.dataset
+    print(ds_meta_data)
+    
+    dataset = ds_meta_data
 
     user_cookie = ds_view_record_service.create_cookie(dataset=dataset)
 

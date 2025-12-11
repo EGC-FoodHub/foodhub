@@ -8,6 +8,8 @@ from flask_login import current_user, login_required
 
 from app.modules.fooddataset.forms import FoodDatasetForm
 from app.modules.fooddataset.services import FoodDatasetService
+from app.modules.basedataset.repositories import BaseDOIMappingRepository
+from app.modules.basedataset.services import BaseDSMetaDataService
 from app.modules.zenodo.services import ZenodoService
 
 logger = logging.getLogger(__name__)
@@ -15,6 +17,9 @@ logger = logging.getLogger(__name__)
 fooddataset_bp = Blueprint("fooddataset", __name__, template_folder="templates", static_folder="assets")
 
 food_service = FoodDatasetService()
+
+base_doi_mapping_repository = BaseDOIMappingRepository()
+dsmetadata_service = BaseDSMetaDataService()
 
 
 @fooddataset_bp.route("/scripts.js")
@@ -61,7 +66,9 @@ def create_dataset():
 
                 zenodo_service.publish_deposition(deposition_id)
 
-                zenodo_service.get_doi(deposition_id)
+                doi = zenodo_service.get_doi(deposition_id)
+                base_doi_mapping_repository.create(dataset.ds_meta_data_id, dataset_doi_old=doi)
+                dsmetadata_service.update(dataset.ds_meta_data_id, dataset_doi=doi)
 
             except Exception as e:
                 msg = f"Error uploading to Zenodo: {e}"
