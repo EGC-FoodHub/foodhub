@@ -25,6 +25,7 @@ def mock_user():
 
 # ------------------ HELPERS ------------------
 
+
 def create_test_zip(files: dict) -> io.BytesIO:
     """Crea un zip en memoria con archivos dados."""
     zip_bytes = io.BytesIO()
@@ -36,6 +37,7 @@ def create_test_zip(files: dict) -> io.BytesIO:
 
 
 # ------------------ FAKE REPOS ------------------
+
 
 class FakeRepo:
     def __init__(self):
@@ -63,6 +65,7 @@ class FakeHubFileRepo:
 
 
 # ------------------ INTEGRATION TESTS ------------------
+
 
 def test_upload_zip_valid(test_client, mock_user, monkeypatch):
     """Test integración: subida de un ZIP válido con archivos .food"""

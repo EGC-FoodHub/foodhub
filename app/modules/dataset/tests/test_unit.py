@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
+
 from app import create_app
 from app.modules.dataset.services import DataSetService
 
@@ -12,6 +13,7 @@ pytestmark = pytest.mark.unit
 
 
 # ------------------ FIXTURES ------------------
+
 
 @pytest.fixture(scope="module")
 def test_client():
@@ -36,6 +38,7 @@ def mock_user():
 
 # ------------------ HELPERS ------------------
 
+
 def create_test_zip(files: dict) -> io.BytesIO:
     """Crea un zip en memoria con archivos dados."""
     zip_bytes = io.BytesIO()
@@ -47,6 +50,7 @@ def create_test_zip(files: dict) -> io.BytesIO:
 
 
 # ------------------ FAKE REPOS ------------------
+
 
 class FakeRepo:
     def __init__(self):
@@ -86,6 +90,7 @@ class FakeHubFileRepo:
 
 
 # ------------------ UNIT TESTS ------------------
+
 
 def test_process_zip_extracts_food_files_only(tmp_path):
     """_process_zip_file extrae solo archivos .food y los registra en hubfilerepository"""
