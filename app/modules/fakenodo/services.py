@@ -29,11 +29,11 @@ class FakenodoService(BaseService):
         FAKENODO_API_URL = ""
 
         if FLASK_ENV == "development":
-            FAKENODO_API_URL = os.getenv("FAKENODO_API_URL", "http://localhost:5000/fakenodo/dummy")
+            FAKENODO_API_URL = os.getenv("FAKENODO_API_URL", "http://localhost:5000/fakenodo/records")
         elif FLASK_ENV == "production":
-            FAKENODO_API_URL = os.getenv("FAKENODO_API_URL", "http://localhost:5000/fakenodo/dummy")
+            FAKENODO_API_URL = os.getenv("FAKENODO_API_URL", "http://localhost:5000/fakenodo/records")
         else:
-            FAKENODO_API_URL = os.getenv("FAKENODO_API_URL", "http://localhost:5000/fakenodo/dummy")
+            FAKENODO_API_URL = os.getenv("FAKENODO_API_URL", "http://localhost:5000/fakenodo/records")
 
         return FAKENODO_API_URL
 
