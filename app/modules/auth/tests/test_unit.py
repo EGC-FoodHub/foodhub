@@ -5,6 +5,8 @@ from app.modules.auth.repositories import UserRepository
 from app.modules.auth.services import AuthenticationService
 from app.modules.profile.repositories import UserProfileRepository
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.fixture(scope="module")
 def test_client(test_client):
