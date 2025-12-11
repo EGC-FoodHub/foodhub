@@ -25,10 +25,13 @@ jobs:
           MARIADB_DATABASE: ${{ env.MARIADB_DATABASE }}
           MARIADB_USER: ${{ env.MARIADB_USER }}
           MARIADB_PASSWORD: ${{ env.MARIADB_PASSWORD }}
+        # map container 3306 to a non-standard host port to avoid conflicts on the runner
         ports:
-          - 3306:3306
+          - 3307:3306
         options: >-
-          --health-cmd="mysqladmin ping -h localhost -u$$MARIADB_USER -p$$MARIADB_PASSWORD"
+          # use the root user for the healthcheck and point at 127.0.0.1; note the doubled-dollar
+          # to avoid GH Actions variable interpolation so the container sees $MARIADB_ROOT_PASSWORD
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -u root -p$$MARIADB_ROOT_PASSWORD --silent"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
@@ -54,12 +57,13 @@ jobs:
 
       - name: Wait for MariaDB to be ready
         run: |
-          for i in {1..30}; do
-            if mysqladmin ping -h"$MARIADB_HOSTNAME" -u"$MARIADB_USER" -p"$MARIADB_PASSWORD" --silent; then
+          for i in {1..60}; do
+            # try connecting via the mapped host port 3307 using the root credentials
+            if mysqladmin ping -h127.0.0.1 -P3307 -u root -p"$MARIADB_ROOT_PASSWORD" --silent; then
               echo "MariaDB is ready"
               break
             fi
-            echo "Waiting for MariaDB ($i/30)..."
+            echo "Waiting for MariaDB ($i/60)..."
             sleep 2
           done
 
