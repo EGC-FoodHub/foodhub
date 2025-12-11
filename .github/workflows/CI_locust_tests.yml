@@ -73,7 +73,7 @@ jobs:
 
       - name: Setup database
         run: |
-          rosemary db:upgrade
+          flask --app app db upgrade
           rosemary db:seed
 
       - name: Start Flask app
