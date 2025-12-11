@@ -5,7 +5,7 @@ on:
 
 jobs:
   integration-tests:
-    name: Pytest
+    name: Integration
     runs-on: ubuntu-24.04
 
     env:
@@ -70,8 +70,8 @@ jobs:
 
       - name: Setup database
         run: |
-          python -m rosemary db:upgrade
-          python -m rosemary db:seed
+          flask --app app db upgrade
+          rosemary db:seed
 
       - name: Run integration tests
         run: pytest -m integration -v --cov=app --cov-report=term-missing --cov-report=xml --cov-report=html
