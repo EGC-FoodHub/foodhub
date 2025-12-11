@@ -16,7 +16,7 @@ jobs:
       MARIADB_HOSTNAME: 127.0.0.1
       MARIADB_PORT: 3306
       FLASK_ENV: testing
-      FLASK_APP_NAME: MaterialsHub
+      FLASK_APP_NAME: FoodHub
       DOMAIN: localhost
       SECRET_KEY: test-secret-key-for-ci
 
