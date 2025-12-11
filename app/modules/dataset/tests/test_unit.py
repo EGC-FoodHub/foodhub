@@ -158,6 +158,7 @@ def test_process_zip_no_matching_files_logs_warning(tmp_path, caplog):
 # ------------------ INTEGRATION TESTS ------------------
 
 
+@pytest.mark.integration
 def test_upload_zip_valid(test_client, mock_user, monkeypatch):
     # Mock usuario actual
     monkeypatch.setattr("app.modules.dataset.routes.current_user", mock_user, raising=False)
@@ -175,6 +176,7 @@ def test_upload_zip_valid(test_client, mock_user, monkeypatch):
     assert len(resp_json["filenames"]) == len(test_files)
 
 
+@pytest.mark.integration
 def test_upload_zip_empty(test_client, mock_user, monkeypatch):
     monkeypatch.setattr("app.modules.dataset.routes.current_user", mock_user, raising=False)
     monkeypatch.setattr("flask_login.utils._get_user", lambda: mock_user, raising=False)
@@ -188,6 +190,7 @@ def test_upload_zip_empty(test_client, mock_user, monkeypatch):
     assert resp_json["message"] == "No files extracted from the ZIP"
 
 
+@pytest.mark.integration
 def test_upload_zip_invalid_file_type(test_client, mock_user, monkeypatch):
     monkeypatch.setattr("app.modules.dataset.routes.current_user", mock_user, raising=False)
     monkeypatch.setattr("flask_login.utils._get_user", lambda: mock_user, raising=False)
@@ -200,6 +203,7 @@ def test_upload_zip_invalid_file_type(test_client, mock_user, monkeypatch):
     assert resp_json["message"] == "No valid zip file"
 
 
+@pytest.mark.integration
 def test_create_dataset_from_zip(tmp_path, mock_user):
     test_files = {"fm1.food": "dummy1", "fm2.food": "dummy2"}
     zip_file = create_test_zip(test_files)
