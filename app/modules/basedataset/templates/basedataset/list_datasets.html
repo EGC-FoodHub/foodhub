@@ -124,6 +124,9 @@
                                             <a href="{{ url_for('basedataset.view_dataset', dataset_id=local_dataset.id) }}" class="btn btn-sm btn-outline-secondary" title="View Local">
                                                 <i data-feather="eye"></i>
                                             </a>
+                                            <a href="{{ url_for('fooddataset.edit_doi_dataset', dataset_id=local_dataset.id) }}"class="btn btn-sm btn-outline-info" title="Edit">
+                                                <i data-feather="edit"></i>
+                                            </a>
                                             <a href="{{ url_for('basedataset.download_dataset', dataset_id=local_dataset.id) }}" class="btn btn-sm btn-outline-primary" title="Download">
                                                 <i data-feather="download"></i>
                                             </a>
