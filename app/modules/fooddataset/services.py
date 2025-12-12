@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional
 
 from sqlalchemy import func
 
+from app.modules.auth.services import AuthenticationService
 from app.modules.basedataset.services import BaseDatasetService
 from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData
 from app.modules.fooddataset.repositories import FoodDatasetRepository
@@ -114,6 +115,29 @@ class FoodDatasetService(BaseDatasetService):
                 src_file = os.path.join(source_dir, file.name)
                 if os.path.exists(src_file):
                     shutil.move(src_file, dest_dir)
+
+    def edit_doi_dataset(self, dataset, form):
+        current_user = AuthenticationService().get_authenticated_user()
+
+        main_author = {
+            "name": f"{current_user.profile.surname}, {current_user.profile.name}",
+            "affiliation": current_user.profile.affiliation,
+            "orcid": current_user.profile.orcid,
+        }
+
+        dsmetadata = dataset.ds_meta_data
+
+        new_authors = []
+        for author_data in [main_author] + form.get_authors():
+            author = self.author_repository.create(commit=False, ds_meta_data_id=dsmetadata.id, **author_data)
+            new_authors.append(author)
+            dsmetadata.authors = new_authors
+
+        updated_instance = self.update_dsmetadata(dsmetadata.id, **form.get_dsmetadata())
+
+        self.repository.session.commit()
+
+        return updated_instance, None
 
     def increment_view_count(self, dataset_id: int) -> bool:
         if not isinstance(dataset_id, int) or dataset_id <= 0:

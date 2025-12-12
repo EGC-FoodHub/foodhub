@@ -6,7 +6,7 @@ import shutil
 from flask import Blueprint, jsonify, render_template, request, send_from_directory, url_for
 from flask_login import current_user, login_required
 
-from app.modules.fooddataset.forms import FoodDatasetForm
+from app.modules.fooddataset.forms import AuthorForm, FoodDatasetForm
 from app.modules.fooddataset.services import FoodDatasetService
 from app.modules.fakenodo.services import FakenodoService
 from core.services.SearchService import SearchService
@@ -115,6 +115,37 @@ def create_dataset_as_draft():
         return jsonify({"message": msg}), 200
 
     return render_template("fooddataset/upload_dataset.html", form=form)
+
+
+@fooddataset_bp.route("/dataset/edit/<int:dataset_id>", methods=["GET", "POST"])
+@login_required
+def edit_doi_dataset(dataset_id):
+    dataset = food_service.get_or_404(dataset_id)
+
+    form = FoodDatasetForm()
+
+    if request.method == "POST":
+        result, errors = food_service.edit_doi_dataset(dataset, form)
+        return food_service.handle_service_response(
+            result, errors, "dataset.list_dataset", "Dataset updated", "dataset/edit_dataset.html", form
+        )
+    else:
+        form.title.data = dataset.ds_meta_data.title
+        form.desc.data = dataset.ds_meta_data.description
+        form.publication_type.data = dataset.ds_meta_data.publication_type.value
+        form.publication_doi.data = dataset.ds_meta_data.publication_doi
+        form.tags.data = dataset.ds_meta_data.tags
+        form.desc.data = dataset.ds_meta_data.description
+
+        form.authors.entries = []
+        for author in dataset.ds_meta_data.authors:
+            subform = AuthorForm()
+            subform.name.data = author.name
+            subform.affiliation.data = author.affiliation
+            subform.orcid.data = author.orcid
+            form.authors.append_entry(subform.data)
+
+    return render_template("fooddataset/edit_dataset.html", form=form, dataset=dataset)
 
 
 @fooddataset_bp.route("/dataset/file/upload", methods=["POST"])
