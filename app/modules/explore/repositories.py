@@ -3,7 +3,7 @@ import re
 import unidecode
 from sqlalchemy import any_, or_
 
-from app.modules.basedataset.models import BaseAuthor, BaseDataset, BaseDSMetaData, BasePublicationType
+from app.modules.basedataset.models import BaseAuthor, BaseDSMetaData, BasePublicationType
 from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData
 from core.repositories.BaseRepository import BaseRepository
 
@@ -47,7 +47,8 @@ class ExploreRepository(BaseRepository):
             datasets = datasets.filter(or_(*filters))
 
         # Exclude datasets without DOI
-        # datasets = datasets.filter(BaseDSMetaData.dataset_doi.isnot(None))  # Comentado para mostrar también datasets no sincronizados
+        # datasets = datasets.filter(BaseDSMetaData.dataset_doi.isnot(None))
+        # Comentado para mostrar también datasets no sincronizados
 
         # Filtro específico por Autor (query completa)
         if author_query:
