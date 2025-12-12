@@ -54,6 +54,41 @@ class DatasetBehavior(TaskSet):
             print(f"⚠ ZIP upload failed: {upload.status_code}")
 
     @task
+    def upload_local_file(self):
+        """Subida de archivo local tipo (.food)"""
+        # 1. GET para obtener CSRF
+        response = self.client.get("/dataset/upload")
+        csrf = get_csrf_token(response)
+        if not csrf:
+            print("⚠ CSRF token not found")
+            return
+
+        # 2. Datos del formulario
+        data = {
+            "title": "Load Test Local File",
+            "description": "Prueba carga concurrente local file",
+            "csrf_token": csrf,
+        }
+
+        # 3. Archivo local de prueba
+        file_path = os.path.abspath("app/modules/dataset/food_examples/test.food")
+        if not os.path.exists(file_path):
+            print(f"⚠ Local file not found: {file_path}")
+            return
+
+        with open(file_path, "rb") as f:
+            files = {"file": ("test.food", f, "application/octet-stream")}
+
+            # 4. POST real para subir el archivo
+            upload = self.client.post("/dataset/file/upload", data=data, files=files)
+
+        # 5. Validación simple
+        if upload.status_code in [200, 302]:
+            print("✔ Local file cargado correctamente")
+        else:
+            print(f"⚠ Local file upload failed: {upload.status_code}")
+
+    @task
     def upload_github(self):
         """Trigger an import from a GitHub repository using form fields."""
         # 1. GET para obtener CSRF (igual que upload_zip)
