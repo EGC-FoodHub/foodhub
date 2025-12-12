@@ -1,5 +1,5 @@
-import logging
 import os
+import logging
 
 import pytest
 from locust import HttpUser, TaskSet, task
