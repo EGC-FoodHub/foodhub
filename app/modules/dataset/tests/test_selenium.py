@@ -102,3 +102,68 @@ def test_upload_valid_food_zip():
 
     finally:
         close_driver(driver)
+
+@pytest.mark.selenium
+def test_upload_zip_no_file_with_login():
+    driver = initialize_driver()
+
+    try:
+        host = get_host_for_selenium_testing()
+
+        # Abrir la página principal
+        driver.get(host)
+        wait_for_page_to_load(driver)
+        driver.set_window_size(1124, 1064)
+
+        # Ir a login
+        login_nav = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, ".nav-link:nth-child(1)"))
+        )
+        login_nav.click()
+        wait_for_page_to_load(driver)
+
+        # Completar login
+        email_field = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "email"))
+        )
+        password_field = driver.find_element(By.ID, "password")
+        email_field.send_keys("user1@example.com")
+        password_field.send_keys("1234")
+
+        driver.find_element(By.ID, "submit").click()
+        wait_for_page_to_load(driver)
+        time.sleep(1)
+
+        # Ir a la sección de datasets
+        sidebar_item = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable(
+                (By.CSS_SELECTOR, ".sidebar-item:nth-child(6) .align-middle:nth-child(2)")
+            )
+        )
+        sidebar_item.click()
+        wait_for_page_to_load(driver)
+
+        # Cambiar a la pestaña ZIP
+        zip_tab = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.ID, "zip-tab"))
+        )
+        zip_tab.click()
+
+        # Click en el botón de subir ZIP sin seleccionar archivo
+        upload_zip_btn = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.ID, "upload_zip_btn"))
+        )
+        upload_zip_btn.click()
+        wait_for_page_to_load(driver)
+        time.sleep(1)
+
+        # Validación: verificar que aparece un mensaje de error
+        error_message = WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "#zip_status span.text-danger"))
+        )
+        assert "Seleccione un archivo" in error_message.text or error_message.is_displayed()
+
+        print("Test de subir ZIP sin archivo con login validado correctamente!")
+
+    finally:
+        close_driver(driver)
