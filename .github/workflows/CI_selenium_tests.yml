@@ -34,8 +34,8 @@ jobs:
         ports:
           - 3307:3306
 
-      chrome:
-        image: selenium/standalone-chrome:latest
+      firefox:
+        image: selenium/standalone-firefox:latest
         ports:
           - 4444:4444
         options: --shm-size=2g
