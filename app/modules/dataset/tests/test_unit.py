@@ -321,3 +321,39 @@ def test_create_from_github_with_food_files(monkeypatch, tmp_path):
     # hubfile should have been created for model.food
     assert len(service.hubfilerepository.created) == 1
     assert service.hubfilerepository.created[0].name == "model.food"
+
+
+def test_upload_file_valid(test_client, mock_user, monkeypatch, tmp_path):
+    """Upload a single .food file via the route should return 200 and filename"""
+    monkeypatch.setattr("app.modules.dataset.routes.current_user", mock_user, raising=False)
+    monkeypatch.setattr("flask_login.utils._get_user", lambda: mock_user, raising=False)
+
+    # ensure temp folder exists
+    temp_dir = tmp_path / "temp_user"
+    temp_dir.mkdir()
+    mock_user.temp_folder.return_value = str(temp_dir)
+
+    data = {"file": (io.BytesIO(b"dummy content"), "test.food")}
+    resp = test_client.post("/dataset/file/upload", data=data, content_type="multipart/form-data")
+
+    assert resp.status_code == 200
+    j = resp.get_json()
+    assert j["message"] == "UVL uploaded and validated successfully"
+    assert j["filename"] == "test.food"
+
+
+def test_upload_file_invalid_extension(test_client, mock_user, monkeypatch, tmp_path):
+    """Upload a non-.food file should be rejected with 400"""
+    monkeypatch.setattr("app.modules.dataset.routes.current_user", mock_user, raising=False)
+    monkeypatch.setattr("flask_login.utils._get_user", lambda: mock_user, raising=False)
+
+    temp_dir = tmp_path / "temp_user2"
+    temp_dir.mkdir()
+    mock_user.temp_folder.return_value = str(temp_dir)
+
+    data = {"file": (io.BytesIO(b"not food"), "bad.txt")}
+    resp = test_client.post("/dataset/file/upload", data=data, content_type="multipart/form-data")
+
+    assert resp.status_code == 400
+    j = resp.get_json()
+    assert j["message"] == "Please upload a .food file"
