@@ -4,7 +4,7 @@ from flask_login import current_user, login_required
 from app import db
 from app.modules.auth.models import User
 from app.modules.auth.services import AuthenticationService
-from app.modules.dataset.models import DataSet
+from app.modules.basedataset.models import BaseDataset
 from app.modules.profile import profile_bp
 from app.modules.profile.forms import UserProfileForm
 from app.modules.profile.services import UserProfileService
@@ -14,7 +14,7 @@ from app.modules.profile.services import UserProfileService
 @login_required
 def edit_profile():
     auth_service = AuthenticationService()
-    profile = auth_service.get_authenticated_user_profile
+    profile = auth_service.get_authenticated_user_profile()
     if not profile:
         return redirect(url_for("public.index"))
 
@@ -36,13 +36,13 @@ def my_profile():
     per_page = 5
 
     user_datasets_pagination = (
-        db.session.query(DataSet)
-        .filter(DataSet.user_id == current_user.id)
-        .order_by(DataSet.created_at.desc())
+        db.session.query(BaseDataset)
+        .filter(BaseDataset.user_id == current_user.id)
+        .order_by(BaseDataset.created_at.desc())
         .paginate(page=page, per_page=per_page, error_out=False)
     )
 
-    total_datasets_count = db.session.query(DataSet).filter(DataSet.user_id == current_user.id).count()
+    total_datasets_count = db.session.query(BaseDataset).filter(BaseDataset.user_id == current_user.id).count()
 
     print(user_datasets_pagination.items)
 
