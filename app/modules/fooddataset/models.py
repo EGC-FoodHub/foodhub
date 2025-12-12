@@ -1,12 +1,9 @@
 from datetime import datetime, timedelta
 
-from sqlalchemy import and_, func
+from sqlalchemy import and_, event, func
 
 from app import db
 from app.modules.basedataset.models import BaseDataset, BaseDSMetaData
-
-from sqlalchemy import event
-
 from core.services.SearchService import SearchService
 
 
