@@ -9,16 +9,18 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+EXAMPLE_KEY = "1JfaHImkqDUvtYTCHhGf320Tyba73BtFGaB3CzMX4s8="
+
 
 def generate_key():
-    cipher = Fernet(os.getenv("MASTER_KEY").encode())
+    cipher = Fernet(os.getenv("MASTER_KEY", EXAMPLE_KEY).encode())
     key = pyotp.random_base32()
     cifrado = cipher.encrypt(key.encode())
     return cifrado
 
 
 def decript_key(key: str | bytes):
-    cipher = Fernet(os.getenv("MASTER_KEY").encode())
+    cipher = Fernet(os.getenv("MASTER_KEY", EXAMPLE_KEY).encode())
     raw_key = cipher.decrypt(key)
 
     return raw_key.decode("utf-8")

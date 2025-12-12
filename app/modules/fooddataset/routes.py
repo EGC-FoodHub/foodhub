@@ -9,12 +9,14 @@ from flask_login import current_user, login_required
 from app.modules.fooddataset.forms import FoodDatasetForm
 from app.modules.fooddataset.services import FoodDatasetService
 from app.modules.zenodo.services import ZenodoService
+from core.services.SearchService import SearchService
 
 logger = logging.getLogger(__name__)
 
 fooddataset_bp = Blueprint("fooddataset", __name__, template_folder="templates", static_folder="assets")
 
 food_service = FoodDatasetService()
+search_service = SearchService()
 
 
 @fooddataset_bp.route("/scripts.js")
@@ -25,25 +27,27 @@ def scripts():
 @fooddataset_bp.route("/dataset/upload", methods=["GET", "POST"])
 @login_required
 def create_dataset():
-    """
-    Ruta para subir un nuevo Food Dataset.
-    """
     form = FoodDatasetForm()
 
     if request.method == "POST":
         dataset = None
 
         if not form.validate_on_submit():
-            return jsonify({"message": form.errors}), 400
+            return jsonify({"message": str(form.errors)}), 400
 
         try:
             logger.info("Creating food dataset...")
             dataset = food_service.create_from_form(form=form, current_user=current_user)
             logger.info(f"Created dataset: {dataset.id}")
 
+            try:
+                search_service.index_dataset(dataset)
+            except Exception as e:
+                logger.error(f"Failed to index dataset in Elasticsearch: {e}")
+
         except Exception as exc:
             logger.exception(f"Exception creating local dataset: {exc}")
-            return jsonify({"error": str(exc)}), 400
+            return jsonify({"message": str(exc)}), 400
 
         zenodo_service = ZenodoService()
 
@@ -84,9 +88,6 @@ def create_dataset():
 @fooddataset_bp.route("/dataset/file/upload", methods=["POST"])
 @login_required
 def upload_file_temp():
-    """
-    Sube un archivo temporal (.food) al servidor antes de crear el dataset.
-    """
     file = request.files.get("file")
     if not file:
         return jsonify({"message": "No file provided"}), 400
@@ -139,3 +140,54 @@ def delete_file_temp():
         return jsonify({"message": "File deleted successfully"})
 
     return jsonify({"error": "File not found"})
+
+
+@fooddataset_bp.route("/dataset/trending", methods=["GET"])
+def trending_datasets():
+    try:
+        period = request.args.get("period", "week")
+        limit = request.args.get("limit", 10, type=int)
+
+        limit = min(limit, 50)
+
+        if period == "month":
+            trending = food_service.get_trending_monthly(limit=limit)
+            period_label = "This Month"
+        else:
+            trending = food_service.get_trending_weekly(limit=limit)
+            period_label = "This Week"
+
+        return render_template("fooddataset/trending.html", trending=trending, period=period, period_label=period_label)
+    except Exception as e:
+        logger.error(f"Error getting trending datasets: {e}")
+        return render_template("fooddataset/trending.html", trending=[], error=str(e))
+
+
+@fooddataset_bp.route("/dataset/<int:dataset_id>/view", methods=["POST"])
+def register_view(dataset_id):
+    try:
+        success = food_service.register_dataset_view(dataset_id)
+
+        if success:
+            return jsonify({"success": True, "message": "View registered"}), 200
+        else:
+            return jsonify({"success": False, "message": "Dataset not found"}), 404
+
+    except Exception as e:
+        logger.error(f"Error registering view for dataset {dataset_id}: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@fooddataset_bp.route("/dataset/<int:dataset_id>/download", methods=["POST"])
+def register_download(dataset_id):
+    try:
+        success = food_service.register_dataset_download(dataset_id)
+
+        if success:
+            return jsonify({"success": True, "message": "Download registered"}), 200
+        else:
+            return jsonify({"success": False, "message": "Dataset not found"}), 404
+
+    except Exception as e:
+        logger.error(f"Error registering download for dataset {dataset_id}: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500

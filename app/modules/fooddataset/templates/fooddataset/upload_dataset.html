@@ -124,15 +124,27 @@
                 this.on('success', function (file, response) {
                     show_upload_dataset(); 
 
+                    let formUniqueId = generateIncrementalId(); 
+
                     let listItem = document.createElement('li');
                     listItem.className = "mb-3 p-3 border rounded bg-light";
                     
                     let header = document.createElement('div');
                     header.className = "d-flex justify-content-between align-items-center mb-2";
-                    header.innerHTML = `<strong>${response.filename}</strong>`;
                     
-                    let formUniqueId = generateIncrementalId(); 
+                    let leftContainer = document.createElement('div');
+                    leftContainer.className = "d-flex align-items-center";
                     
+                    let title = document.createElement('strong');
+                    title.textContent = response.filename;
+                    
+                    let statusSpan = document.createElement('span');
+                    statusSpan.id = `check_status_${formUniqueId}`;
+                    statusSpan.className = "ms-3";
+                    
+                    leftContainer.appendChild(title);
+                    leftContainer.appendChild(statusSpan);
+
                     let btnGroup = document.createElement('div');
                     
                     let toggleBtn = document.createElement('button');
@@ -145,14 +157,18 @@
                     deleteBtn.innerHTML = "Delete";
                     deleteBtn.type = "button";
 
+                    btnGroup.appendChild(toggleBtn);
+                    btnGroup.appendChild(deleteBtn);
+
+                    header.appendChild(leftContainer);
+                    header.appendChild(btnGroup);
+
                     let metaForm = document.createElement('div');
                     metaForm.style.display = "none";
                     metaForm.className = "mt-2 pt-2 border-top";
                     
                     metaForm.innerHTML = `
                         <input type="hidden" name="food_models-${formUniqueId}-filename" value="${response.filename}">
-                        
-                        <div class="mb-2" id="check_status_${formUniqueId}"></div>
                         
                         <div class="mb-2">
                             <label class="form-label small">Title</label>
@@ -194,16 +210,11 @@
                             document.getElementById("upload_dataset").style.display = "none";
                         }
                     });
-
-                    btnGroup.appendChild(toggleBtn);
-                    btnGroup.appendChild(deleteBtn);
-                    header.appendChild(btnGroup);
                     
                     listItem.appendChild(header);
                     listItem.appendChild(metaForm);
                     fileList.appendChild(listItem);
 
-                    // NUEVO: LLAMADA A LA FUNCIÓN DE VALIDACIÓN DEFINIDA EN SCRIPTS.JS
                     if (typeof validateTempFile === 'function') {
                         validateTempFile(response.filename, `check_status_${formUniqueId}`);
                     }

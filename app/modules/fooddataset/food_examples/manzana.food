@@ -1,0 +1,10 @@
+name: Manzana
+calories: 52 kcal
+type: VEGAN
+nutritional_values:
+  protein: 0.3g
+  carbohydrates: 14g
+  fat: 0.2g
+  fiber: 2.4g
+  vitamin_c: 7%
+  potassium: 3%

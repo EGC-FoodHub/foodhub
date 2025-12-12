@@ -39,15 +39,15 @@ def login():
 
     form = LoginForm()
     if request.method == "POST" and form.validate_on_submit():
-        if authentication_service.check_password(form.email.data, form.password.data):
+        try:
             if authentication_service.check_2FA_is_enabled(form.email.data):
                 session["temp_mail"] = form.email.data
                 session["temp_pass"] = form.password.data
                 return redirect(url_for("auth.verify_2fa"))
             authentication_service.login(form.email.data, form.password.data)
             return redirect(url_for("public.index"))
-
-        return render_template("auth/login_form.html", form=form, error="Invalid credentials")
+        except Exception as e:
+            return render_template("auth/login_form.html", form=form, error=f"Login error: {str(e)}")
 
     return render_template("auth/login_form.html", form=form)
 

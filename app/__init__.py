@@ -55,6 +55,10 @@ def create_app(config_name="development"):
     error_handler_manager = ErrorHandlerManager(app)
     error_handler_manager.register_error_handlers()
 
+    from app.modules.fooddataset.events import register_events
+
+    register_events()
+
     # Injecting environment variables into jinja context
     @app.context_processor
     def inject_vars_into_jinja():

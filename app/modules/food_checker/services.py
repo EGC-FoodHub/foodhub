@@ -1,9 +1,7 @@
 import logging
 import os
 
-from app.modules.food_checker.repositories import FoodCheckerRepository
 from app.modules.hubfile.services import HubfileService
-from core.services.BaseService import BaseService
 
 logger = logging.getLogger(__name__)
 
@@ -92,7 +90,7 @@ class FoodCheckerService:
                     try:
                         cal_str = result["data"].get("calories", "0").split()[0]
                         summary["total_calories"] += int(cal_str)
-                    except:
+                    except Exception:
                         pass
 
                 summary["details"].append(info)

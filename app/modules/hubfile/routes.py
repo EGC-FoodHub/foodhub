@@ -2,15 +2,13 @@ import os
 import uuid
 from datetime import datetime, timezone
 
-from flask import Blueprint, current_app, jsonify, make_response, request, send_from_directory
+from flask import current_app, jsonify, make_response, request, send_from_directory
 from flask_login import current_user
 
 from app import db
 from app.modules.hubfile import hubfile_bp
 from app.modules.hubfile.models import HubfileDownloadRecord, HubfileViewRecord
 from app.modules.hubfile.services import HubfileDownloadRecordService, HubfileService
-
-hubfile_bp = Blueprint("hubfile", __name__, url_prefix="/hubfile")
 
 
 @hubfile_bp.route("/download/<int:file_id>", methods=["GET"])

@@ -1,13 +1,12 @@
 import os
 
-from flask import Blueprint, jsonify, render_template, request
+from flask import jsonify, request
 from flask_login import current_user, login_required
 
 from app.modules.basedataset.services import BaseDatasetService
 from app.modules.food_checker import food_checker_bp
 from app.modules.food_checker.services import FoodCheckerService
 
-food_checker_bp = Blueprint("food_checker", __name__, url_prefix="/api/food_checker")
 checker_service = FoodCheckerService()
 dataset_service = BaseDatasetService()
 
