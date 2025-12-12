@@ -2,12 +2,12 @@ import os
 import time
 
 import pytest
+from selenium import webdriver
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.action_chains import ActionChains
-from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
 
 from core.environment.host import get_host_for_selenium_testing
 from core.selenium.common import close_driver, initialize_driver
@@ -28,6 +28,7 @@ def count_datasets(driver, host):
     except Exception:
         amount_datasets = 0
     return amount_datasets
+
 
 """
 @pytest.mark.selenium
@@ -159,9 +160,7 @@ def test_upload_github_repo():
         wait_for_page_to_load(driver)
 
         # Completar login
-        email_field = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, "email"))
-        )
+        email_field = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "email")))
         password_field = driver.find_element(By.ID, "password")
         email_field.send_keys("user1@example.com")
         password_field.send_keys("1234")
@@ -178,37 +177,27 @@ def test_upload_github_repo():
         wait_for_page_to_load(driver)
 
         # Cambiar a la pestaña GitHub
-        github_tab = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.ID, "github-tab"))
-        )
+        github_tab = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "github-tab")))
         github_tab.click()
 
         # Introducir URL del repositorio
-        gh_url_input = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, "gh_url"))
-        )
+        gh_url_input = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "gh_url")))
         gh_url_input.send_keys("https://github.com/EGC-FoodHub/foodhub")
 
         # Click en botón importar repositorio
-        import_btn = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.ID, "import_repo_btn"))
-        )
+        import_btn = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "import_repo_btn")))
         driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", import_btn)
         import_btn.click()
         wait_for_page_to_load(driver)
         time.sleep(1)
 
         # Aceptar términos
-        agree_checkbox = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.ID, "agreeCheckbox"))
-        )
+        agree_checkbox = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "agreeCheckbox")))
         driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", agree_checkbox)
         agree_checkbox.click()
 
         # Click en botón final de subir
-        upload_btn = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.ID, "upload_button"))
-        )
+        upload_btn = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "upload_button")))
         driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", upload_btn)
         upload_btn.click()
         wait_for_page_to_load(driver)
@@ -220,9 +209,7 @@ def test_upload_github_repo():
 
         # Click final en subir
         # Botón final subir dataset
-        upload_btn = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.ID, "upload_button"))
-        )
+        upload_btn = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "upload_button")))
         driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", upload_btn)
         upload_btn.click()
 
@@ -241,9 +228,7 @@ def test_invalidbranch():
         driver.set_window_size(810, 1063)
 
         # Click Login
-        WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.LINK_TEXT, "Login"))
-        ).click()
+        WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.LINK_TEXT, "Login"))).click()
 
         # Optional extra click present in the recorded test (may not exist in all layouts)
         try:
@@ -277,23 +262,17 @@ def test_invalidbranch():
         driver.find_element(By.ID, "title").send_keys("test")
         driver.find_element(By.ID, "desc").send_keys("test")
 
-        github_tab = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.ID, "github-tab"))
-        )
+        github_tab = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "github-tab")))
         github_tab.click()
 
-        gh_url_input = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, "gh_url"))
-        )
+        gh_url_input = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "gh_url")))
         gh_url_input.click()
         gh_url_input.send_keys("https://github.com/EGC-FoodHub/foodhub")
 
         gh_branch = driver.find_element(By.ID, "gh_branch")
         gh_branch.send_keys("invalid")
 
-        import_btn = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.ID, "import_repo_btn"))
-        )
+        import_btn = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "import_repo_btn")))
         driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", import_btn)
         import_btn.click()
         wait_for_page_to_load(driver)
@@ -311,9 +290,7 @@ def test_invalid_title_description():
         driver.set_window_size(664, 947)
 
         # Click Login
-        WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.LINK_TEXT, "Login"))
-        ).click()
+        WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.LINK_TEXT, "Login"))).click()
 
         # Fill credentials
         WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "email"))).click()
@@ -327,9 +304,7 @@ def test_invalid_title_description():
         except Exception:
             pass
 
-        WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.LINK_TEXT, "Upload dataset"))
-        ).click()
+        WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.LINK_TEXT, "Upload dataset"))).click()
         wait_for_page_to_load(driver)
 
         # Click title and description (leave them empty)
@@ -337,14 +312,10 @@ def test_invalid_title_description():
         driver.find_element(By.ID, "desc").click()
 
         # Switch to GitHub tab and fill repo + branch
-        github_tab = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.ID, "github-tab"))
-        )
+        github_tab = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "github-tab")))
         github_tab.click()
 
-        gh_url_input = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, "gh_url"))
-        )
+        gh_url_input = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "gh_url")))
         gh_url_input.click()
         gh_url_input.send_keys("https://github.com/EGC-FoodHub/foodhub")
 
@@ -352,9 +323,7 @@ def test_invalid_title_description():
         gh_branch.click()
         gh_branch.send_keys("main")
 
-        import_btn = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.ID, "import_repo_btn"))
-        )
+        import_btn = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "import_repo_btn")))
         driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", import_btn)
         import_btn.click()
         wait_for_page_to_load(driver)
@@ -391,9 +360,7 @@ def test_validrepowithnofoodfile():
         driver.set_window_size(664, 947)
 
         # Click Login
-        WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.LINK_TEXT, "Login"))
-        ).click()
+        WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.LINK_TEXT, "Login"))).click()
 
         # Optional extra click present in recording
         try:
@@ -424,14 +391,10 @@ def test_validrepowithnofoodfile():
         driver.find_element(By.ID, "title").send_keys("test")
         driver.find_element(By.ID, "desc").send_keys("test")
 
-        github_tab = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.ID, "github-tab"))
-        )
+        github_tab = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "github-tab")))
         github_tab.click()
 
-        gh_url_input = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, "gh_url"))
-        )
+        gh_url_input = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "gh_url")))
         gh_url_input.click()
         gh_url_input.send_keys("https://github.com/SalmaEl1/iissi_lab3")
 
@@ -439,9 +402,7 @@ def test_validrepowithnofoodfile():
         gh_branch.click()
         gh_branch.send_keys("main")
 
-        import_btn = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.ID, "import_repo_btn"))
-        )
+        import_btn = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "import_repo_btn")))
         driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", import_btn)
         import_btn.click()
         wait_for_page_to_load(driver)
@@ -472,22 +433,16 @@ def test_invalidgithuburl_with_valid_url_format():
         driver.find_element(By.ID, "title").send_keys("test")
         driver.find_element(By.ID, "desc").send_keys("test")
         # Cambiar a la pestaña GitHub y completar el formulario usando waits como en test_upload_github
-        github_tab = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.ID, "github-tab"))
-        )
+        github_tab = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "github-tab")))
         github_tab.click()
 
-        gh_url_input = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, "gh_url"))
-        )
+        gh_url_input = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "gh_url")))
         gh_url_input.send_keys("https://github.com/EGC-FoodHub/foodhubinvalid")
 
         gh_branch = driver.find_element(By.ID, "gh_branch")
         gh_branch.send_keys("main")
 
-        import_btn = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.ID, "import_repo_btn"))
-        )
+        import_btn = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "import_repo_btn")))
         driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", import_btn)
         import_btn.click()
         wait_for_page_to_load(driver)
@@ -517,22 +472,16 @@ def test_invalidgithuburl_with_invalid_url_format():
         driver.find_element(By.ID, "title").send_keys("test")
         driver.find_element(By.ID, "desc").send_keys("test")
         # Cambiar a la pestaña GitHub y completar el formulario usando waits como en test_upload_github
-        github_tab = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.ID, "github-tab"))
-        )
+        github_tab = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "github-tab")))
         github_tab.click()
 
-        gh_url_input = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, "gh_url"))
-        )
+        gh_url_input = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "gh_url")))
         gh_url_input.send_keys("httpsinvalid")
 
         gh_branch = driver.find_element(By.ID, "gh_branch")
         gh_branch.send_keys("main")
 
-        import_btn = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.ID, "import_repo_btn"))
-        )
+        import_btn = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "import_repo_btn")))
         driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", import_btn)
         import_btn.click()
         wait_for_page_to_load(driver)
