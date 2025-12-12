@@ -6,6 +6,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium import webdriver
 
 from core.environment.host import get_host_for_selenium_testing
@@ -296,6 +297,86 @@ def test_invalidbranch():
         driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", import_btn)
         import_btn.click()
         wait_for_page_to_load(driver)
+
+    finally:
+        close_driver(driver)
+
+
+@pytest.mark.selenium
+def test_invalid_title_description():
+    driver = initialize_driver()
+    try:
+        host = get_host_for_selenium_testing()
+        driver.get(f"{host}/")
+        driver.set_window_size(664, 947)
+
+        # Click Login
+        WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.LINK_TEXT, "Login"))
+        ).click()
+
+        # Fill credentials
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "email"))).click()
+        driver.find_element(By.ID, "password").send_keys("1234")
+        driver.find_element(By.ID, "email").send_keys("user1@example.com")
+        driver.find_element(By.ID, "submit").click()
+
+        # Open sidebar and go to upload page
+        try:
+            driver.find_element(By.CSS_SELECTOR, ".sidebar-toggle").click()
+        except Exception:
+            pass
+
+        WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.LINK_TEXT, "Upload dataset"))
+        ).click()
+        wait_for_page_to_load(driver)
+
+        # Click title and description (leave them empty)
+        driver.find_element(By.ID, "title").click()
+        driver.find_element(By.ID, "desc").click()
+
+        # Switch to GitHub tab and fill repo + branch
+        github_tab = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.ID, "github-tab"))
+        )
+        github_tab.click()
+
+        gh_url_input = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "gh_url"))
+        )
+        gh_url_input.click()
+        gh_url_input.send_keys("https://github.com/EGC-FoodHub/foodhub")
+
+        gh_branch = driver.find_element(By.ID, "gh_branch")
+        gh_branch.click()
+        gh_branch.send_keys("main")
+
+        import_btn = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.ID, "import_repo_btn"))
+        )
+        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", import_btn)
+        import_btn.click()
+        wait_for_page_to_load(driver)
+
+        # Move to zip-tab element (as in recorded test)
+        try:
+            element = driver.find_element(By.ID, "zip-tab")
+            actions = ActionChains(driver)
+            actions.move_to_element(element).perform()
+        except Exception:
+            pass
+
+        # Agree and attempt upload
+        try:
+            WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.ID, "agreeCheckbox"))).click()
+        except Exception:
+            pass
+
+        try:
+            WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.ID, "upload_button"))).click()
+        except Exception:
+            pass
 
     finally:
         close_driver(driver)
