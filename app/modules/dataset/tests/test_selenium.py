@@ -36,44 +36,50 @@ def test_upload_dataset():
     try:
         host = get_host_for_selenium_testing()
 
-        # Open the login page
+        # Abrir login
         driver.get(f"{host}/login")
         wait_for_page_to_load(driver)
 
-        # Find the username and password field and enter the values
-        email_field = driver.find_element(By.NAME, "email")
+        # Completar login
+        email_field = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, "email")))
         password_field = driver.find_element(By.NAME, "password")
-
         email_field.send_keys("user1@example.com")
         password_field.send_keys("1234")
-
-        # Send the form
         password_field.send_keys(Keys.RETURN)
-        time.sleep(4)
+        wait_for_page_to_load(driver)
+        time.sleep(1)
+
+        # Ir a sección datasets
+        sidebar_item = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, ".sidebar-item:nth-child(6) .align-middle:nth-child(2)"))
+        )
+        sidebar_item.click()
         wait_for_page_to_load(driver)
 
-        # Count initial datasets
+        # Contar datasets iniciales
         initial_datasets = count_datasets(driver, host)
 
-        # Open the upload dataset
-        driver.get(f"{host}/dataset/upload")
+        # Abrir upload dataset
+        upload_link = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.LINK_TEXT, "Upload dataset")))
+        upload_link.click()
         wait_for_page_to_load(driver)
 
-        # Find basic info and UVL model and fill values
-        title_field = driver.find_element(By.NAME, "title")
+        # Rellenar título, descripción y tags
+        title_field = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, "title")))
         title_field.send_keys("Title")
         desc_field = driver.find_element(By.NAME, "desc")
         desc_field.send_keys("Description")
         tags_field = driver.find_element(By.NAME, "tags")
         tags_field.send_keys("tag1,tag2")
 
-        # Add two authors and fill
-        add_author_button = driver.find_element(By.ID, "add_author")
-        add_author_button.send_keys(Keys.RETURN)
-        wait_for_page_to_load(driver)
-        add_author_button.send_keys(Keys.RETURN)
-        wait_for_page_to_load(driver)
+        # Añadir dos autores
+        add_author_btn = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "add_author")))
+        for _ in range(2):
+            driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", add_author_btn)
+            add_author_btn.click()
+            time.sleep(0.5)
 
+        # Rellenar autores
         name_field0 = driver.find_element(By.NAME, "authors-0-name")
         name_field0.send_keys("Author0")
         affiliation_field0 = driver.find_element(By.NAME, "authors-0-affiliation")
@@ -86,52 +92,41 @@ def test_upload_dataset():
         affiliation_field1 = driver.find_element(By.NAME, "authors-1-affiliation")
         affiliation_field1.send_keys("Club1")
 
-        # Obtén las rutas absolutas de los archivos
-        file1_path = os.path.abspath("app/modules/dataset/uvl_examples/file1.uvl")
-        file2_path = os.path.abspath("app/modules/dataset/uvl_examples/file2.uvl")
+        # Subir archivos food
+        file_paths = [
+            os.path.abspath("app/modules/dataset/food_examples/test.food"),
+            os.path.abspath("app/modules/dataset/food_examples/test.food")
+        ]
+        for file_path in file_paths:
+            dropzone = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.CLASS_NAME, "dz-hidden-input"))
+            )
+            dropzone.send_keys(file_path)
+            time.sleep(1)  # esperar que Dropzone procese el archivo
 
-        # Subir el primer archivo
-        dropzone = driver.find_element(By.CLASS_NAME, "dz-hidden-input")
-        dropzone.send_keys(file1_path)
+        # Click en botón "show" del primer UVL model
+        show_button = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "0_button")))
+        show_button.click()
+
+        # Check I agree y subir dataset
+        agree_checkbox = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "agreeCheckbox")))
+        agree_checkbox.click()
+
+        upload_btn = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "upload_button")))
+        upload_btn.click()
         wait_for_page_to_load(driver)
+        time.sleep(2)
 
-        # Subir el segundo archivo
-        dropzone = driver.find_element(By.CLASS_NAME, "dz-hidden-input")
-        dropzone.send_keys(file2_path)
-        wait_for_page_to_load(driver)
+        # Validar que se redirige a lista de datasets
+        assert driver.current_url == f"{host}/dataset/list", "Test falló: no redirigió a /dataset/list"
 
-        # Add authors in UVL models
-        show_button = driver.find_element(By.ID, "0_button")
-        show_button.send_keys(Keys.RETURN)
-        add_author_uvl_button = driver.find_element(By.ID, "0_form_authors_button")
-        add_author_uvl_button.send_keys(Keys.RETURN)
-        wait_for_page_to_load(driver)
-
-        name_field = driver.find_element(By.NAME, "feature_models-0-authors-2-name")
-        name_field.send_keys("Author3")
-        affiliation_field = driver.find_element(By.NAME, "feature_models-0-authors-2-affiliation")
-        affiliation_field.send_keys("Club3")
-
-        # Check I agree and send form
-        check = driver.find_element(By.ID, "agreeCheckbox")
-        check.send_keys(Keys.SPACE)
-        wait_for_page_to_load(driver)
-
-        upload_btn = driver.find_element(By.ID, "upload_button")
-        upload_btn.send_keys(Keys.RETURN)
-        wait_for_page_to_load(driver)
-        time.sleep(2)  # Force wait time
-
-        assert driver.current_url == f"{host}/dataset/list", "Test failed!"
-
-        # Count final datasets
+        # Contar datasets finales
         final_datasets = count_datasets(driver, host)
-        assert final_datasets == initial_datasets + 1, "Test failed!"
+        assert final_datasets == initial_datasets + 1, "Test falló: el dataset no se subió correctamente"
 
-        print("Test passed!")
+        print("Test upload_dataset pasó correctamente!")
 
     finally:
-        # Close the browser
         close_driver(driver)
 
 
