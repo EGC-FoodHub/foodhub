@@ -19,11 +19,17 @@ function send_query() {
             const searchCriteria = {
                 csrf_token: csrfToken,
                 query: document.querySelector('#query').value,
+                author_query: document.querySelector('#author_query').value,
+                tag_query: document.querySelector('#tag_query').value,
+                date_from: document.querySelector('#date_from').value,
+                date_to: document.querySelector('#date_to').value,
                 publication_type: document.querySelector('#publication_type').value,
                 sorting: document.querySelector('[name="sorting"]:checked').value,
+                calories_min: document.querySelector('#calories_min').value,
+                calories_max: document.querySelector('#calories_max').value,
             };
 
-            console.log(document.querySelector('#publication_type').value);
+            console.log(searchCriteria);
 
             fetch('/explore', {
                 method: 'POST',
@@ -135,7 +141,7 @@ function send_query() {
 }
 
 function formatDate(dateString) {
-    const options = {day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: 'numeric'};
+    const options = { day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: 'numeric' };
     const date = new Date(dateString);
     return date.toLocaleString('en-US', options);
 }
@@ -143,7 +149,7 @@ function formatDate(dateString) {
 function set_tag_as_query(tagName) {
     const queryInput = document.getElementById('query');
     queryInput.value = tagName.trim();
-    queryInput.dispatchEvent(new Event('input', {bubbles: true}));
+    queryInput.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
 function set_publication_type_as_query(publicationType) {
@@ -155,7 +161,7 @@ function set_publication_type_as_query(publicationType) {
             break;
         }
     }
-    publicationTypeSelect.dispatchEvent(new Event('input', {bubbles: true}));
+    publicationTypeSelect.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
 document.getElementById('clear-filters').addEventListener('click', clearFilters);
@@ -178,9 +184,15 @@ function clearFilters() {
         option.checked = option.value == "newest"; // replace "default" with whatever your default value is
         // option.dispatchEvent(new Event('input', {bubbles: true}));
     });
+    let datefromInput = document.querySelector('#date_from');
+    datefromInput.value = "";
+    let datetoInput = document.querySelector('#date_to');
+    datetoInput.value = "";
+    document.querySelector('#calories_min').value = "";
+    document.querySelector('#calories_max').value = "";
 
     // Perform a new search with the reset filters
-    queryInput.dispatchEvent(new Event('input', {bubbles: true}));
+    queryInput.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -195,11 +207,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const queryInput = document.getElementById('query');
         queryInput.value = queryParam
-        queryInput.dispatchEvent(new Event('input', {bubbles: true}));
+        queryInput.dispatchEvent(new Event('input', { bubbles: true }));
         console.log("throw event");
 
     } else {
         const queryInput = document.getElementById('query');
-        queryInput.dispatchEvent(new Event('input', {bubbles: true}));
+        queryInput.dispatchEvent(new Event('input', { bubbles: true }));
     }
 });

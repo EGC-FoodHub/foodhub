@@ -1,9 +1,10 @@
 from datetime import datetime, timedelta
 
-from sqlalchemy import and_, func
+from sqlalchemy import and_, event, func
 
 from app import db
 from app.modules.basedataset.models import BaseDataset, BaseDSMetaData
+from core.services.SearchService import SearchService
 
 
 class FoodDataset(BaseDataset):
@@ -31,6 +32,14 @@ class FoodDataset(BaseDataset):
     __mapper_args__ = {
         "polymorphic_identity": "food_dataset",
     }
+
+    def get_file_total_size(self) -> int:
+        """Calcula el tamaño total de todos los archivos del dataset."""
+        total_size = 0
+        for food_model in self.files:  # self.files son FoodModels
+            for hubfile in food_model.files:  # food_model.files son Hubfiles
+                total_size += hubfile.size
+        return total_size
 
     def __repr__(self):
         return f"<FoodDataset {self.id}>"
@@ -207,10 +216,20 @@ class FoodDatasetActivity(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     dataset_id = db.Column(db.Integer, db.ForeignKey("food_dataset.id"), nullable=False, index=True)
-    activity_type = db.Column(db.String(20), nullable=False, index=True)  # 'view' o 'download'
+    activity_type = db.Column(db.String(20), nullable=False, index=True)
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now, index=True)
 
     dataset = db.relationship("FoodDataset", back_populates="activity_logs")
 
     def __repr__(self):
         return f"<FoodDatasetActivity {self.activity_type} on dataset {self.dataset_id}>"
+
+
+@event.listens_for(FoodDataset, "after_delete")
+def delete_dataset_from_elastic(mapper, connection, target):
+    try:
+        service = SearchService()
+        if service.enabled:
+            service.delete_dataset(target.id)
+    except Exception as e:
+        print(f"Error automaically deleting from Elastic: {e}")

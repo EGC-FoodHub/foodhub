@@ -41,6 +41,18 @@ def db_reset(clear_migrations, yes):
                         conn.execute(table.delete())
                 trans.commit()  # End transaction
             click.echo(click.style("All table data cleared.", fg="yellow"))
+
+            # Clear Elasticsearch index
+            try:
+                from core.services.SearchService import SearchService
+
+                search_service = SearchService()
+                if search_service.enabled:
+                    search_service.es.options(ignore_status=[400, 404]).indices.delete(index="datasets")
+                    click.echo(click.style("Elasticsearch index cleared.", fg="yellow"))
+            except Exception as e:
+                click.echo(click.style(f"Error clearing Elasticsearch index: {e}", fg="red"))
+
             subprocess.run(["flask", "db", "stamp", "head"], check=True)
         except Exception as e:
             click.echo(click.style(f"Error clearing table data: {e}", fg="red"))

@@ -1,19 +1,16 @@
 from flask_wtf import FlaskForm
 from wtforms import FieldList, FormField, SelectField, StringField, TextAreaField
-from wtforms.validators import URL, DataRequired, Optional
+from wtforms.validators import URL, DataRequired, Length, Optional
 
 from app.modules.basedataset.forms import AuthorForm, BaseDatasetForm
 from app.modules.basedataset.models import BasePublicationType
 
 
 class FoodModelForm(FlaskForm):
-    """
-    Formulario para un archivo individual .food (un modelo).
-    """
 
     filename = StringField("Filename", validators=[DataRequired()])
 
-    title = StringField("Title", validators=[Optional()])
+    title = StringField("Title", validators=[Optional(), Length(max=200)])
     description = TextAreaField("Description", validators=[Optional()])
 
     publication_type = SelectField(
@@ -23,7 +20,7 @@ class FoodModelForm(FlaskForm):
     )
 
     publication_doi = StringField("Publication DOI", validators=[Optional(), URL()])
-    tags = StringField("Tags (separated by commas)")
+    tags = StringField("Tags (separated by commas)", validators=[Optional()])
 
     authors = FieldList(FormField(AuthorForm))
 
@@ -34,10 +31,6 @@ class FoodModelForm(FlaskForm):
         return [author.get_author() for author in self.authors]
 
     def get_food_metadata(self):
-        """
-        Devuelve el diccionario para crear el objeto FoodMetaData.
-        Nombre corregido (antes get_fmmetadata).
-        """
         return {
             "food_filename": self.filename.data,
             "title": self.title.data,
@@ -49,13 +42,48 @@ class FoodModelForm(FlaskForm):
 
 
 class FoodDatasetForm(BaseDatasetForm):
-    """
-    Formulario principal para subir FoodDatasets.
-    Hereda los campos de dataset (título, desc, autores) de BaseDatasetForm.
-    Añade la lista de modelos de comida.
-    """
+
+    calories = StringField(
+        "Calories", validators=[Optional(), Length(max=50)], description="Total calories (e.g., '2000 kcal')"
+    )
+
+    type = StringField(
+        "Food Type",
+        validators=[Optional(), Length(max=50)],
+        description="Type of food (e.g., 'Breakfast', 'Lunch', 'Dinner')",
+    )
+
+    community = StringField(
+        "Community",
+        validators=[Optional(), Length(max=200)],
+        description="Community or research group associated with this dataset",
+    )
 
     food_models = FieldList(FormField(FoodModelForm), min_entries=1)
 
+    def get_dsmetadata(self):
+
+        base_metadata = super().get_dsmetadata()
+
+        food_metadata = {
+            "calories": self.calories.data,
+            "type": self.type.data,
+            "community": self.community.data,
+        }
+
+        return {**base_metadata, **food_metadata}
+
     def get_food_models_metadata(self):
+
         return [fm.get_food_metadata() for fm in self.food_models]
+
+    def validate(self, extra_validators=None):
+
+        if not super().validate(extra_validators):
+            return False
+
+        if len(self.food_models) < 1:
+            self.food_models.errors.append("At least one food model is required")
+            return False
+
+        return True
