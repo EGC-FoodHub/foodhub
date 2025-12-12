@@ -95,7 +95,7 @@ def test_upload_dataset():
         # Subir archivos food
         file_paths = [
             os.path.abspath("app/modules/dataset/food_examples/test.food"),
-            os.path.abspath("app/modules/dataset/food_examples/test.food")
+            os.path.abspath("app/modules/dataset/food_examples/test.food"),
         ]
         for file_path in file_paths:
             dropzone = WebDriverWait(driver, 10).until(
