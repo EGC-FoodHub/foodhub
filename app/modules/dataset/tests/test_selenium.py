@@ -167,3 +167,66 @@ def test_upload_zip_no_file_with_login():
 
     finally:
         close_driver(driver)
+
+
+@pytest.mark.selenium
+def test_upload_zip_with_non_food_files():
+    driver = initialize_driver()
+
+    try:
+        host = get_host_for_selenium_testing()
+
+        # Abrir página y login
+        driver.get(host)
+        wait_for_page_to_load(driver)
+        driver.set_window_size(1124, 1064)
+
+        # Click en login
+        login_nav = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, ".nav-link:nth-child(1)"))
+        )
+        login_nav.click()
+
+        email_field = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "email")))
+        password_field = driver.find_element(By.ID, "password")
+        email_field.send_keys("user1@example.com")
+        password_field.send_keys("1234")
+        driver.find_element(By.ID, "submit").click()
+        wait_for_page_to_load(driver)
+        time.sleep(1)
+
+        # Ir a la sección de datasets
+        sidebar_item = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, ".sidebar-item:nth-child(6) .align-middle:nth-child(2)"))
+        )
+        sidebar_item.click()
+        wait_for_page_to_load(driver)
+
+        # Completar título y descripción
+        driver.find_element(By.ID, "title").send_keys("Test ZIP with .uvl")
+        driver.find_element(By.ID, "desc").send_keys("Testing invalid file in ZIP")
+
+        # Cambiar a la pestaña ZIP
+        WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "zip-tab"))).click()
+
+        # Seleccionar ZIP que contiene solo .uvl
+        zip_path = os.path.abspath("app/modules/dataset/zip_examples/uvl.zip")
+        zip_input = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "zip_input")))
+        zip_input.send_keys(zip_path)
+
+        # Click en Upload ZIP
+        upload_zip_btn = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "upload_zip_btn")))
+        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", upload_zip_btn)
+        driver.execute_script("arguments[0].click();", upload_zip_btn)
+
+        # Validar mensaje de advertencia
+        warning_locator = (By.CSS_SELECTOR, "#zip_status span.text-warning")
+        WebDriverWait(driver, 5).until(
+            EC.text_to_be_present_in_element(warning_locator, "No .food files found in the ZIP")
+        )
+        warning_message = driver.find_element(*warning_locator)
+        assert "No .food files found in the ZIP" in warning_message.text
+        print("Mensaje de advertencia detectado correctamente para ZIP con .uvl.")
+
+    finally:
+        close_driver(driver)
