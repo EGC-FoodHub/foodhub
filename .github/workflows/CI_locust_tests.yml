@@ -85,15 +85,14 @@ jobs:
 
       - name: Run load tests with Locust
         run: |
-          locust -f app/tests/load --host=http://localhost:5000 \
+          locust --host=http://localhost:5000 \
                  --users 50 \
                  --spawn-rate 5 \
                  --run-time 60s \
                  --headless \
-                 --html reports/locust_report.html \
-                 --csv reports/locust_stats \
+                 --html reports/reporte_locust.html \
+                 --csv reports/estadisticas_locust \
                  --exit-code-on-error 0
-        continue-on-error: true
 
       - name: Upload Locust HTML report
         uses: actions/upload-artifact@v4
