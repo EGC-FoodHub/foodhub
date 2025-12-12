@@ -1,5 +1,6 @@
-import pytest
 import os
+
+import pytest
 from locust import HttpUser, TaskSet, task
 
 from core.environment.host import get_host_for_locust_testing
@@ -38,16 +39,10 @@ class DatasetBehavior(TaskSet):
             return
 
         with open(zip_path, "rb") as f:
-            files = {
-                "zip_file": ("test.zip", f, "application/zip")
-            }
+            files = {"zip_file": ("test.zip", f, "application/zip")}
 
             # 4. POST real para subir el ZIP
-            upload = self.client.post(
-                "/dataset/upload",
-                data=data,
-                files=files
-            )
+            upload = self.client.post("/dataset/upload", data=data, files=files)
 
         # 5. Validación simple tipo Hubfile
         if upload.status_code not in [200, 302]:
