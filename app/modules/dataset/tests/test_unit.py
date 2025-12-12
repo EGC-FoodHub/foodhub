@@ -3,6 +3,7 @@ import logging
 import zipfile
 from types import SimpleNamespace
 from unittest.mock import MagicMock
+import requests
 
 import pytest
 
@@ -153,3 +154,170 @@ def test_process_zip_no_matching_files_logs_warning(tmp_path, caplog):
     service._process_zip_file(SimpleNamespace(id=3), zipbuf, current_user)
 
     assert any("No .food files found" in rec.getMessage() for rec in caplog.records)
+
+
+# ------------------ GITHUB UPLOAD MINIMAL TESTS ------------------
+
+
+def make_form(url: str):
+    return SimpleNamespace(github_url=SimpleNamespace(data=url))
+
+
+def test_create_from_github_success(monkeypatch, tmp_path):
+    """Caso mínimo: descarga correcta y se llama a _process_zip_file"""
+    service = DataSetService()
+    fake_dataset = SimpleNamespace(id=99)
+    service._create_dataset_shell = MagicMock(return_value=fake_dataset)
+    service._process_zip_file = MagicMock()
+    service.repository.session = SimpleNamespace(commit=MagicMock(), rollback=MagicMock())
+
+    # Simular requests.get: repo info and zip
+    def fake_get(url, *args, **kwargs):
+        if url.startswith("https://api.github.com/"):
+            m = MagicMock()
+            m.json.return_value = {"default_branch": "main"}
+            m.raise_for_status = MagicMock()
+            return m
+        elif url.endswith(".zip"):
+            m = MagicMock()
+            m.content = b"PK\x03\x04fakezip"
+            m.raise_for_status = MagicMock()
+            return m
+        raise RuntimeError("Unexpected URL")
+
+    monkeypatch.setattr("app.modules.dataset.services.requests.get", fake_get)
+
+    form = make_form("https://github.com/user/repo")
+    current_user = SimpleNamespace()
+    current_user.temp_folder = lambda: str(tmp_path)
+
+    result = service.create_from_github(form, current_user)
+
+    assert result is fake_dataset
+    service._process_zip_file.assert_called_once()
+
+
+def test_create_from_github_invalid_url_raises(tmp_path):
+    service = DataSetService()
+    service._create_dataset_shell = MagicMock(return_value=SimpleNamespace(id=1))
+    service._process_zip_file = MagicMock()
+    service.repository.session = SimpleNamespace(commit=MagicMock(), rollback=MagicMock())
+
+    form = make_form("https://notgithub.com/user/repo")
+    current_user = SimpleNamespace()
+    current_user.temp_folder = lambda: str(tmp_path)
+
+    with pytest.raises(ValueError):
+        service.create_from_github(form, current_user)
+
+
+def test_create_from_github_no_food_files(monkeypatch, tmp_path, caplog):
+    """Valid GitHub URL but ZIP contains no .food files: should commit and create no hubfiles."""
+    service = DataSetService()
+    fake_dataset = SimpleNamespace(id=200)
+    service._create_dataset_shell = MagicMock(return_value=fake_dataset)
+
+    # use fake repos so that _process_zip_file can create objects without DB
+    service.fmmetadata_repository = FakeRepo()
+    service.feature_model_repository = FakeFeatureModelRepo()
+    service.hubfilerepository = FakeHubFileRepo()
+
+    service.repository.session = SimpleNamespace(commit=MagicMock(), rollback=MagicMock())
+
+    # create zip with no .food files
+    zipbuf = create_test_zip({"README.md": "no food here"})
+
+    def fake_get(url, *args, **kwargs):
+        if url.startswith("https://api.github.com/"):
+            m = MagicMock()
+            m.json.return_value = {"default_branch": "main"}
+            m.raise_for_status = MagicMock()
+            return m
+        elif url.endswith(".zip"):
+            m = MagicMock()
+            m.content = zipbuf.getvalue()
+            m.raise_for_status = MagicMock()
+            return m
+        raise RuntimeError("Unexpected URL")
+
+    monkeypatch.setattr("app.modules.dataset.services.requests.get", fake_get)
+
+    form = make_form("https://github.com/user/repo")
+    current_user = SimpleNamespace()
+    current_user.temp_folder = lambda: str(tmp_path)
+
+    caplog.set_level(logging.WARNING)
+    result = service.create_from_github(form, current_user)
+
+    assert result is fake_dataset
+    # no hubfiles created
+    assert len(service.hubfilerepository.created) == 0
+
+
+def test_create_from_github_invalid_branch_raises(monkeypatch, tmp_path):
+    """If zip download fails (invalid branch) raise ValueError"""
+    service = DataSetService()
+    service._create_dataset_shell = MagicMock(return_value=SimpleNamespace(id=10))
+    service.repository.session = SimpleNamespace(commit=MagicMock(), rollback=MagicMock())
+
+    def fake_get(url, *args, **kwargs):
+        if url.startswith("https://api.github.com/"):
+            m = MagicMock()
+            m.json.return_value = {"default_branch": "nonexistent"}
+            m.raise_for_status = MagicMock()
+            return m
+        elif url.endswith(".zip"):
+            # simulate 404 / requests exception when fetching zip
+            raise requests.RequestException("Not Found")
+        raise RuntimeError("Unexpected URL")
+
+    monkeypatch.setattr("app.modules.dataset.services.requests.get", fake_get)
+
+    form = make_form("https://github.com/user/repo")
+    current_user = SimpleNamespace()
+    current_user.temp_folder = lambda: str(tmp_path)
+
+    with pytest.raises(ValueError):
+        service.create_from_github(form, current_user)
+
+
+def test_create_from_github_with_food_files(monkeypatch, tmp_path):
+    """Simulate github repo (EGC-FoodHub/foodhub main) with a .food file inside zip."""
+    service = DataSetService()
+    fake_dataset = SimpleNamespace(id=300)
+    service._create_dataset_shell = MagicMock(return_value=fake_dataset)
+
+    service.fmmetadata_repository = FakeRepo()
+    service.feature_model_repository = FakeFeatureModelRepo()
+    service.hubfilerepository = FakeHubFileRepo()
+
+    service.repository.session = SimpleNamespace(commit=MagicMock(), rollback=MagicMock())
+
+    # zip with a .food file
+    zipbuf = create_test_zip({"models/model.food": "food content"})
+
+    def fake_get(url, *args, **kwargs):
+        if url.startswith("https://api.github.com/repos/EGC-FoodHub/foodhub"):
+            m = MagicMock()
+            m.json.return_value = {"default_branch": "main"}
+            m.raise_for_status = MagicMock()
+            return m
+        elif url.endswith("main.zip") or url.endswith(".zip"):
+            m = MagicMock()
+            m.content = zipbuf.getvalue()
+            m.raise_for_status = MagicMock()
+            return m
+        raise RuntimeError("Unexpected URL")
+
+    monkeypatch.setattr("app.modules.dataset.services.requests.get", fake_get)
+
+    form = make_form("https://github.com/EGC-FoodHub/foodhub")
+    current_user = SimpleNamespace()
+    current_user.temp_folder = lambda: str(tmp_path)
+
+    result = service.create_from_github(form, current_user)
+
+    assert result is fake_dataset
+    # hubfile should have been created for model.food
+    assert len(service.hubfilerepository.created) == 1
+    assert service.hubfilerepository.created[0].name == "model.food"
