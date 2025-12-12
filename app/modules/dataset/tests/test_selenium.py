@@ -1,5 +1,6 @@
-import time
 import os
+import time
+
 import pytest
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
@@ -25,7 +26,6 @@ def count_datasets(driver, host):
     except Exception:
         amount_datasets = 0
     return amount_datasets
-
 
 
 @pytest.mark.selenium
@@ -132,7 +132,6 @@ def test_upload_dataset():
     finally:
         # Close the browser
         close_driver(driver)
-
 
 
 @pytest.mark.selenium
@@ -323,6 +322,7 @@ def test_upload_zip_no_title_no_description():
 
     finally:
         close_driver(driver)
+
 
 @pytest.mark.selenium
 def test_upload_github_repo():
