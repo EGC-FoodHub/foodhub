@@ -127,7 +127,7 @@ def edit_doi_dataset(dataset_id):
     if request.method == "POST":
         result, errors = food_service.edit_doi_dataset(dataset, form)
         return food_service.handle_service_response(
-            result, errors, "dataset.list_dataset", "Dataset updated", "dataset/edit_dataset.html", form
+            result, errors, "basedataset.list_dataset", "Dataset updated", "dataset/edit_dataset.html", form
         )
     else:
         form.title.data = dataset.ds_meta_data.title

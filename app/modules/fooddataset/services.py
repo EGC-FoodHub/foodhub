@@ -103,6 +103,9 @@ class FoodDatasetService(BaseDatasetService):
 
         return dataset
 
+    def update_dsmetadata(self, id, **kwargs):
+        return self.dsmetadata_repository.update(id, **kwargs)
+
     def _move_dataset_files(self, dataset, current_user):
         """Mueve los archivos físicos del directorio temporal al final."""
         source_dir = current_user.temp_folder()
