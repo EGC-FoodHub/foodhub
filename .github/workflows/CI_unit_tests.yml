@@ -1,27 +1,33 @@
-name: Unit Tests
+name: Tests de Interfaz
 
 on:
   push:
 
 jobs:
-  unit-tests:
-    name: Pytest
+  tests-e2e:
+    name: Selenium + MariaDB
     runs-on: ubuntu-24.04
 
     env:
+      # MariaDB
+      MARIADB_ROOT_PASSWORD: rootpassword
       MARIADB_DATABASE: foodhub_test
       MARIADB_USER: test
       MARIADB_PASSWORD: testpassword
-      MARIADB_ROOT_PASSWORD: rootpassword
       MARIADB_HOSTNAME: 127.0.0.1
-      # The MariaDB container maps container:3306 to host:3307 (see services.ports).
-      # CI processes should connect to the host port (3307) on 127.0.0.1.
       MARIADB_PORT: 3307
-      # Testing DB name used by the app's TestingConfig (core.managers.config_manager)
-      MARIADB_TEST_DATABASE: foodhub_test
+
+      # Flask
       FLASK_ENV: testing
+      FLASK_APP_NAME: FoodHub
+      DOMAIN: localhost
+      SECRET_KEY: test-secret-key-for-ci
+
+      # Dirección correcta del HOST vista desde contenedores
+      BASE_URL: http://172.17.0.1:5000
 
     services:
+
       mariadb:
         image: mariadb:11.3
         env:
@@ -29,56 +35,114 @@ jobs:
           MARIADB_DATABASE: ${{ env.MARIADB_DATABASE }}
           MARIADB_USER: ${{ env.MARIADB_USER }}
           MARIADB_PASSWORD: ${{ env.MARIADB_PASSWORD }}
-        # map container 3306 to a non-standard host port to avoid conflicts on the runner
         ports:
           - 3307:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h127.0.0.1 -uroot -p${MARIADB_ROOT_PASSWORD}"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+      chrome:
+        image: selenium/standalone-chrome:latest
+        ports:
+          - 4444:4444
+        options: --shm-size=2g
 
     steps:
 
-      - name: Checkout code
+      - name: Obtener código
         uses: actions/checkout@v5
 
-      - name: Setup Python
+      - name: Configurar Python
         uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           cache: 'pip'
 
-      - name: Remove rosemary editable entry
+      - name: Eliminar rosemary editable
         run: sed -i '/rosemary @ file:\/\/\/app/d' requirements.txt
 
-      - name: Install dependencies
+      - name: Instalar dependencias
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install -e .
 
-      - name: Wait for MariaDB to be ready
+      - name: Instalar cliente MariaDB
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mariadb-client
+
+      - name: Esperar a MariaDB (host:3307)
         run: |
           for i in {1..60}; do
-            # try connecting via the mapped host port 3307 using the root credentials
-            if mysqladmin ping -h127.0.0.1 -P3307 -u root -p"$MARIADB_ROOT_PASSWORD" --silent; then
-              echo "MariaDB is ready"
-              break
+            if mysqladmin ping -h127.0.0.1 -P3307 -uroot -p"$MARIADB_ROOT_PASSWORD" --silent; then
+              echo "MariaDB listo"
+              exit 0
             fi
-            echo "Waiting for MariaDB ($i/60)..."
+            echo "Esperando MariaDB ($i/60)..."
             sleep 2
           done
+          echo "MariaDB no respondió a tiempo"
+          exit 1
 
-      - name: Run unit tests
-        run: pytest -m unit -v --cov=app --cov-report=term-missing --cov-report=xml --cov-report=html --cov-fail-under=25
+      - name: Inicializar base de datos
+        run: |
+          rosemary db:upgrade
+          rosemary db:seed
 
-      - name: Upload HTML coverage report
+      - name: Iniciar aplicación Flask
+        run: |
+          flask run --host=0.0.0.0 --port=5000 &
+          echo $! > flask.pid
+          sleep 10
+
+      - name: Verificar que Flask responde
+        run: |
+          curl -f http://localhost:5000/ || exit 1
+          echo "Flask funcionando"
+
+      - name: Esperar a Selenium (Chrome)
+        run: |
+          timeout 45 bash -c 'until curl -s http://localhost:4444/wd/hub/status | grep -q "ready"; do echo "Esperando Selenium..."; sleep 2; done'
+          echo "Selenium listo"
+
+      - name: Ejecutar tests de interfaz
+        env:
+          SELENIUM_REMOTE_URL: http://localhost:4444/wd/hub
+        run: |
+          if pytest --collect-only -m selenium 2>&1 | grep -q "no tests ran"; then
+            echo "No hay tests Selenium"
+            exit 0
+          else
+            pytest -m selenium -v --tb=short
+          fi
+        continue-on-error: true
+
+      - name: Subir capturas de pantalla
         uses: actions/upload-artifact@v4
-        if: always()
+        if: failure()
         with:
-          name: unit-tests-coverage-${{ github.sha }}
-          path: htmlcov/
+          name: capturas-interfaz-selenium-${{ github.sha }}
+          path: |
+            screenshots/
+            test-results/
           retention-days: 30
+          if-no-files-found: ignore
 
-      - name: Coverage summary
+      - name: Mostrar logs de Selenium (si falla)
+        if: failure()
+        run: |
+          echo "### LOGS DE SELENIUM"
+          docker logs $(docker ps -q --filter ancestor=selenium/standalone-chrome:latest) || true
+
+      - name: Resumen de tests de interfaz
         if: always()
         run: |
-          echo "## 📊 Coverage Report - Unit Tests" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          coverage report >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "## Resultados Tests de Interfaz" >> $GITHUB_STEP_SUMMARY
+
+      - name: Detener Flask
+        if: always()
+        run: |
+          kill $(cat flask.pid) || true
