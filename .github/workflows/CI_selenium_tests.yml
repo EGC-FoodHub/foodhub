@@ -9,12 +9,12 @@ jobs:
     runs-on: ubuntu-24.04
 
     env:
+      # ... (Variables de entorno sin cambios)
       MARIADB_DATABASE: foodhub_test
       MARIADB_USER: test
       MARIADB_PASSWORD: testpassword
       MARIADB_ROOT_PASSWORD: rootpassword
       MARIADB_HOSTNAME: 127.0.0.1
-      # The runner maps the MariaDB container's 3306 to host 3307 to avoid port conflicts.
       MARIADB_PORT: 3307
       MARIADB_TEST_DATABASE: foodhub_test
       FLASK_ENV: testing
@@ -30,15 +30,8 @@ jobs:
           MARIADB_DATABASE: ${{ env.MARIADB_DATABASE }}
           MARIADB_USER: ${{ env.MARIADB_USER }}
           MARIADB_PASSWORD: ${{ env.MARIADB_PASSWORD }}
-        # map container 3306 to a non-standard host port to avoid conflicts on the runner
         ports:
           - 3307:3306
-
-      chrome:
-        image: selenium/standalone-chrome:latest
-        ports:
-          - 4444:4444
-        options: --shm-size=2g
 
     steps:
       - name: Checkout code
@@ -49,6 +42,24 @@ jobs:
         with:
           python-version: '3.12'
           cache: 'pip'
+
+      # ➡️ PASO MODIFICADO: Instalar Firefox, GeckoDriver Y Xvfb
+      - name: Install Firefox, GeckoDriver, and Xvfb
+        run: |
+          echo "Installing prerequisites..."
+          sudo apt-get update
+          # Instalar Firefox y Xvfb
+          sudo apt-get install -y firefox xvfb
+          
+          # Instalar GeckoDriver (sin cambios, ya que funciona)
+          LATEST_GECKODRIVER_VERSION=$(curl -s "https://api.github.com/repos/mozilla/geckodriver/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+          wget https://github.com/mozilla/geckodriver/releases/download/$LATEST_GECKODRIVER_VERSION/geckodriver-$LATEST_GECKODRIVER_VERSION-linux64.tar.gz
+          tar -xvzf geckodriver-$LATEST_GECKODRIVER_VERSION-linux64.tar.gz
+          sudo mv geckodriver /usr/local/bin/
+          
+          echo "Installation complete. Checking versions:"
+          /usr/local/bin/geckodriver --version
+          firefox --version
 
       - name: Remove rosemary editable entry
         run: sed -i '/rosemary @ file:\/\/\/app/d' requirements.txt
@@ -86,27 +97,23 @@ jobs:
         run: |
           flask run --host=0.0.0.0 --port=5000 &
           echo $! > flask.pid
-          sleep 10
+          sleep 20 
 
       - name: Health check
         run: |
           curl -f http://localhost:5000/ || exit 1
           echo "Flask running"
 
-      - name: Wait for Selenium
-        run: |
-          timeout 30 bash -c 'until curl -s http://localhost:4444/wd/hub/status | grep -q "ready"; do sleep 1; done'
-          echo "Selenium ready"
-
-      - name: Run interface tests
+      # ➡️ PASO MODIFICADO: Ejecutar Pytest con Xvfb
+      - name: Run interface tests (using Xvfb)
         env:
-          SELENIUM_REMOTE_URL: http://localhost:4444/wd/hub
-          BASE_URL: http://host.docker.internal:5000
+          BASE_URL: http://localhost:5000
         run: |
           if pytest --collect-only -m selenium 2>&1 | grep -q "no tests ran"; then
             exit 0
           else
-            pytest -m selenium -v --tb=short
+            # xvfb-run simula una pantalla para que Firefox se pueda inicializar
+            xvfb-run --auto-servernum pytest -m selenium -v --tb=short
           fi
 
       - name: Upload screenshots
