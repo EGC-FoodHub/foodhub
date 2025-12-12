@@ -13,7 +13,6 @@ from app.modules.foodmodel.models import FoodMetaData, FoodModel
 from app.modules.hubfile.repositories import HubfileRepository
 
 
-
 logger = logging.getLogger(__name__)
 
 
