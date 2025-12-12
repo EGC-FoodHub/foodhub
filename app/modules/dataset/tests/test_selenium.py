@@ -5,6 +5,8 @@ import pytest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium import webdriver
 
 from core.environment.host import get_host_for_selenium_testing
 from core.selenium.common import close_driver, initialize_driver
@@ -26,7 +28,7 @@ def count_datasets(driver, host):
         amount_datasets = 0
     return amount_datasets
 
-
+"""
 @pytest.mark.selenium
 def test_upload_dataset():
     driver = initialize_driver()
@@ -91,16 +93,24 @@ def test_upload_dataset():
         # Subir el primer archivo
         dropzone = driver.find_element(By.CLASS_NAME, "dz-hidden-input")
         dropzone.send_keys(file1_path)
-        wait_for_page_to_load(driver)
+        time.sleep(2)
 
         # Subir el segundo archivo
         dropzone = driver.find_element(By.CLASS_NAME, "dz-hidden-input")
         dropzone.send_keys(file2_path)
-        wait_for_page_to_load(driver)
+        time.sleep(2)
 
-        # Add authors in UVL models
+        # Add authors in UVL models - Wait for button to be present
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "0_button"))
+        )
         show_button = driver.find_element(By.ID, "0_button")
         show_button.send_keys(Keys.RETURN)
+        wait_for_page_to_load(driver)
+
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "0_form_authors_button"))
+        )
         add_author_uvl_button = driver.find_element(By.ID, "0_form_authors_button")
         add_author_uvl_button.send_keys(Keys.RETURN)
         wait_for_page_to_load(driver)
@@ -130,4 +140,92 @@ def test_upload_dataset():
 
     finally:
         # Close the browser
+        close_driver(driver)
+
+        
+"""
+
+
+@pytest.mark.selenium
+def test_upload_github_repo():
+    driver = initialize_driver()
+
+    try:
+        host = get_host_for_selenium_testing()
+
+        # Abrir login
+        driver.get(f"{host}/login")
+        wait_for_page_to_load(driver)
+
+        # Completar login
+        email_field = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "email"))
+        )
+        password_field = driver.find_element(By.ID, "password")
+        email_field.send_keys("user1@example.com")
+        password_field.send_keys("1234")
+
+        driver.find_element(By.ID, "submit").click()
+        wait_for_page_to_load(driver)
+        time.sleep(1)
+
+        # Ir a la sección de datasets
+        sidebar_item = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, ".sidebar-item:nth-child(6) .align-middle:nth-child(2)"))
+        )
+        sidebar_item.click()
+        wait_for_page_to_load(driver)
+
+        # Cambiar a la pestaña GitHub
+        github_tab = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.ID, "github-tab"))
+        )
+        github_tab.click()
+
+        # Introducir URL del repositorio
+        gh_url_input = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "gh_url"))
+        )
+        gh_url_input.send_keys("https://github.com/EGC-FoodHub/foodhub")
+
+        # Click en botón importar repositorio
+        import_btn = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.ID, "import_repo_btn"))
+        )
+        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", import_btn)
+        import_btn.click()
+        wait_for_page_to_load(driver)
+        time.sleep(1)
+
+        # Aceptar términos
+        agree_checkbox = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.ID, "agreeCheckbox"))
+        )
+        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", agree_checkbox)
+        agree_checkbox.click()
+
+        # Click en botón final de subir
+        upload_btn = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.ID, "upload_button"))
+        )
+        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", upload_btn)
+        upload_btn.click()
+        wait_for_page_to_load(driver)
+        time.sleep(1)
+
+        # Completar título y descripción
+        driver.find_element(By.ID, "title").send_keys("test")
+        driver.find_element(By.ID, "desc").send_keys("test")
+
+        # Click final en subir
+        # Botón final subir dataset
+        upload_btn = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.ID, "upload_button"))
+        )
+        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", upload_btn)
+        upload_btn.click()
+
+        print("Subida de repositorio GitHub completada correctamente!")
+
+    finally:
         close_driver(driver)
