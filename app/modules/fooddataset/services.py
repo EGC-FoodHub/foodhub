@@ -119,7 +119,7 @@ class FoodDatasetService(BaseDatasetService):
                 if os.path.exists(src_file):
                     shutil.move(src_file, dest_dir)
 
-    def edit_doi_dataset(self, dataset, form):
+    def edit_doi_dataset(self, dataset, form, sync_fakenodo):
         current_user = AuthenticationService().get_authenticated_user()
 
         main_author = {
@@ -139,8 +139,14 @@ class FoodDatasetService(BaseDatasetService):
         updated_instance = self.update_dsmetadata(dsmetadata.id, **form.get_dsmetadata())
 
         self.repository.session.commit()
-
-        return updated_instance, None
+        if sync_fakenodo:
+            try:
+                self.fakenodo.publish(dataset)
+            except Exception as e:
+                # Optionally rollback or just report the error
+                self.repository.session.rollback()
+                return None, {"fakenodo_error": str(e)}
+            return updated_instance, None
 
     def increment_view_count(self, dataset_id: int) -> bool:
         if not isinstance(dataset_id, int) or dataset_id <= 0:

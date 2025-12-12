@@ -125,7 +125,8 @@ def edit_doi_dataset(dataset_id):
     form = FoodDatasetForm()
 
     if request.method == "POST":
-        result, errors = food_service.edit_doi_dataset(dataset, form)
+        sync_fakenodo = request.form.get("sync_fakenodo") == "yes"
+        result, errors = food_service.edit_doi_dataset(dataset, form, sync_fakenodo=sync_fakenodo)
         return food_service.handle_service_response(
             result, errors, "basedataset.list_dataset", "Dataset updated", "dataset/edit_dataset.html", form
         )
