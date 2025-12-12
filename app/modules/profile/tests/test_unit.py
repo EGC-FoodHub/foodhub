@@ -6,7 +6,7 @@ from app import db
 from app.modules.auth.models import User
 from app.modules.conftest import login, logout
 from app.modules.profile.models import UserProfile
-from app.modules.dataset.models import DSMetaData, DataSet, PublicationType
+from app.modules.basedataset.models import BaseDSMetaData, BaseDataset, BasePublicationType
 
 
 @pytest.fixture(scope="module")
@@ -28,12 +28,12 @@ def test_client(test_client):
 
 
 @pytest.fixture
-def user_with_datasets(test_client):
+def user_with_BaseDatasets(test_client):
     user_id = None
     
     with test_client.application.app_context():
 
-        unique_email = f"dataset_user_{uuid.uuid4()}@example.com"
+        unique_email = f"BaseDataset_user_{uuid.uuid4()}@example.com"
         user = User(email=unique_email, password="pass1234")
         db.session.add(user)
         db.session.commit()
@@ -43,21 +43,21 @@ def user_with_datasets(test_client):
         db.session.add(profile)
 
         for i in range(2):
-            meta = DSMetaData(
-                title=f"Dataset {i}", 
+            meta = BaseDSMetaData(
+                title=f"BaseDataset {i}", 
                 description=f"Desc {i}",
-                publication_type=PublicationType.JOURNAL_ARTICLE,
+                publication_type=BasePublicationType.JOURNAL_ARTICLE,
                 tags="test"
             )
             db.session.add(meta)
             db.session.flush() 
 
-            dataset = DataSet(
+            BaseDataset = BaseDataset(
                 user_id=user_id, 
                 ds_meta_data_id=meta.id, 
                 created_at=datetime.utcnow()
             )
-            db.session.add(dataset)
+            db.session.add(BaseDataset)
 
         db.session.commit()
 
@@ -65,7 +65,7 @@ def user_with_datasets(test_client):
 
     with test_client.application.app_context():
         if user_id:
-            DataSet.query.filter_by(user_id=user_id).delete()
+            BaseDataset.query.filter_by(user_id=user_id).delete()
             UserProfile.query.filter_by(user_id=user_id).delete()
             User.query.filter_by(id=user_id).delete()
             db.session.commit()
@@ -94,12 +94,12 @@ def test_user_profile_not_found(test_client):
     assert response.status_code == 404, "Un perfil inexistente debería devolver 404."
 
 
-def test_user_profile_view(test_client, user_with_datasets):
+def test_user_profile_view(test_client, user_with_BaseDatasets):
     """
     Verifica que la vista /profile/<id> muestra correctamente
-    el perfil y los datasets.
+    el perfil y los BaseDatasets.
     """
-    user_id = user_with_datasets
+    user_id = user_with_BaseDatasets
     response = test_client.get(f"/profile/{user_id}")
     
     assert response.status_code == 200, "La vista de perfil público no respondió con 200 OK."
@@ -109,15 +109,15 @@ def test_user_profile_view(test_client, user_with_datasets):
     assert "User" in response_content, "El apellido del perfil no aparece."
 
 
-    assert "Dataset 0" in response_content or "Dataset 1" in response_content, \
-        "Los datasets del usuario no aparecen en la página."
+    assert "BaseDataset 0" in response_content or "BaseDataset 1" in response_content, \
+        "Los BaseDatasets del usuario no aparecen en la página."
     
 
-def test_user_profile_view2(test_client, user_with_datasets):
+def test_user_profile_view2(test_client, user_with_BaseDatasets):
     """
     Test de diagnóstico para encontrar por qué da 404.
     """
-    user_id = user_with_datasets
+    user_id = user_with_BaseDatasets
     print(f"\n--- DIAGNÓSTICO ---")
     print(f"1. ID del usuario creado: {user_id}")
     
