@@ -1,5 +1,5 @@
-import os
 import logging
+import os
 
 import pytest
 from locust import HttpUser, TaskSet, task
@@ -53,7 +53,7 @@ class DatasetBehavior(TaskSet):
         else:
             print(f"⚠ ZIP upload failed: {upload.status_code}")
 
-    @task 
+    @task
     def upload_github(self):
         """Trigger an import from a GitHub repository using form fields."""
         # 1. GET para obtener CSRF (igual que upload_zip)
@@ -84,4 +84,3 @@ class DatasetUser(HttpUser):
     min_wait = 5000
     max_wait = 9000
     host = get_host_for_locust_testing()
-
