@@ -21,9 +21,12 @@ WORKDIR /app
 COPY app/ ./app
 COPY core/ ./core
 COPY migrations/ ./migrations
+COPY rosemary/ ./rosemary
 
 # Copy requirements.txt into the working directory /app
 COPY requirements.txt .
+COPY pyproject.toml .
+COPY README.md .
 
 # Removes cache at the build stage
 RUN find . -type d -name "__pycache__" -exec rm -r {} + && \
@@ -45,6 +48,7 @@ RUN pip install --no-cache-dir --upgrade pip
 
 # Install any needed packages specified in requirements.txt
 RUN pip install -r requirements.txt
+RUN pip install .
 
 # Expose port 80
 EXPOSE 80
