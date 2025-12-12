@@ -68,7 +68,7 @@ class FoodDatasetService(BaseDatasetService):
 
             dataset = self.create(commit=False, user_id=current_user.id)
 
-            dataset.ds_meta_data_id = dsmetadata.id
+            dataset.ds_meta_data = dsmetadata
 
             for food_model_form in form.food_models:
                 filename = food_model_form.filename.data

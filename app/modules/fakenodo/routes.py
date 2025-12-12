@@ -212,7 +212,14 @@ def records_files(id):
     if not record:
         return jsonify({"error": "Record not found"}), 404
 
+    # Fix: Look for files in request.files, not request.json
+    if 'file' in request.files:
+        file = request.files['file']
+        file_info = {"filename": file.filename, "status": "uploaded"}
+        record["files"].append(file_info)
+        return jsonify({"status": "files added", "files": record["files"]}), 201
+    # Fallback
     data = request.json or {}
     files = data.get("files", [])
     record["files"].extend(files)
-    return jsonify({"status": "files added", "files": record["files"]}), 200
+    return jsonify({"status": "files added", "files": record["files"]}), 201

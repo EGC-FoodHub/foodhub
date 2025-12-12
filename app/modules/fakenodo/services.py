@@ -182,7 +182,7 @@ class FakenodoService(BaseService):
             raise Exception(error_message)
         return response.json()
 
-    def upload_file(self, dataset: FoodDataset, deposition_id: int, feature_model: FoodModel, user=None) -> dict:
+    def upload_file2(self, dataset: FoodDataset, deposition_id: int, feature_model: FoodModel, user=None) -> dict:
         """
         Upload a file to a deposition in Fakenodo.
 
@@ -198,16 +198,37 @@ class FakenodoService(BaseService):
         data = {"name": food_filename}
         user_id = current_user.id if user is None else user.id
         file_path = os.path.join(uploads_folder_name(), f"user_{str(user_id)}", f"dataset_{dataset.id}/", food_filename)
-        files = {"file": open(file_path, "rb")}
+        files = {"file": (food_filename, open(file_path, "rb"))}
 
         publish_url = f"{self.FAKENODO_API_URL}/{deposition_id}/files"
-        response = requests.post(publish_url, params=self.params, data=data, files=files)
+        response = requests.post(publish_url, params=self.params, files=files)
         if response.status_code != 201:
             error_message = f"Failed to upload files. Error details: {response.json()}"
             raise Exception(error_message)
         return response.json()
 
-    def publish_deposition(self, deposition_id: int) -> dict:
+    def upload_file(self, dataset: FoodDataset, deposition_id: int, feature_model: FoodModel, user=None) -> dict:
+        food_filename = feature_model.food_meta_data.food_filename
+        user_id = current_user.id if user is None else user.id
+        file_path = os.path.join(uploads_folder_name(), f"user_{str(user_id)}", f"dataset_{dataset.id}/", food_filename)
+        
+        # Use 'with' to ensure the file is closed after the request
+        with open(file_path, "rb") as f:
+            files = {"file": (food_filename, f)}
+            publish_url = f"{self.FAKENODO_API_URL}/{deposition_id}/files"
+            response = requests.post(publish_url, params=self.params, files=files)
+
+        if response.status_code not in [200, 201]:
+            # Safely handle non-JSON responses to avoid "Expecting value: line 1 column 1"
+            try:
+                err_details = response.json()
+            except:
+                err_details = response.text
+            raise Exception(f"Failed to upload. Status: {response.status_code}. Details: {err_details}")
+            
+        return response.json()
+
+    def publish_deposition2(self, deposition_id: int) -> dict:
         """
         Publish a deposition in Fakenodo.
 
@@ -223,6 +244,15 @@ class FakenodoService(BaseService):
             raise Exception("Failed to publish deposition")
         return response.json()
 
+    def publish_deposition(self, deposition_id: int) -> dict:
+        publish_url = f"{self.FAKENODO_API_URL}/{deposition_id}/publish" # Match the route in blueprint
+        response = requests.post(publish_url, params=self.params, headers=self.headers)
+        
+        # Change check from 202 to 201 to match your blueprint's return code
+        if response.status_code not in [200, 201]:
+            raise Exception(f"Failed to publish deposition. Status: {response.status_code}")
+        return response.json()
+    
     def get_deposition(self, deposition_id: int) -> dict:
         """
         Get a deposition from Fakenodo.

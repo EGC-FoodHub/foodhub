@@ -2,6 +2,9 @@ import os
 
 from elasticsearch import Elasticsearch
 
+from dotenv import load_dotenv
+load_dotenv()
+
 
 class SearchService:
     def __init__(self):

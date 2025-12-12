@@ -9,6 +9,8 @@ from flask_login import current_user, login_required
 from app.modules.fooddataset.forms import FoodDatasetForm
 from app.modules.fooddataset.services import FoodDatasetService
 from app.modules.fakenodo.services import FakenodoService
+from app.modules.basedataset.repositories import BaseDOIMappingRepository
+from app.modules.basedataset.services import BaseDSMetaDataService
 from core.services.SearchService import SearchService
 
 logger = logging.getLogger(__name__)
@@ -17,7 +19,8 @@ fooddataset_bp = Blueprint("fooddataset", __name__, template_folder="templates",
 
 food_service = FoodDatasetService()
 search_service = SearchService()
-
+base_doi_mapping_repository = BaseDOIMappingRepository()
+dsmetadata_service = BaseDSMetaDataService()
 
 @fooddataset_bp.route("/scripts.js")
 def scripts():
@@ -54,26 +57,34 @@ def create_dataset():
         data = {}
         try:
             fakenodo_response_json = fakenodo_service.create_new_deposition(dataset)
+            print(fakenodo_response_json)
             response_data = json.dumps(fakenodo_response_json)
             data = json.loads(response_data)
         except Exception as exc:
             logger.exception(f"Exception creating Fakenodo deposition: {exc}")
 
-        if data.get("conceptrecid"):
+        print("-"*30)
+        if data.get("doi"):
             deposition_id = data.get("id")
 
             try:
                 for food_model in dataset.files:
                     fakenodo_service.upload_file(dataset, deposition_id, food_model)
+                    print("hola1")
 
                 fakenodo_service.publish_deposition(deposition_id)
-
-                fakenodo_service.get_doi(deposition_id)
+                print("hola2")
+                doi = fakenodo_service.get_doi(deposition_id)
+                print("hola3")
+                base_doi_mapping_repository.create(dataset.ds_meta_data_id, dataset_doi_old=doi)
+                print("hola4")
+                dsmetadata_service.update(dataset.ds_meta_data_id, dataset_doi=doi)
+                print(f"{doi}------------------------------------------------------------------------------------------")
 
             except Exception as e:
                 msg = f"Error uploading to Fakenodo: {e}"
                 logger.error(msg)
-                return jsonify({"message": msg}), 200
+                return jsonify({"message": msg}), 400
 
         file_path = current_user.temp_folder()
         if os.path.exists(file_path) and os.path.isdir(file_path):
