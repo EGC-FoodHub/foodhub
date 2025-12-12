@@ -3,7 +3,7 @@ name: Notify Discord on Push
 on:
   push:
     branches:
-      - feature-g2/63-cd-discord 
+      - feature-g2/63-cd-discord
 
 jobs:
   notify:
@@ -12,12 +12,13 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Send Discord notification
+      - name: Discord notification
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         uses: Ilshidur/action-discord@0.4.0
         with:
-          webhook: ${{ secrets.DISCORD_WEBHOOK }}
-          message: |
-            📢 **New push to branch:** `${{ github.ref_name }}`
-            👤 **Author:** ${{ github.actor }}
-            📄 **Commit:** ${{ github.event.head_commit.message }}
-            🔗 <${{ github.event.head_commit.url }}>
+          args: |
+            📢 New push to branch: **${{ github.ref_name }}**
+            👤 Author: **${{ github.actor }}**
+            📝 Commit: **${{ github.event.head_commit.message }}**
+            🔗 ${{ github.event.head_commit.url }}
