@@ -26,7 +26,7 @@ def count_datasets(driver, host):
         amount_datasets = 0
     return amount_datasets
 
-"""
+
 
 @pytest.mark.selenium
 def test_upload_dataset():
@@ -133,7 +133,6 @@ def test_upload_dataset():
         # Close the browser
         close_driver(driver)
 
-"""
 
 
 @pytest.mark.selenium
