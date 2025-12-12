@@ -128,6 +128,77 @@ def download_dataset(dataset_id):
     return resp
 
 
+@basedataset_bp.route("/dataset/download", methods=["GET"])
+def download_datasets():
+    ids_str = request.args.get("ids")
+    if not ids_str:
+        abort(400, description="No dataset IDs provided")
+
+    try:
+        dataset_ids = [int(i) for i in ids_str.split(",")]
+    except ValueError:
+        abort(400, description="Invalid dataset IDs")
+
+    temp_dir = tempfile.mkdtemp()
+    zip_path = os.path.join(temp_dir, f"datasets_{'_'.join(map(str, dataset_ids))}.zip")
+
+    with ZipFile(zip_path, "w") as zipf:
+        for dataset_id in dataset_ids:
+            dataset = dataset_service.get_by_id(dataset_id)
+            if not dataset:
+                continue
+
+            file_path = f"uploads/user_{dataset.user_id}/dataset_{dataset.id}/"
+            if not os.path.exists(file_path):
+                continue
+
+            for subdir, dirs, files in os.walk(file_path):
+                for file in files:
+                    full_path = os.path.join(subdir, file)
+                    relative_path = os.path.relpath(full_path, file_path)
+                    zipf.write(
+                        full_path,
+                        arcname=os.path.join(f"dataset_{dataset.id}", relative_path),
+                    )
+
+    user_cookie = request.cookies.get("download_cookie")
+    if not user_cookie:
+        user_cookie = str(uuid.uuid4())
+        resp = make_response(
+            send_from_directory(
+                temp_dir,
+                os.path.basename(zip_path),
+                as_attachment=True,
+                mimetype="application/zip",
+            )
+        )
+        resp.set_cookie("download_cookie", user_cookie)
+    else:
+        resp = send_from_directory(
+            temp_dir,
+            os.path.basename(zip_path),
+            as_attachment=True,
+            mimetype="application/zip",
+        )
+
+    for dataset_id in dataset_ids:
+        existing_record = ds_download_record_service.repository.model.query.filter_by(
+            user_id=current_user.id if current_user.is_authenticated else None,
+            dataset_id=dataset_id,
+            download_cookie=user_cookie,
+        ).first()
+
+        if not existing_record:
+            ds_download_record_service.create(
+                user_id=current_user.id if current_user.is_authenticated else None,
+                dataset_id=dataset_id,
+                download_date=datetime.now(timezone.utc),
+                download_cookie=user_cookie,
+            )
+
+    return resp
+
+
 @basedataset_bp.route("/doi/<path:doi>/", methods=["GET"])
 def subdomain_index(doi):
     new_doi = doi_mapping_service.get_new_doi(doi)

@@ -331,3 +331,19 @@ class FoodDatasetService(BaseDatasetService):
             "most_downloaded": self.get_most_downloaded_datasets(limit=5),
             "timestamp": os.getenv("SERVER_TIMESTAMP", "N/A"),
         }
+        
+            
+class SizeService:
+
+    def __init__(self):
+        pass
+
+    def get_human_readable_size(self, size: int) -> str:
+        if size < 1024:
+            return f"{size} bytes"
+        elif size < 1024**2:
+            return f"{round(size / 1024, 2)} KB"
+        elif size < 1024**3:
+            return f"{round(size / (1024 ** 2), 2)} MB"
+        else:
+            return f"{round(size / (1024 ** 3), 2)} GB"
