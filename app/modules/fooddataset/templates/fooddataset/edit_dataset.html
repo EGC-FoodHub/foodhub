@@ -284,6 +284,15 @@
         document.getElementById('agreeCheckbox').addEventListener('change', function() {
             document.getElementById('upload_button').disabled = !this.checked;
         });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.remove-author-btn').forEach(btn => {
+                btn.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    this.closest('.author').remove();
+                });
+            });
+        });
     </script>
 
 {% endblock %}
