@@ -25,6 +25,8 @@ from app.modules.basedataset.services import (
     BaseDSViewRecordService,
 )
 
+from app.modules.fooddataset.services import FoodDatasetService
+
 logger = logging.getLogger(__name__)
 
 basedataset_bp = Blueprint("basedataset", __name__, template_folder="templates")
@@ -34,6 +36,7 @@ dsmetadata_service = BaseDSMetaDataService()
 doi_mapping_service = BaseDOIMappingService()
 ds_view_record_service = BaseDSViewRecordService()
 ds_download_record_service = BaseDSDownloadRecordService()
+food_dataset_service = FoodDatasetService()
 
 
 @basedataset_bp.route("/dataset/list", methods=["GET"])
@@ -60,6 +63,7 @@ def view_dataset(dataset_id):
     Vista de detalle para un dataset específico (acceso por ID).
     """
     dataset = dataset_service.get_by_id(dataset_id)
+    print(dataset)
     if not dataset:
         abort(404)
 
@@ -135,17 +139,18 @@ def subdomain_index(doi):
         return redirect(url_for("basedataset.subdomain_index", doi=new_doi), code=302)
 
     ds_meta_data = dsmetadata_service.filter_by_doi(doi)
+    dataset = food_dataset_service.get_dataset_by_ds_meta_data_id(ds_meta_data.id)
 
     if not ds_meta_data:
         abort(404)
 
     print(ds_meta_data)
-    
-    dataset = ds_meta_data
+    print("AA", dataset)
+    print(dataset.ds_meta_data_id)
 
     user_cookie = ds_view_record_service.create_cookie(dataset=dataset)
 
-    resp = make_response(render_template("basedataset/view_dataset.html", dataset=dataset))
+    resp = make_response(render_template("basedataset/view_dataset.html", dataset=dataset, ds_meta_data = ds_meta_data))
     resp.set_cookie("view_cookie", user_cookie)
 
     return resp

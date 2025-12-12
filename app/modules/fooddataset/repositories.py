@@ -14,6 +14,13 @@ class FoodDatasetRepository(BaseDatasetRepository):
         super().__init__()
         self.model = FoodDataset
 
+    def get_all(self,ds_meta_data_id):
+        return (
+            self.model.query.join(FoodDSMetaData)
+            .filter(FoodDataset.ds_meta_data_id == ds_meta_data_id)
+            .first()
+        )
+
     def get_synchronized(self, current_user_id: int):
         return (
             self.model.query.join(FoodDSMetaData)
