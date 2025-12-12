@@ -8,7 +8,7 @@ from flask_login import current_user, login_required
 
 from app.modules.fooddataset.forms import FoodDatasetForm
 from app.modules.fooddataset.services import FoodDatasetService
-from app.modules.zenodo.services import ZenodoService
+from app.modules.fakenodo.services import FakenodoService
 from core.services.SearchService import SearchService
 
 logger = logging.getLogger(__name__)
@@ -49,29 +49,29 @@ def create_dataset():
             logger.exception(f"Exception creating local dataset: {exc}")
             return jsonify({"message": str(exc)}), 400
 
-        zenodo_service = ZenodoService()
+        fakenodo_service = FakenodoService()
 
         data = {}
         try:
-            zenodo_response_json = zenodo_service.create_new_deposition(dataset)
-            response_data = json.dumps(zenodo_response_json)
+            fakenodo_response_json = fakenodo_service.create_new_deposition(dataset)
+            response_data = json.dumps(fakenodo_response_json)
             data = json.loads(response_data)
         except Exception as exc:
-            logger.exception(f"Exception creating Zenodo deposition: {exc}")
+            logger.exception(f"Exception creating Fakenodo deposition: {exc}")
 
         if data.get("conceptrecid"):
             deposition_id = data.get("id")
 
             try:
                 for food_model in dataset.files:
-                    zenodo_service.upload_file(dataset, deposition_id, food_model)
+                    fakenodo_service.upload_file(dataset, deposition_id, food_model)
 
-                zenodo_service.publish_deposition(deposition_id)
+                fakenodo_service.publish_deposition(deposition_id)
 
-                zenodo_service.get_doi(deposition_id)
+                fakenodo_service.get_doi(deposition_id)
 
             except Exception as e:
-                msg = f"Error uploading to Zenodo: {e}"
+                msg = f"Error uploading to Fakenodo: {e}"
                 logger.error(msg)
                 return jsonify({"message": msg}), 200
 

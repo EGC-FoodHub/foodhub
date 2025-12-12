@@ -340,7 +340,7 @@ def test_route_dataset_upload_post_success(test_client):
 
     with (
         patch("app.modules.fooddataset.routes.food_service") as mock_service_instance,
-        patch("app.modules.fooddataset.routes.ZenodoService") as MockZenodo,
+        patch("app.modules.fooddataset.routes.FakenodoService") as MockFakenodo,
         patch("app.modules.fooddataset.routes.shutil.rmtree") as mock_rmtree,
         patch("app.modules.fooddataset.routes.os.path.exists") as mock_exists,
         patch("app.modules.fooddataset.routes.FoodDatasetForm") as MockForm,
@@ -352,8 +352,8 @@ def test_route_dataset_upload_post_success(test_client):
         mock_dataset.files = []
         mock_service_instance.create_from_form.return_value = mock_dataset
 
-        mock_zenodo_instance = MockZenodo.return_value
-        mock_zenodo_instance.create_new_deposition.return_value = {"id": 123, "conceptrecid": 456}
+        mock_fakenodo_instance = MockFakenodo.return_value
+        mock_fakenodo_instance.create_new_deposition.return_value = {"id": 123, "conceptrecid": 456}
 
         mock_exists.return_value = True
         mock_temp_folder.return_value = "/tmp"
@@ -431,14 +431,14 @@ def test_route_dataset_upload_bad_request(test_client):
     assert b"message" in response.data
 
 
-def test_route_dataset_upload_zenodo_failure(test_client):
+def test_route_dataset_upload_fakenodo_failure(test_client):
     from app.modules.conftest import login
 
     login(test_client, "test_food@example.com", "test1234")
 
     with (
         patch("app.modules.fooddataset.routes.food_service") as mock_service_instance,
-        patch("app.modules.fooddataset.routes.ZenodoService") as MockZenodo,
+        patch("app.modules.fooddataset.routes.FakenodoService") as MockFakenodo,
         patch("app.modules.fooddataset.routes.shutil.rmtree") as mock_rmtree,
         patch("app.modules.fooddataset.routes.os.path.exists") as mock_exists,
         patch("app.modules.fooddataset.routes.FoodDatasetForm") as MockForm,
@@ -451,9 +451,9 @@ def test_route_dataset_upload_zenodo_failure(test_client):
         mock_dataset.files = []
         mock_service_instance.create_from_form.return_value = mock_dataset
 
-        # Zenodo failure
-        mock_zenodo_instance = MockZenodo.return_value
-        mock_zenodo_instance.create_new_deposition.side_effect = Exception("Zenodo Down")
+        # Fakenodo failure
+        mock_fakenodo_instance = MockFakenodo.return_value
+        mock_fakenodo_instance.create_new_deposition.side_effect = Exception("Fakenodo Down")
 
         mock_exists.return_value = True
         mock_temp_folder.return_value = "/tmp"
@@ -462,13 +462,13 @@ def test_route_dataset_upload_zenodo_failure(test_client):
         mock_form_instance.validate_on_submit.return_value = True
 
         # Should still return 200 but maybe with a warning or just success message
-        # (Current implementation swallows Zenodo errors and returns success)
+        # (Current implementation swallows Fakenodo errors and returns success)
         response = test_client.post("/dataset/upload", data={"title": "Test Title"})
 
         assert response.status_code == 200
         assert response.json["message"] == "Dataset created successfully!"
-        # Verify Zenodo was attempted
-        mock_zenodo_instance.create_new_deposition.assert_called()
+        # Verify Fakenodo was attempted
+        mock_fakenodo_instance.create_new_deposition.assert_called()
         mock_rmtree.assert_called()
 
 

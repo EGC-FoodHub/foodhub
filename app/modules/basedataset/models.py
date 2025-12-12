@@ -150,9 +150,9 @@ class BaseDataset(db.Model):
             return f"{round(size / (1024 ** 2), 2)} MB"
         return f"{round(size / (1024 ** 3), 2)} GB"
 
-    def get_zenodo_url(self):
+    def get_fakenodo_url(self):
         return (
-            f"https://zenodo.org/record/{self.ds_meta_data.deposition_id}"
+            f"http://localhost:5000/fakenodo/record/{self.ds_meta_data.deposition_id}"
             if hasattr(self, "ds_meta_data") and self.ds_meta_data and self.ds_meta_data.dataset_doi
             else None
         )

@@ -89,9 +89,9 @@
                 {% if dataset.ds_meta_data.dataset_doi %}
                 <div class="row mb-2">
                     <div class="col-md-4 col-12">
-                        <span class="text-secondary">Zenodo record</span>
+                        <span class="text-secondary">Fakenodo record</span>
                     </div>
-                    <div class="col-md-8 col-12">
+<!--                    <div class="col-md-8 col-12">
                         {% if FLASK_ENV == 'production' %}
                             <a href="https://zenodo.org/doi/{{ dataset.ds_meta_data.dataset_doi }}" target="_blank">
                                 https://zenodo.org/doi/{{ dataset.ds_meta_data.dataset_doi }}
@@ -100,7 +100,7 @@
                             <a href="https://sandbox.zenodo.org/doi/{{ dataset.ds_meta_data.dataset_doi }}" target="_blank">
                                 https://sandbox.zenodo.org/doi/{{ dataset.ds_meta_data.dataset_doi }}
                             </a>
-                        {% endif %}
+                        {% endif %}-->
                     </div>
                 </div>
                 {% endif %}

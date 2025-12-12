@@ -126,8 +126,8 @@ function write_upload_error(error_message) {
 }
 
 window.onload = function () {
-    if (typeof test_zenodo_connection === 'function') {
-        test_zenodo_connection();
+    if (typeof test_fakenodo_connection === 'function') {
+        test_fakenodo_connection();
     }
 
     document.getElementById('upload_button').addEventListener('click', function () {

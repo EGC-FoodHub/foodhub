@@ -123,19 +123,19 @@ def test_get_file_total_size_for_human():
     assert ds.get_file_total_size_for_human() == "1.0 GB"
 
 
-def test_get_zenodo_url_valid(test_client):
+def test_get_fakenodo_url_valid(test_client):
     ds = ConcreteDataset()
-    ds.ds_meta_data = MagicMock(deposition_id=12345, dataset_doi="10.5281/zenodo.12345")
-    assert ds.get_zenodo_url() == "https://zenodo.org/record/12345"
+    ds.ds_meta_data = MagicMock(deposition_id=12345, dataset_doi="10.5281/fakenodo.12345")
+    assert ds.get_fakenodo_url() == "https://fakenodo.org/record/12345"
 
 
-def test_get_zenodo_url_invalid(test_client):
+def test_get_fakenodo_url_invalid(test_client):
     ds = ConcreteDataset()
     ds.ds_meta_data = None
-    assert ds.get_zenodo_url() is None
+    assert ds.get_fakenodo_url() is None
 
     ds.ds_meta_data = MagicMock(dataset_doi=None)
-    assert ds.get_zenodo_url() is None
+    assert ds.get_fakenodo_url() is None
 
 
 def test_version_compare_metadata():
