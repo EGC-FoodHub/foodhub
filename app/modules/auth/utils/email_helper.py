@@ -1,5 +1,4 @@
 import os
-import secrets
 
 import requests
 from dotenv import load_dotenv
@@ -82,6 +81,7 @@ def send_email_verification(user: User):
         print(f"Verification email sent to {user.email}")
     except requests.exceptions.RequestException as e:
         print(f"Error sending verification email: {e}")
+
 
 def send_password_change_email(user: User, token):
     if not BREVO_API_KEY:

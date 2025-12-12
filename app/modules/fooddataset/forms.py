@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import FieldList, FormField, SelectField, StringField, TextAreaField
-from wtforms.validators import URL, DataRequired, Optional, Length
+from wtforms.validators import URL, DataRequired, Length, Optional
 
 from app.modules.basedataset.forms import AuthorForm, BaseDatasetForm
 from app.modules.basedataset.models import BasePublicationType
@@ -44,23 +44,20 @@ class FoodModelForm(FlaskForm):
 class FoodDatasetForm(BaseDatasetForm):
 
     calories = StringField(
-        "Calories",
-        validators=[Optional(), Length(max=50)],
-        description="Total calories (e.g., '2000 kcal')"
+        "Calories", validators=[Optional(), Length(max=50)], description="Total calories (e.g., '2000 kcal')"
     )
-    
+
     type = StringField(
         "Food Type",
         validators=[Optional(), Length(max=50)],
-        description="Type of food (e.g., 'Breakfast', 'Lunch', 'Dinner')"
+        description="Type of food (e.g., 'Breakfast', 'Lunch', 'Dinner')",
     )
-    
+
     community = StringField(
         "Community",
         validators=[Optional(), Length(max=200)],
-        description="Community or research group associated with this dataset"
+        description="Community or research group associated with this dataset",
     )
-
 
     food_models = FieldList(FormField(FoodModelForm), min_entries=1)
 
@@ -73,7 +70,6 @@ class FoodDatasetForm(BaseDatasetForm):
             "type": self.type.data,
             "community": self.community.data,
         }
-        
 
         return {**base_metadata, **food_metadata}
 
@@ -89,5 +85,5 @@ class FoodDatasetForm(BaseDatasetForm):
         if len(self.food_models) < 1:
             self.food_models.errors.append("At least one food model is required")
             return False
-        
+
         return True

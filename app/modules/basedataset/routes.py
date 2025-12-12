@@ -17,6 +17,7 @@ from flask import (
 )
 from flask_login import current_user, login_required
 
+from app import db
 from app.modules.basedataset.services import (
     BaseDatasetService,
     BaseDOIMappingService,
@@ -24,7 +25,6 @@ from app.modules.basedataset.services import (
     BaseDSMetaDataService,
     BaseDSViewRecordService,
 )
-from app import db
 
 logger = logging.getLogger(__name__)
 

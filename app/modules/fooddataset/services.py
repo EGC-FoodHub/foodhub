@@ -2,12 +2,10 @@ import hashlib
 import logging
 import os
 import shutil
-from typing import List, Optional, Dict, Any, Union
+from typing import Any, List, Optional
 
 from sqlalchemy import func
 
-from app.modules.basedataset.services import BaseDatasetService
-from app.modules.basedataset.repositories import BaseAuthorRepository, BaseDSMetaDataRepository
 from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData
 from app.modules.fooddataset.repositories import FoodDatasetRepository
 from app.modules.foodmodel.models import FoodMetaData, FoodModel
@@ -127,7 +125,7 @@ class FoodDatasetService(BaseDatasetService):
         if not isinstance(dataset_id, int) or dataset_id <= 0:
             logger.error(f"ID invalid: {dataset_id}")
             return False
-            
+
         logger.info(f"Incrementing download count for dataset {dataset_id}")
         return self.repository.increment_download_count(dataset_id)
 
@@ -135,8 +133,8 @@ class FoodDatasetService(BaseDatasetService):
         if period_days not in [7, 30]:
             logger.warning(f"Invalid period: {period_days}, using 7 as default")
             period_days = 7
-            
-        limit = min(max(1, limit), 50)  
+
+        limit = min(max(1, limit), 50)
         logger.info(f"Getting trending datasets for period {period_days} days, limit {limit}")
         return self.repository.get_trending_datasets(period_days=period_days, limit=limit)
 
@@ -168,90 +166,80 @@ class FoodDatasetService(BaseDatasetService):
 
     def get_trending_stats(self) -> Dict[str, Any]:
         logger.info("Obtaining statistics")
-        
+
         try:
             weekly = self.get_trending_weekly(limit=5)
             monthly = self.get_trending_monthly(limit=5)
             most_viewed = self.get_most_viewed_datasets(limit=5)
             most_downloaded = self.get_most_downloaded_datasets(limit=5)
-            
+
             stats = {
-                'weekly_trending': weekly,
-                'monthly_trending': monthly,
-                'most_viewed': most_viewed,
-                'most_downloaded': most_downloaded,
-                'total_datasets': self.repository.count(),
-                'trending_periods': {
-                    'week': 7,
-                    'month': 30
-                },
-                'timestamp': os.getenv("SERVER_TIMEZONE", "UTC")
+                "weekly_trending": weekly,
+                "monthly_trending": monthly,
+                "most_viewed": most_viewed,
+                "most_downloaded": most_downloaded,
+                "total_datasets": self.repository.count(),
+                "trending_periods": {"week": 7, "month": 30},
+                "timestamp": os.getenv("SERVER_TIMEZONE", "UTC"),
             }
-            
+
             logger.info(f"Obtained statistics: {len(weekly)} weekly, {len(monthly)} monthly")
             return stats
-        
+
         except Exception as e:
             logger.error(f"Error obtaining statistics: {e}")
             return {
-                'weekly_trending': [],
-                'monthly_trending': [],
-                'most_viewed': [],
-                'most_downloaded': [],
-                'total_datasets': 0,
-                'error': str(e)
+                "weekly_trending": [],
+                "monthly_trending": [],
+                "most_viewed": [],
+                "most_downloaded": [],
+                "total_datasets": 0,
+                "error": str(e),
             }
 
     def get_popular_datasets_summary(self) -> Dict[str, Any]:
         logger.info("Generating resume")
-        
+
         try:
             top_weekly = self.get_trending_weekly(limit=3)
             top_monthly = self.get_trending_monthly(limit=3)
-            
+
             summary = {
-                'weekly_top_3': [
+                "weekly_top_3": [
                     {
-                        'title': ds.get('title', 'Untitled'),
-                        'author': ds.get('main_author', {}).get('name', 'Unknown'),
-                        'community': ds.get('community'),
-                        'downloads': ds.get('recent_downloads', 0),
-                        'views': ds.get('recent_views', 0),
-                        'score': ds.get('trending_score', 0)
+                        "title": ds.get("title", "Untitled"),
+                        "author": ds.get("main_author", {}).get("name", "Unknown"),
+                        "community": ds.get("community"),
+                        "downloads": ds.get("recent_downloads", 0),
+                        "views": ds.get("recent_views", 0),
+                        "score": ds.get("trending_score", 0),
                     }
                     for ds in top_weekly[:3]
                 ],
-                'monthly_top_3': [
+                "monthly_top_3": [
                     {
-                        'title': ds.get('title', 'Untitled'),
-                        'author': ds.get('main_author', {}).get('name', 'Unknown'),
-                        'community': ds.get('community'),
-                        'downloads': ds.get('recent_downloads', 0),
-                        'views': ds.get('recent_views', 0),
-                        'score': ds.get('trending_score', 0)
+                        "title": ds.get("title", "Untitled"),
+                        "author": ds.get("main_author", {}).get("name", "Unknown"),
+                        "community": ds.get("community"),
+                        "downloads": ds.get("recent_downloads", 0),
+                        "views": ds.get("recent_views", 0),
+                        "score": ds.get("trending_score", 0),
                     }
                     for ds in top_monthly[:3]
                 ],
-                'total_active_datasets': self.repository.count(),
-                'last_updated': os.getenv("SERVER_TIMESTAMP", "N/A")
+                "total_active_datasets": self.repository.count(),
+                "last_updated": os.getenv("SERVER_TIMESTAMP", "N/A"),
             }
-            
+
             return summary
-            
+
         except Exception as e:
             logger.error(f"Error generating resume: {e}")
-            return {
-                'weekly_top_3': [],
-                'monthly_top_3': [],
-                'total_active_datasets': 0,
-                'error': str(e)
-            }
+            return {"weekly_top_3": [], "monthly_top_3": [], "total_active_datasets": 0, "error": str(e)}
 
     def total_dataset_downloads(self) -> int:
         try:
-            total = self.repository.session.query(
-                func.sum(FoodDataset.download_count)
-            ).scalar()
+            total = self.repository.session.query(func.sum(FoodDataset.download_count)).scalar()
             return total or 0
         except Exception as e:
             logger.error(f"Error getting total downloads: {e}")
@@ -259,9 +247,7 @@ class FoodDatasetService(BaseDatasetService):
 
     def total_dataset_views(self) -> int:
         try:
-            total = self.repository.session.query(
-                func.sum(FoodDataset.view_count)
-            ).scalar()
+            total = self.repository.session.query(func.sum(FoodDataset.view_count)).scalar()
             return total or 0
         except Exception as e:
             logger.error(f"Error getting total views: {e}")
@@ -270,9 +256,8 @@ class FoodDatasetService(BaseDatasetService):
     def total_feature_model_downloads(self) -> int:
         try:
             from app.modules.foodmodel.models import FoodModel
-            total = self.repository.session.query(
-                func.sum(FoodModel.download_count)
-            ).scalar()
+
+            total = self.repository.session.query(func.sum(FoodModel.download_count)).scalar()
             return total or 0
         except Exception as e:
             logger.error(f"Error getting total feature model downloads: {e}")
@@ -281,9 +266,8 @@ class FoodDatasetService(BaseDatasetService):
     def total_feature_model_views(self) -> int:
         try:
             from app.modules.foodmodel.models import FoodModel
-            total = self.repository.session.query(
-                func.sum(FoodModel.view_count)
-            ).scalar()
+
+            total = self.repository.session.query(func.sum(FoodModel.view_count)).scalar()
             return total or 0
         except Exception as e:
             logger.error(f"Error getting total feature model views: {e}")
@@ -292,6 +276,7 @@ class FoodDatasetService(BaseDatasetService):
     def count_feature_models(self) -> int:
         try:
             from app.modules.foodmodel.models import FoodModel
+
             total = self.repository.session.query(FoodModel).count()
             return total or 0
         except Exception as e:
@@ -300,15 +285,15 @@ class FoodDatasetService(BaseDatasetService):
 
     def get_all_statistics(self) -> Dict[str, Any]:
         return {
-            'datasets_counter': self.count_synchronized_datasets(),
-            'feature_models_counter': self.count_feature_models(),
-            'total_dataset_downloads': self.total_dataset_downloads(),
-            'total_dataset_views': self.total_dataset_views(),
-            'total_feature_model_downloads': self.total_feature_model_downloads(),
-            'total_feature_model_views': self.total_feature_model_views(),
-            'trending_weekly': self.get_trending_weekly(limit=3),
-            'trending_monthly': self.get_trending_monthly(limit=3),
-            'most_viewed': self.get_most_viewed_datasets(limit=5),
-            'most_downloaded': self.get_most_downloaded_datasets(limit=5),
-            'timestamp': os.getenv("SERVER_TIMESTAMP", "N/A")
+            "datasets_counter": self.count_synchronized_datasets(),
+            "feature_models_counter": self.count_feature_models(),
+            "total_dataset_downloads": self.total_dataset_downloads(),
+            "total_dataset_views": self.total_dataset_views(),
+            "total_feature_model_downloads": self.total_feature_model_downloads(),
+            "total_feature_model_views": self.total_feature_model_views(),
+            "trending_weekly": self.get_trending_weekly(limit=3),
+            "trending_monthly": self.get_trending_monthly(limit=3),
+            "most_viewed": self.get_most_viewed_datasets(limit=5),
+            "most_downloaded": self.get_most_downloaded_datasets(limit=5),
+            "timestamp": os.getenv("SERVER_TIMESTAMP", "N/A"),
         }

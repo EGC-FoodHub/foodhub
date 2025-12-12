@@ -1,5 +1,4 @@
 import os
-
 from unittest.mock import Mock, patch
 
 import pytest
@@ -16,9 +15,9 @@ class TestAuthPasswordRecovery:
     def test_send_recover_email(self, auth_service):
         """Test envío de email de recuperación"""
         # Limpiar variable de entorno si existe
-        
+
         mock_user = Mock()
-        mock_user.email="test@example.com"
+        mock_user.email = "test@example.com"
 
         with patch.dict(os.environ, {"TOKEN_KEY": ""}, clear=False):
             with patch.object(auth_service.repository, "get_by_email", return_value=mock_user):
@@ -40,7 +39,6 @@ class TestAuthPasswordRecovery:
 
                         assert user_arg.email == "test@example.com"
                         assert token_arg == "abc123"
-
 
     def test_validate_recovery_success(self, auth_service):
         """Test validación de recuperación exitosa"""

@@ -127,7 +127,7 @@ class AuthenticationService(BaseService):
         token = self.generate_recovery_token()
         user = self.repository.get_by_email(email)
         email = send_password_change_email(user, token)
-        
+
         return email
 
     def validate_recovery(self, token, new_password, confirm_password):

@@ -207,7 +207,7 @@ class FoodDatasetActivity(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     dataset_id = db.Column(db.Integer, db.ForeignKey("food_dataset.id"), nullable=False, index=True)
-    activity_type = db.Column(db.String(20), nullable=False, index=True)  
+    activity_type = db.Column(db.String(20), nullable=False, index=True)
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now, index=True)
 
     dataset = db.relationship("FoodDataset", back_populates="activity_logs")
