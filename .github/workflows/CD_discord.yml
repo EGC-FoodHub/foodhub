@@ -3,7 +3,8 @@ name: Notify Discord on Push
 on:
   push:
     branches:
-      - feature-g2/63-cd-discord
+      - trunk-2
+      - main-2
 
 jobs:
   notify:
