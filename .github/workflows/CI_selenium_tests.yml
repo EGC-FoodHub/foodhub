@@ -14,13 +14,13 @@ jobs:
       MARIADB_PASSWORD: testpassword
       MARIADB_ROOT_PASSWORD: rootpassword
       MARIADB_HOSTNAME: 127.0.0.1
-      # The runner maps the MariaDB container's 3306 to host 3307 to avoid port conflicts.
       MARIADB_PORT: 3307
-      MARIADB_TEST_DATABASE: foodhub_test
       FLASK_ENV: testing
       FLASK_APP_NAME: FoodHub
       DOMAIN: localhost
       SECRET_KEY: test-secret-key-for-ci
+      SELENIUM_REMOTE_URL: http://localhost:4444/wd/hub
+      BASE_URL: http://host.docker.internal:5000
 
     services:
       mariadb:
@@ -30,7 +30,6 @@ jobs:
           MARIADB_DATABASE: ${{ env.MARIADB_DATABASE }}
           MARIADB_USER: ${{ env.MARIADB_USER }}
           MARIADB_PASSWORD: ${{ env.MARIADB_PASSWORD }}
-        # map container 3306 to a non-standard host port to avoid conflicts on the runner
         ports:
           - 3307:3306
 
@@ -69,12 +68,7 @@ jobs:
             echo "Waiting for MariaDB ($i/60)..."
             sleep 2
           done
-          echo "MariaDB did not become ready in time, printing docker info..."
-          /usr/bin/docker ps -a || true
-          CID=$(/usr/bin/docker ps -aq -f ancestor=mariadb:11.3 | head -n1) || true
-          if [ -n "$CID" ]; then
-            /usr/bin/docker logs --details $CID || true
-          fi
+          echo "MariaDB did not become ready in time"
           exit 1
 
       - name: Setup database
@@ -98,11 +92,26 @@ jobs:
           timeout 30 bash -c 'until curl -s http://localhost:4444/wd/hub/status | grep -q "ready"; do sleep 1; done'
           echo "Selenium ready"
 
+      - name: Patch Selenium to use remote Chrome
+        run: |
+          mkdir -p ci_patch
+          cat <<EOF > ci_patch/patch_selenium.py
+          import os
+          from selenium import webdriver
+          from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+
+          def initialize_driver(*args, **kwargs):
+              return webdriver.Remote(
+                  command_executor=os.environ.get("SELENIUM_REMOTE_URL"),
+                  desired_capabilities=DesiredCapabilities.CHROME
+              )
+          EOF
+
       - name: Run interface tests
         env:
-          SELENIUM_REMOTE_URL: http://localhost:4444/wd/hub
           BASE_URL: http://host.docker.internal:5000
         run: |
+          export PYTHONPATH=$(pwd)/ci_patch:$PYTHONPATH
           if pytest --collect-only -m selenium 2>&1 | grep -q "no tests ran"; then
             exit 0
           else
