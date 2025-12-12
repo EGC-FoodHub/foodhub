@@ -1,4 +1,5 @@
 import io
+import urllib.error
 import zipfile
 from types import SimpleNamespace
 from unittest.mock import MagicMock
@@ -6,7 +7,6 @@ from unittest.mock import MagicMock
 import pytest
 
 from app.modules.dataset.services import DataSetService
-import urllib.error
 
 pytestmark = pytest.mark.integration
 
@@ -158,7 +158,6 @@ def test_create_dataset_from_zip(tmp_path, mock_user):
 
     dataset = service.create_from_zip(form, mock_user)
     assert dataset is not None
-
 
 
 def test_upload_github_no_food_files(test_client, mock_user, monkeypatch, tmp_path):
