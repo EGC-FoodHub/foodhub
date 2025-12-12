@@ -222,3 +222,18 @@ class FoodDatasetActivity(db.Model):
 
     def __repr__(self):
         return f"<FoodDatasetActivity {self.activity_type} on dataset {self.dataset_id}>"
+
+
+from sqlalchemy import event
+
+from core.services.SearchService import SearchService
+
+
+@event.listens_for(FoodDataset, "after_delete")
+def delete_dataset_from_elastic(mapper, connection, target):
+    try:
+        service = SearchService()
+        if service.enabled:
+            service.delete_dataset(target.id)
+    except Exception as e:
+        print(f"Error automaically deleting from Elastic: {e}")

@@ -9,9 +9,15 @@ class SearchService:
 
         elastic_url = os.getenv("ELASTICSEARCH_URL")
         elastic_password = os.getenv("ELASTICSEARCH_PASSWORD")
+        elastic_enabled = os.getenv("ELASTICSEARCH_ENABLED")
 
         if not elastic_url or not elastic_password:
             print("❌ ERROR: Faltan ELASTICSEARCH_URL o ELASTICSEARCH_PASSWORD en el archivo .env")
+            self.enabled = False
+            return
+
+        if elastic_enabled and elastic_enabled.lower() == "false":
+            print("ElasticSearch deshabilitado en el archivo .env")
             self.enabled = False
             return
 
@@ -89,3 +95,10 @@ class SearchService:
         except Exception as e:
             print(f"❌ Error searching in Elastic: {e}")
             return []
+
+    def delete_dataset(self, dataset_id):
+        try:
+            self.es.delete(index="datasets", id=dataset_id)
+            print(f"✅ Dataset {dataset_id} eliminado de Elastic.")
+        except Exception as e:
+            print(f"❌ Error deleting dataset from Elastic: {e}")
