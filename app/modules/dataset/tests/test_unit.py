@@ -211,6 +211,22 @@ def test_create_from_github_invalid_url_raises(tmp_path):
         service.create_from_github(form, current_user)
 
 
+def test_create_from_github_malformed_url_raises(tmp_path):
+    """URL pointing to github but missing repo part should raise ValueError"""
+    service = DataSetService()
+    service._create_dataset_shell = MagicMock(return_value=SimpleNamespace(id=2))
+    service._process_zip_file = MagicMock()
+    service.repository.session = SimpleNamespace(commit=MagicMock(), rollback=MagicMock())
+
+    # github.com/user (no repo) -> invalid
+    form = make_form("https://github.com/onlyuser")
+    current_user = SimpleNamespace()
+    current_user.temp_folder = lambda: "/tmp"
+
+    with pytest.raises(ValueError):
+        service.create_from_github(form, current_user)
+
+
 def test_create_from_github_no_food_files(monkeypatch, tmp_path, caplog):
     """Valid GitHub URL but ZIP contains no .food files: should commit and create no hubfiles."""
     service = DataSetService()
