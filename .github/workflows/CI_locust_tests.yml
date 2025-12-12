@@ -85,7 +85,7 @@ jobs:
 
       - name: Run load tests with Locust
         run: |
-          locust -f app/modules \
+          locust -f app/modules/dataset/tests/locustfile.py \
                 --host=http://localhost:5000 \
                 --users 50 \
                 --spawn-rate 5 \
