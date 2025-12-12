@@ -9,6 +9,8 @@ from flask_login import current_user, login_required
 from app.modules.fooddataset.forms import AuthorForm, FoodDatasetForm
 from app.modules.fooddataset.services import FoodDatasetService
 from app.modules.fakenodo.services import FakenodoService
+from app.modules.basedataset.repositories import BaseDOIMappingRepository
+from app.modules.basedataset.services import BaseDSMetaDataService
 from core.services.SearchService import SearchService
 
 logger = logging.getLogger(__name__)
@@ -17,6 +19,8 @@ fooddataset_bp = Blueprint("fooddataset", __name__, template_folder="templates",
 
 food_service = FoodDatasetService()
 search_service = SearchService()
+base_doi_mapping_repository = BaseDOIMappingRepository()
+dsmetadata_service = BaseDSMetaDataService()
 
 
 @fooddataset_bp.route("/scripts.js")
@@ -59,7 +63,7 @@ def create_dataset():
         except Exception as exc:
             logger.exception(f"Exception creating Fakenodo deposition: {exc}")
 
-        if data.get("conceptrecid"):
+        if data.get("doi"):
             deposition_id = data.get("id")
 
             try:
@@ -67,13 +71,14 @@ def create_dataset():
                     fakenodo_service.upload_file(dataset, deposition_id, food_model)
 
                 fakenodo_service.publish_deposition(deposition_id)
-
-                fakenodo_service.get_doi(deposition_id)
+                doi = fakenodo_service.get_doi(deposition_id)
+                base_doi_mapping_repository.create(dataset.ds_meta_data_id, dataset_doi_old=doi)
+                dsmetadata_service.update(dataset.ds_meta_data_id, dataset_doi=doi)
 
             except Exception as e:
                 msg = f"Error uploading to Fakenodo: {e}"
                 logger.error(msg)
-                return jsonify({"message": msg}), 200
+                return jsonify({"message": msg}), 400
 
         file_path = current_user.temp_folder()
         if os.path.exists(file_path) and os.path.isdir(file_path):
