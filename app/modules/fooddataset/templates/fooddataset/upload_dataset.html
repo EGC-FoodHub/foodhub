@@ -111,6 +111,15 @@
         </div>
     </div>
 
+    <div class="row mt-4">
+        <div class="col-12 text-end">
+            <button id="save_as_draft_button" class="btn btn-outline-secondary">
+                <i data-feather="save"></i>
+                Save as draft
+            </button>
+        </div>
+    </div>
+
     <script>
         Dropzone.options.myDropzone = {
             url: "{{ url_for('fooddataset.upload_file_temp') }}",
@@ -231,6 +240,36 @@
 
         document.getElementById('agreeCheckbox').addEventListener('change', function() {
             document.getElementById('upload_button').disabled = !this.checked;
+        });
+
+        document.getElementById('save_as_draft_button').addEventListener('click', function () {
+            const formData = new FormData();
+
+            const form = document.querySelector('#basic_info_form form') || document.querySelector('#basic_info_form');
+            if (form) {
+                const inputs = form.querySelectorAll('input, select, textarea');
+                inputs.forEach(input => {
+                    if (input.name && !input.disabled) {
+                        formData.append(input.name, input.value);
+                    }
+                });
+            }
+            fetch("/dataset/save_as_draft", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    window.location.href = "/dataset/list";
+                } else {
+                    alert("⚠️ Something went wrong: " + JSON.stringify(data));
+                }
+            })
+            .catch(error => {
+                console.error("Error saving draft:", error);
+                alert("❌ Error saving draft: " + error);
+            });
         });
     </script>
 

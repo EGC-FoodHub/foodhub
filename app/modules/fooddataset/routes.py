@@ -9,8 +9,6 @@ from flask_login import current_user, login_required
 from app.modules.fooddataset.forms import FoodDatasetForm
 from app.modules.fooddataset.services import FoodDatasetService
 from app.modules.fakenodo.services import FakenodoService
-from app.modules.basedataset.repositories import BaseDOIMappingRepository
-from app.modules.basedataset.services import BaseDSMetaDataService
 from core.services.SearchService import SearchService
 
 logger = logging.getLogger(__name__)
@@ -19,8 +17,7 @@ fooddataset_bp = Blueprint("fooddataset", __name__, template_folder="templates",
 
 food_service = FoodDatasetService()
 search_service = SearchService()
-base_doi_mapping_repository = BaseDOIMappingRepository()
-dsmetadata_service = BaseDSMetaDataService()
+
 
 @fooddataset_bp.route("/scripts.js")
 def scripts():
@@ -57,34 +54,26 @@ def create_dataset():
         data = {}
         try:
             fakenodo_response_json = fakenodo_service.create_new_deposition(dataset)
-            print(fakenodo_response_json)
             response_data = json.dumps(fakenodo_response_json)
             data = json.loads(response_data)
         except Exception as exc:
             logger.exception(f"Exception creating Fakenodo deposition: {exc}")
 
-        print("-"*30)
-        if data.get("doi"):
+        if data.get("conceptrecid"):
             deposition_id = data.get("id")
 
             try:
                 for food_model in dataset.files:
                     fakenodo_service.upload_file(dataset, deposition_id, food_model)
-                    print("hola1")
 
                 fakenodo_service.publish_deposition(deposition_id)
-                print("hola2")
-                doi = fakenodo_service.get_doi(deposition_id)
-                print("hola3")
-                base_doi_mapping_repository.create(dataset.ds_meta_data_id, dataset_doi_old=doi)
-                print("hola4")
-                dsmetadata_service.update(dataset.ds_meta_data_id, dataset_doi=doi)
-                print(f"{doi}------------------------------------------------------------------------------------------")
+
+                fakenodo_service.get_doi(deposition_id)
 
             except Exception as e:
                 msg = f"Error uploading to Fakenodo: {e}"
                 logger.error(msg)
-                return jsonify({"message": msg}), 400
+                return jsonify({"message": msg}), 200
 
         file_path = current_user.temp_folder()
         if os.path.exists(file_path) and os.path.isdir(file_path):
@@ -92,6 +81,38 @@ def create_dataset():
 
         msg = "Dataset created successfully!"
         return jsonify({"message": msg, "redirect": url_for("basedataset.list_dataset")}), 200
+
+    return render_template("fooddataset/upload_dataset.html", form=form)
+
+
+@fooddataset_bp.route("/dataset/save_as_draft", methods=["GET", "POST"])
+@login_required
+def create_dataset_as_draft():
+    form = FoodDatasetForm()
+    if request.method == "POST":
+
+        dataset = None
+
+        form.title.data = form.title.data if form.title.data else ""
+        form.desc.data = form.desc.data if form.desc.data else ""
+        form.food_models.entries = []
+
+        try:
+            logger.info("Creating dataset...")
+            dataset = food_service.create_from_form(form=form, current_user=current_user)
+            logger.info(f"Created dataset: {dataset}")
+            food_service._move_dataset_files(dataset, current_user)
+        except Exception as exc:
+            logger.exception(f"Exception while create dataset data in local {exc}")
+            return jsonify({"Exception while create dataset data in local: ": str(exc)}), 400
+
+        # Delete temp folder
+        file_path = current_user.temp_folder()
+        if os.path.exists(file_path) and os.path.isdir(file_path):
+            shutil.rmtree(file_path)
+
+        msg = "Everything works!"
+        return jsonify({"message": msg}), 200
 
     return render_template("fooddataset/upload_dataset.html", form=form)
 
