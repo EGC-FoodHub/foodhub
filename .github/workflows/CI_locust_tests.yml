@@ -90,7 +90,7 @@ jobs:
                 -f app/modules/featuremodel/tests/locustfile.py \
                 -f app/modules/flamapy/tests/locustfile.py \
                 -f app/modules/hubfile/tests/locustfile.py \
-                -f app/modules/profile/tests/locustfile.py
+                -f app/modules/profile/tests/locustfile.py \
                 --host=http://localhost:5000 \
                 --users 50 \
                 --spawn-rate 5 \
