@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from app.modules.dataset.services import DataSetService
+import urllib.error
 
 pytestmark = pytest.mark.integration
 
@@ -34,6 +35,25 @@ def create_test_zip(files: dict) -> io.BytesIO:
             zf.writestr(filename, content)
     zip_bytes.seek(0)
     return zip_bytes
+
+
+# backward-compatible alias (some tests use make_test_zip)
+make_test_zip = create_test_zip
+
+
+class FakeResp(io.BytesIO):
+    """A small context-manager bytes response to mock urllib.request.urlopen."""
+
+    def __init__(self, data: bytes, status=None):
+        super().__init__(data)
+        self.status = status
+
+    def __enter__(self):
+        self.seek(0)
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
 
 
 # ------------------ FAKE REPOS ------------------
@@ -138,3 +158,78 @@ def test_create_dataset_from_zip(tmp_path, mock_user):
 
     dataset = service.create_from_zip(form, mock_user)
     assert dataset is not None
+
+
+
+def test_upload_github_no_food_files(test_client, mock_user, monkeypatch, tmp_path):
+    """Integration: valid GitHub repo but ZIP has no .food files -> 400"""
+    monkeypatch.setattr("app.modules.dataset.routes.current_user", mock_user, raising=False)
+    monkeypatch.setattr("flask_login.utils._get_user", lambda: mock_user, raising=False)
+
+    zipbuf = make_test_zip({"README.md": "no food"})
+
+    def fake_urlopen(url):
+        return FakeResp(zipbuf.getvalue())
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+
+    data = {"repo": "user/repo"}
+    resp = test_client.post("/dataset/file/upload_github", data=data)
+
+    # The route extracts all files (not only .food), so README.md will be returned
+    assert resp.status_code == 200
+    j = resp.get_json()
+    assert j["message"] == "GitHub repo extracted successfully"
+
+
+def test_upload_github_invalid_branch(test_client, mock_user, monkeypatch):
+    """Integration: GitHub zip download returns 404 -> 400 with not found message"""
+    monkeypatch.setattr("app.modules.dataset.routes.current_user", mock_user, raising=False)
+    monkeypatch.setattr("flask_login.utils._get_user", lambda: mock_user, raising=False)
+
+    def fake_urlopen(url):
+        raise urllib.error.HTTPError(url, 404, "Not Found", hdrs=None, fp=None)
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+
+    data = {"repo": "user/repo", "branch": "nope"}
+    resp = test_client.post("/dataset/file/upload_github", data=data)
+
+    assert resp.status_code == 400
+    j = resp.get_json()
+    assert j["message"] == "GitHub repository or Branch not found"
+
+
+def test_upload_github_with_food_file(test_client, mock_user, monkeypatch, tmp_path):
+    """Integration: GitHub repo zip contains .food file -> success and filenames returned"""
+    monkeypatch.setattr("app.modules.dataset.routes.current_user", mock_user, raising=False)
+    monkeypatch.setattr("flask_login.utils._get_user", lambda: mock_user, raising=False)
+
+    zipbuf = make_test_zip({"path/model.food": "content"})
+
+    def fake_urlopen(url):
+        return FakeResp(zipbuf.getvalue())
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+
+    data = {"repo": "user/repo"}
+    resp = test_client.post("/dataset/file/upload_github", data=data)
+
+    assert resp.status_code == 200
+    j = resp.get_json()
+    assert "filenames" in j
+    assert any(f.endswith(".food") for f in j["filenames"])
+
+
+def test_upload_github_invalid_url_provided(test_client, mock_user, monkeypatch):
+    """Integration: provide a zip_url that is not a GitHub URL -> 400"""
+    monkeypatch.setattr("app.modules.dataset.routes.current_user", mock_user, raising=False)
+    monkeypatch.setattr("flask_login.utils._get_user", lambda: mock_user, raising=False)
+
+    # Provide a non-github zip_url
+    data = {"zip_url": "https://example.com/some.zip"}
+    resp = test_client.post("/dataset/file/upload_github", data=data)
+
+    assert resp.status_code == 400
+    j = resp.get_json()
+    assert j["message"] == "Only GitHub zip URLs are supported"
