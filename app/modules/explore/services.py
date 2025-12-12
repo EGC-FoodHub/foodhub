@@ -18,12 +18,12 @@ class ExploreService(BaseService):
         """
         if self.search_service.enabled:
             try:
-                result_ids = self.search_service.search_datasets(query, publication_type, tags)
+                result_ids = self.search_service.search_datasets(query, publication_type, tags, **kwargs)
 
                 if result_ids is not None:
                     logger.info(f"Search used Elasticsearch. Found {len(result_ids)} results.")
-                    
-                    if len(result_ids) != 0:                    
+
+                    if len(result_ids) != 0:
                         datasets = self.repository.get_by_ids(result_ids)
                         return datasets
                     logger.info("Search used Elasticsearch. Found 0 results. Falling back to SQL.")

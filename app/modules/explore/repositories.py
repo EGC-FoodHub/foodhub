@@ -1,7 +1,7 @@
 import re
 
 import unidecode
-from sqlalchemy import any_, or_
+from sqlalchemy import Integer, any_, cast, or_
 
 from app.modules.basedataset.models import BaseAuthor, BaseDSMetaData, BasePublicationType
 from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData
@@ -59,6 +59,16 @@ class ExploreRepository(BaseRepository):
             datasets = datasets.filter(FoodDataset.created_at >= date_from)
         if date_to:
             datasets = datasets.filter(FoodDataset.created_at <= date_to)
+
+        # Filter by calories
+        calories_min = kwargs.get("calories_min")
+        calories_max = kwargs.get("calories_max")
+
+        if calories_min:
+            datasets = datasets.filter(cast(FoodDSMetaData.calories, Integer) >= int(calories_min))
+
+        if calories_max:
+            datasets = datasets.filter(cast(FoodDSMetaData.calories, Integer) <= int(calories_max))
 
         # Filter by publication type
         if publication_type != "any":
