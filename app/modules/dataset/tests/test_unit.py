@@ -3,9 +3,9 @@ import logging
 import zipfile
 from types import SimpleNamespace
 from unittest.mock import MagicMock
-import requests
 
 import pytest
+import requests
 
 from app import create_app
 from app.modules.dataset.services import DataSetService
