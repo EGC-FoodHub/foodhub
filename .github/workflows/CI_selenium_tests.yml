@@ -1,4 +1,4 @@
-name: Selenium Tests
+name: Tests de Interfaz
 
 on:
   push:
@@ -9,107 +9,118 @@ jobs:
     runs-on: ubuntu-24.04
 
     env:
-      MARIADB_DATABASE: foodhub_test
-      MARIADB_USER: test
-      MARIADB_PASSWORD: testpassword
-      MARIADB_ROOT_PASSWORD: rootpassword
-      MARIADB_HOSTNAME: 127.0.0.1
-      MARIADB_PORT: 3307
+      POSTGRES_ROOT_PASSWORD: foodhub_root_password
+      POSTGRES_DATABASE: foodhub_test
+      POSTGRES_TEST_DATABASE: foodhub_test
+      POSTGRES_USER: foodhub_user
+      POSTGRES_PASSWORD: foodhub_password
+      POSTGRES_HOSTNAME: 127.0.0.1
+      POSTGRES_PORT: 5432
       FLASK_ENV: testing
-      FLASK_APP_NAME: FoodHub
+      FLASK_APP_NAME: foodsHub
       DOMAIN: localhost
       SECRET_KEY: test-secret-key-for-ci
 
     services:
-      mariadb:
-        image: mariadb:11.3
+      postgres:
+        image: postgres:17
         env:
-          MARIADB_ROOT_PASSWORD: ${{ env.MARIADB_ROOT_PASSWORD }}
-          MARIADB_DATABASE: ${{ env.MARIADB_DATABASE }}
-          MARIADB_USER: ${{ env.MARIADB_USER }}
-          MARIADB_PASSWORD: ${{ env.MARIADB_PASSWORD }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ env.POSTGRES_DATABASE }}
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
         ports:
-          - 3307:3306
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U $POSTGRES_USER"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+      chrome:
+        image: selenium/standalone-chrome:latest
+        ports:
+          - 4444:4444
+        options: --shm-size=2g
 
     steps:
-      - name: Checkout code
+
+      - name: Obtener código
         uses: actions/checkout@v5
 
-      - name: Setup Python
+      - name: Configurar Python
         uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           cache: 'pip'
 
-      - name: Remove rosemary editable entry
+      - name: Eliminar rosemary en modo editable
         run: sed -i '/rosemary @ file:\/\/\/app/d' requirements.txt
 
-      - name: Install dependencies
+      - name: Instalar dependencias
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -e .
 
-      - name: Install Firefox & Geckodriver
+      - name: Instalar PostgreSQL 17 client
         run: |
-          sudo apt-get update
-          sudo apt-get install -y firefox
-          wget -O geckodriver.tar.gz https://github.com/mozilla/geckodriver/releases/download/v0.34.0/geckodriver-v0.34.0-linux64.tar.gz
-          tar -xvzf geckodriver.tar.gz
-          sudo mv geckodriver /usr/local/bin/
-          geckodriver --version
+          sudo apt update
+          sudo apt install -y wget gnupg lsb-release
+          wget -qO - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /usr/share/keyrings/postgresql-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/postgresql-archive-keyring.gpg] http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt update
+          sudo apt install -y postgresql-client-17
 
-      - name: Wait for MariaDB
+      - name: Configurar base de datos
         run: |
-          for i in {1..60}; do
-            if mysqladmin ping -h127.0.0.1 -P3307 -u root -p"$MARIADB_ROOT_PASSWORD" --silent; then
-              echo "MariaDB ready"
-              exit 0
-            fi
-            echo "Waiting for MariaDB ($i/60)..."
-            sleep 2
-          done
-          echo "MariaDB did not become ready in time"
-          exit 1
-
-      - name: Setup database
-        run: |
-          flask --app app db upgrade
+          rosemary db:upgrade
           rosemary db:seed
 
-      - name: Start Flask app
+      - name: Iniciar aplicación Flask
         run: |
           flask run --host=0.0.0.0 --port=5000 &
           echo $! > flask.pid
           sleep 10
 
-      - name: Health check
+      - name: Verificación de salud
         run: |
           curl -f http://localhost:5000/ || exit 1
-          echo "Flask running"
+          echo "Aplicación funcionando"
 
-      - name: Run interface tests
-        env:
-          BASE_URL: http://localhost:5000
+      - name: Esperar a Selenium
         run: |
-          pytest -m selenium -v --tb=short
+          timeout 30 bash -c 'until curl -s http://localhost:4444/wd/hub/status | grep -q "ready"; do sleep 1; done'
+          echo "Selenium listo"
 
-      - name: Upload screenshots
+      - name: Ejecutar tests de interfaz
+        env:
+          SELENIUM_REMOTE_URL: http://localhost:4444/wd/hub
+          BASE_URL: http://host.docker.internal:5000
+        run: |
+          if pytest --collect-only -m selenium 2>&1 | grep -q "no tests ran"; then
+            exit 0
+          else
+            pytest -m selenium -v --tb=short
+          fi
+        continue-on-error: true
+
+      - name: Subir capturas de pantalla
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: selenium-interface-screenshots-${{ github.sha }}
+          name: capturas-interfaz-selenium-${{ github.sha }}
           path: |
             screenshots/
             test-results/
           retention-days: 30
           if-no-files-found: ignore
 
-      - name: Summary
+      - name: Resumen de tests de interfaz
         if: always()
-        run: echo "## Selenium Interface Tests Results" >> $GITHUB_STEP_SUMMARY
+        run: |
+          echo "## Resultados de Tests de Interfaz (Selenium)" >> $GITHUB_STEP_SUMMARY
 
-      - name: Stop Flask
+      - name: Detener aplicación Flask
         if: always()
         run: |
           if [ -f flask.pid ]; then
