@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-24.04
 
     env:
+      # ... (Variables de entorno sin cambios)
       MARIADB_DATABASE: foodhub_test
       MARIADB_USER: test
       MARIADB_PASSWORD: testpassword
@@ -42,21 +43,21 @@ jobs:
           python-version: '3.12'
           cache: 'pip'
 
-      # ➡️ NUEVO PASO: Instalar Firefox y GeckoDriver localmente
-      - name: Install Firefox and GeckoDriver
+      # ➡️ PASO MODIFICADO: Instalar Firefox, GeckoDriver Y Xvfb
+      - name: Install Firefox, GeckoDriver, and Xvfb
         run: |
-          echo "Installing Firefox and GeckoDriver locally on the runner..."
-          # 1. Instalar Firefox
+          echo "Installing prerequisites..."
           sudo apt-get update
-          sudo apt-get install -y firefox
+          # Instalar Firefox y Xvfb
+          sudo apt-get install -y firefox xvfb
           
-          # 2. Instalar GeckoDriver
+          # Instalar GeckoDriver (sin cambios, ya que funciona)
           LATEST_GECKODRIVER_VERSION=$(curl -s "https://api.github.com/repos/mozilla/geckodriver/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
           wget https://github.com/mozilla/geckodriver/releases/download/$LATEST_GECKODRIVER_VERSION/geckodriver-$LATEST_GECKODRIVER_VERSION-linux64.tar.gz
           tar -xvzf geckodriver-$LATEST_GECKODRIVER_VERSION-linux64.tar.gz
           sudo mv geckodriver /usr/local/bin/
           
-          echo "Firefox and GeckoDriver installation complete."
+          echo "Installation complete. Checking versions:"
           /usr/local/bin/geckodriver --version
           firefox --version
 
@@ -94,7 +95,6 @@ jobs:
 
       - name: Start Flask app
         run: |
-          # Aumentamos el sleep a 20s como sugerimos antes por si acaso
           flask run --host=0.0.0.0 --port=5000 &
           echo $! > flask.pid
           sleep 20 
@@ -104,15 +104,16 @@ jobs:
           curl -f http://localhost:5000/ || exit 1
           echo "Flask running"
 
-      - name: Run interface tests
+      # ➡️ PASO MODIFICADO: Ejecutar Pytest con Xvfb
+      - name: Run interface tests (using Xvfb)
         env:
-          BASE_URL: http://localhost:5000 
+          BASE_URL: http://localhost:5000
         run: |
           if pytest --collect-only -m selenium 2>&1 | grep -q "no tests ran"; then
             exit 0
           else
-            # La ejecución usará el Firefox instalado localmente
-            pytest -m selenium -v --tb=short
+            # xvfb-run simula una pantalla para que Firefox se pueda inicializar
+            xvfb-run --auto-servernum pytest -m selenium -v --tb=short
           fi
 
       - name: Upload screenshots
