@@ -5,33 +5,33 @@ on:
 
 jobs:
   tests-e2e:
-    name: Selenium
+    name: Selenium + MariaDB
     runs-on: ubuntu-24.04
 
     env:
-      POSTGRES_ROOT_PASSWORD: foodhub_root_password
-      POSTGRES_DATABASE: foodhub_test
-      POSTGRES_TEST_DATABASE: foodhub_test
-      POSTGRES_USER: foodhub_user
-      POSTGRES_PASSWORD: foodhub_password
-      POSTGRES_HOSTNAME: 127.0.0.1
-      POSTGRES_PORT: 5432
+      MARIADB_ROOT_PASSWORD: rootpassword
+      MARIADB_DATABASE: foodhub_test
+      MARIADB_USER: test
+      MARIADB_PASSWORD: testpassword
+      MARIADB_HOSTNAME: 127.0.0.1
+      MARIADB_PORT: 3307
       FLASK_ENV: testing
-      FLASK_APP_NAME: foodsHub
+      FLASK_APP_NAME: FoodHub
       DOMAIN: localhost
       SECRET_KEY: test-secret-key-for-ci
 
     services:
-      postgres:
-        image: postgres:17
+      mariadb:
+        image: mariadb:11.3
         env:
-          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
-          POSTGRES_DB: ${{ env.POSTGRES_DATABASE }}
-          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          MARIADB_ROOT_PASSWORD: ${{ env.MARIADB_ROOT_PASSWORD }}
+          MARIADB_DATABASE: ${{ env.MARIADB_DATABASE }}
+          MARIADB_USER: ${{ env.MARIADB_USER }}
+          MARIADB_PASSWORD: ${{ env.MARIADB_PASSWORD }}
         ports:
-          - 5432:5432
+          - 3307:3306
         options: >-
-          --health-cmd="pg_isready -U $POSTGRES_USER"
+          --health-cmd="mysqladmin ping -h127.0.0.1 -P3306 -u${MARIADB_USER} -p${MARIADB_PASSWORD}"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=3
@@ -43,7 +43,6 @@ jobs:
         options: --shm-size=2g
 
     steps:
-
       - name: Obtener código
         uses: actions/checkout@v5
 
@@ -53,7 +52,7 @@ jobs:
           python-version: '3.12'
           cache: 'pip'
 
-      - name: Eliminar rosemary en modo editable
+      - name: Eliminar rosemary editable
         run: sed -i '/rosemary @ file:\/\/\/app/d' requirements.txt
 
       - name: Instalar dependencias
@@ -62,14 +61,23 @@ jobs:
           pip install -r requirements.txt
           pip install -e .
 
-      - name: Instalar PostgreSQL 17 client
+      - name: Instalar cliente MariaDB
         run: |
-          sudo apt update
-          sudo apt install -y wget gnupg lsb-release
-          wget -qO - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /usr/share/keyrings/postgresql-archive-keyring.gpg
-          echo "deb [signed-by=/usr/share/keyrings/postgresql-archive-keyring.gpg] http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
-          sudo apt update
-          sudo apt install -y postgresql-client-17
+          sudo apt-get update
+          sudo apt-get install -y mariadb-client
+
+      - name: Esperar a MariaDB
+        run: |
+          for i in {1..60}; do
+            if mysqladmin ping -h127.0.0.1 -P3307 -u root -p"$MARIADB_ROOT_PASSWORD" --silent; then
+              echo "MariaDB listo"
+              exit 0
+            fi
+            echo "Esperando MariaDB ($i/60)..."
+            sleep 2
+          done
+          echo "MariaDB no respondió a tiempo"
+          exit 1
 
       - name: Configurar base de datos
         run: |
