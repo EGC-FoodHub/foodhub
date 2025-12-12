@@ -5,6 +5,10 @@ from sqlalchemy import and_, func
 from app import db
 from app.modules.basedataset.models import BaseDataset, BaseDSMetaData
 
+from sqlalchemy import event
+
+from core.services.SearchService import SearchService
+
 
 class FoodDataset(BaseDataset):
     __tablename__ = "food_dataset"
@@ -222,11 +226,6 @@ class FoodDatasetActivity(db.Model):
 
     def __repr__(self):
         return f"<FoodDatasetActivity {self.activity_type} on dataset {self.dataset_id}>"
-
-
-from sqlalchemy import event
-
-from core.services.SearchService import SearchService
 
 
 @event.listens_for(FoodDataset, "after_delete")
