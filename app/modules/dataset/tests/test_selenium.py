@@ -229,3 +229,74 @@ def test_upload_github_repo():
 
     finally:
         close_driver(driver)
+
+
+@pytest.mark.selenium
+def test_invalidbranch():
+    driver = initialize_driver()
+    try:
+        host = get_host_for_selenium_testing()
+        driver.get(f"{host}/")
+        driver.set_window_size(810, 1063)
+
+        # Click Login
+        WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.LINK_TEXT, "Login"))
+        ).click()
+
+        # Optional extra click present in the recorded test (may not exist in all layouts)
+        try:
+            driver.find_element(By.CSS_SELECTOR, ".row:nth-child(2) > .col-md-6 > .mb-3").click()
+        except Exception:
+            pass
+
+        # Fill credentials
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "email"))).click()
+        driver.find_element(By.ID, "password").send_keys("1234")
+        driver.find_element(By.ID, "email").send_keys("user1@example.com")
+        driver.find_element(By.ID, "submit").click()
+
+        # Open sidebar / datasets
+        try:
+            driver.find_element(By.CSS_SELECTOR, ".hamburger").click()
+        except Exception:
+            try:
+                driver.find_element(By.CSS_SELECTOR, ".sidebar-toggle").click()
+            except Exception:
+                pass
+
+        sidebar_item = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, ".sidebar-item:nth-child(6) .align-middle:nth-child(2)"))
+        )
+        sidebar_item.click()
+        wait_for_page_to_load(driver)
+
+        # Fill basic dataset info and switch to GitHub tab
+        driver.find_element(By.ID, "title").click()
+        driver.find_element(By.ID, "title").send_keys("test")
+        driver.find_element(By.ID, "desc").send_keys("test")
+
+        github_tab = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.ID, "github-tab"))
+        )
+        github_tab.click()
+
+        gh_url_input = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "gh_url"))
+        )
+        gh_url_input.click()
+        gh_url_input.send_keys("https://github.com/EGC-FoodHub/foodhub")
+
+        gh_branch = driver.find_element(By.ID, "gh_branch")
+        gh_branch.send_keys("invalid")
+
+        import_btn = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.ID, "import_repo_btn"))
+        )
+        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", import_btn)
+        import_btn.click()
+        wait_for_page_to_load(driver)
+
+    finally:
+        close_driver(driver)
+
