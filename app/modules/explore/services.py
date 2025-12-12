@@ -22,9 +22,11 @@ class ExploreService(BaseService):
 
                 if result_ids is not None:
                     logger.info(f"Search used Elasticsearch. Found {len(result_ids)} results.")
-
-                    datasets = self.repository.get_by_ids(result_ids)
-                    return datasets
+                    
+                    if len(result_ids) != 0:                    
+                        datasets = self.repository.get_by_ids(result_ids)
+                        return datasets
+                    logger.info("Search used Elasticsearch. Found 0 results. Falling back to SQL.")
 
             except Exception as e:
                 logger.error(f"Unexpected error in Elastic search: {e}. Falling back to SQL.")

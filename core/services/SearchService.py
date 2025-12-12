@@ -47,19 +47,18 @@ class SearchService:
     def search_datasets(self, query, sorting=None, publication_type=None, tags=None, **kwargs):
         try:
             if not query or query.strip() == "":
-                return []
-
-            search_query = f"*{query}*"
-
-            search_body = {
-                "query": {
-                    "query_string": {
-                        "query": search_query,
-                        "fields": ["title", "description", "tags"],
-                        "default_operator": "AND",
+                search_body = {"query": {"match_all": {}}}
+            else:
+                search_query = f"*{query}*"
+                search_body = {
+                    "query": {
+                        "query_string": {
+                            "query": search_query,
+                            "fields": ["title", "description", "tags"],
+                            "default_operator": "AND",
+                        }
                     }
                 }
-            }
 
             response = self.es.search(index="datasets", body=search_body)
 

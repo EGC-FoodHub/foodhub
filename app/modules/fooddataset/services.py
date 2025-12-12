@@ -93,6 +93,15 @@ class FoodDatasetService(BaseDatasetService):
 
             self.repository.session.commit()
 
+            try:
+                from core.services.SearchService import SearchService
+
+                search_service = SearchService()
+                if search_service.enabled:
+                    search_service.index_dataset(dataset)
+            except Exception as e:
+                logger.error(f"Error indexing dataset on creation: {e}")
+
             self._move_dataset_files(dataset, current_user)
 
         except Exception as exc:
