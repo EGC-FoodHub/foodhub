@@ -188,7 +188,7 @@ def test_activity_log_creation(test_client):
         assert logs[0].dataset_id == dataset.id
 
 
-def test_service_get_uvlhub_doi(test_client):
+def test_service_get_doi(test_client):
     from app.modules.fooddataset.services import FoodDatasetService
 
     service = FoodDatasetService()
@@ -197,7 +197,7 @@ def test_service_get_uvlhub_doi(test_client):
     dataset.ds_meta_data.dataset_doi = "10.1234/test"
 
     # helper to mock env if needed, but default is localhost
-    doi_url = service.get_uvlhub_doi(dataset)
+    doi_url = service.get_doi(dataset)
     # The URL might include port 5000 in test environment
     assert "http://" in doi_url
     assert "/doi/10.1234/test" in doi_url
