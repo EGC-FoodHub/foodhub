@@ -19,8 +19,6 @@ jobs:
       FLASK_APP_NAME: FoodHub
       DOMAIN: localhost
       SECRET_KEY: test-secret-key-for-ci
-      SELENIUM_REMOTE_URL: http://localhost:4444/wd/hub
-      BASE_URL: http://host.docker.internal:5000
 
     services:
       mariadb:
@@ -32,12 +30,6 @@ jobs:
           MARIADB_PASSWORD: ${{ env.MARIADB_PASSWORD }}
         ports:
           - 3307:3306
-
-      chrome:
-        image: selenium/standalone-chrome:latest
-        ports:
-          - 4444:4444
-        options: --shm-size=2g
 
     steps:
       - name: Checkout code
@@ -57,6 +49,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install -e .
+
+      - name: Install Firefox & Geckodriver
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y firefox
+          wget -O geckodriver.tar.gz https://github.com/mozilla/geckodriver/releases/download/v0.34.0/geckodriver-v0.34.0-linux64.tar.gz
+          tar -xvzf geckodriver.tar.gz
+          sudo mv geckodriver /usr/local/bin/
+          geckodriver --version
 
       - name: Wait for MariaDB
         run: |
@@ -87,36 +88,11 @@ jobs:
           curl -f http://localhost:5000/ || exit 1
           echo "Flask running"
 
-      - name: Wait for Selenium
-        run: |
-          timeout 30 bash -c 'until curl -s http://localhost:4444/wd/hub/status | grep -q "ready"; do sleep 1; done'
-          echo "Selenium ready"
-
-      - name: Patch Selenium to use remote Chrome
-        run: |
-          mkdir -p ci_patch
-          cat <<EOF > ci_patch/patch_selenium.py
-          import os
-          from selenium import webdriver
-          from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-
-          def initialize_driver(*args, **kwargs):
-              return webdriver.Remote(
-                  command_executor=os.environ.get("SELENIUM_REMOTE_URL"),
-                  desired_capabilities=DesiredCapabilities.CHROME
-              )
-          EOF
-
       - name: Run interface tests
         env:
-          BASE_URL: http://host.docker.internal:5000
+          BASE_URL: http://localhost:5000
         run: |
-          export PYTHONPATH=$(pwd)/ci_patch:$PYTHONPATH
-          if pytest --collect-only -m selenium 2>&1 | grep -q "no tests ran"; then
-            exit 0
-          else
-            pytest -m selenium -v --tb=short
-          fi
+          pytest -m selenium -v --tb=short
 
       - name: Upload screenshots
         uses: actions/upload-artifact@v4
