@@ -54,15 +54,9 @@
                             {{ dataset.recent_views_week }} this week
                         </small>
                     </div>
-
                 </div>
 
-                <div class="mt-3">
-                    <a href="/food/dataset/{{ dataset.id }}" class="btn btn-outline-primary btn-sm">
-                        <i data-feather="eye"></i>
-                        View dataset
-                    </a>
-                </div>
+                <!-- Se eliminó el botón "View dataset" según los requisitos -->
             </div>
         </div>
     </div>
@@ -142,12 +136,13 @@
 
                 <div class="row mt-4">
                     <div class="col-12">
-                        <a href="{{ dataset.get_doi() }}" class="btn btn-outline-primary btn-sm"
-                            style="border-radius: 5px;">
-                            <i data-feather="eye" class="center-button-icon"></i>
-                            View dataset
+                        <a href="{{ dataset.get_doi() }}" 
+                        class="btn btn-outline-primary btn-sm dataset-view-link"
+                        data-dataset-id="{{ dataset.id }}"
+                        style="border-radius: 5px;">
+                        <i data-feather="eye" class="center-button-icon"></i>
+                        View dataset
                         </a>
-
                         <a href="/dataset/download/{{ dataset.id }}" 
                            class="btn btn-outline-primary btn-sm dataset-download-link"
                            data-dataset-id="{{ dataset.id }}"
@@ -184,7 +179,7 @@
                             </h4>
                             <h4 class="h4 mb-3 stats-color">
                                 <i data-feather="eye" class="align-middle mr-2 stats-color"></i>&nbsp;{{
-                                total_dataset_views }} datasets viewed
+                                view_count }} datasets viewed
                             </h4>
                             <h4 class="h4 mb-3 stats-color">
                                 <i data-feather="eye" class="align-middle mr-2 stats-color"></i>&nbsp;{{
