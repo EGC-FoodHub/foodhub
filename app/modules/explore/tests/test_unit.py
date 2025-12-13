@@ -43,6 +43,7 @@ def test_search_datasets_returns_ids():
         assert result_ids == [10, 25]
         service.es.search.assert_called_once()
 
+
 # 3. Test de integración del Servicio Explore: verificar si Elastic devuelve IDs, el servicio Explore filtra por esos IDs
 def test_explore_service_uses_search_results():
     with patch("app.modules.explore.services.ExploreRepository") as MockRepositoryClass:
@@ -50,7 +51,6 @@ def test_explore_service_uses_search_results():
 
         with patch("app.modules.explore.services.SearchService") as MockSearchService:
             mock_search_instance = MockSearchService.return_value
-
 
             mock_search_instance.enabled = True
             mock_search_instance.search_datasets.return_value = [1, 2]
