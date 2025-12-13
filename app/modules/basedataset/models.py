@@ -58,6 +58,8 @@ class BaseDSMetaData(db.Model):
     publication_doi = db.Column(db.String(120))
     dataset_doi = db.Column(db.String(120))
     tags = db.Column(db.String(120))
+    ds_metrics_id = db.Column(db.Integer, db.ForeignKey("ds_metrics.id"))
+    ds_metrics = db.relationship("BaseDSMetrics", uselist=False, backref="ds_meta_data", cascade="all, delete")
 
     @declared_attr
     def authors(cls):

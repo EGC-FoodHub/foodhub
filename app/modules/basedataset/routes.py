@@ -4,6 +4,7 @@ import tempfile
 import uuid
 from datetime import datetime, timezone
 from zipfile import ZipFile
+from app.modules.recommendations.services import RecommendationService
 
 from flask import (
     Blueprint,
@@ -223,9 +224,11 @@ def subdomain_index(doi):
     if not dataset:
         abort(404)
 
+    related_datasets = RecommendationService.get_related_food_datasets(dataset, limit=5)
+
     user_cookie = ds_view_record_service.create_cookie(dataset=dataset)
 
-    resp = make_response(render_template("basedataset/view_dataset.html", dataset=dataset))
+    resp = make_response(render_template("basedataset/view_dataset.html", dataset=dataset, related_datasets=related_datasets))
     resp.set_cookie("view_cookie", user_cookie)
 
     return resp
