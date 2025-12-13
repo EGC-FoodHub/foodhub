@@ -1,7 +1,5 @@
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from app.modules.explore.services import ExploreService
 from core.services.SearchService import SearchService
 
@@ -16,7 +14,7 @@ def test_index_dataset():
     mock_dataset.ds_meta_data.publication_type.name = "ARTICLE"
     mock_dataset.ds_meta_data.tags = "tag1, tag2"
 
-    with patch("core.services.SearchService.Elasticsearch") as MockEs:
+    with patch("core.services.SearchService.Elasticsearch"):
         service = SearchService()
         service.es = MagicMock()
 
@@ -31,7 +29,7 @@ def test_index_dataset():
 
 # 2. Test para verificar la búsqueda y el parseo de IDs
 def test_search_datasets_returns_ids():
-    with patch("core.services.SearchService.Elasticsearch") as MockEs:
+    with patch("core.services.SearchService.Elasticsearch"):
         service = SearchService()
         service.es = MagicMock()
 
@@ -44,7 +42,8 @@ def test_search_datasets_returns_ids():
         service.es.search.assert_called_once()
 
 
-# 3. Test de integración del Servicio Explore: verificar si Elastic devuelve IDs, el servicio Explore filtra por esos IDs
+# 3. Test de integración del Servicio Explore:
+# verificar si Elastic devuelve IDs, el servicio Explore filtra por esos IDs
 def test_explore_service_uses_search_results():
     with patch("app.modules.explore.services.ExploreRepository") as MockRepositoryClass:
         mock_repo_instance = MockRepositoryClass.return_value
@@ -86,7 +85,8 @@ def test_explore_service_falls_back_to_repository_when_search_disabled():
             mock_repo_instance.get_by_ids.assert_not_called()
 
 
-# 6. Test de Resiliencia: Si Elastic lanza una excepción (caída del servidor, timeout), el servicio debe capturarla y usar SQL transparentemente.
+# 6. Test de Resiliencia: Si Elastic lanza una excepción
+# (caída del servidor, timeout), el servicio debe capturarla y usar SQL transparentemente.
 def test_explore_service_handles_elastic_exception_gracefully():
     with patch("app.modules.explore.services.ExploreRepository") as MockRepositoryClass:
         mock_repo_instance = MockRepositoryClass.return_value
