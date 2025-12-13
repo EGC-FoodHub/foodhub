@@ -1,5 +1,7 @@
 // Tracking de vistas y descargas para datasets en la página principal
 document.addEventListener('DOMContentLoaded', function () {
+    console.log('=== TRACKING SCRIPT LOADED ===');
+    
     // Inicializar feather icons
     if (typeof feather !== 'undefined') {
         feather.replace();
@@ -7,6 +9,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Función para registrar una vista
     function registerView(datasetId, redirectUrl) {
+        console.log(`Registrando vista para dataset ${datasetId}`);
+        
         fetch(`/dataset/${datasetId}/view`, {
             method: 'POST',
             headers: { 
@@ -14,23 +18,26 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         })
         .then(response => {
+            console.log('Respuesta de vista:', response.status);
             if (!response.ok) {
-                console.warn('Error registering view, but continuing...');
+                console.warn('Error registrando vista, pero continuando...');
             }
             return response.json();
         })
         .then(data => {
-            console.log('View registered:', data);
+            console.log('Vista registrada:', data);
             window.location.href = redirectUrl;
         })
         .catch(error => {
-            console.error('Error registering view:', error);
+            console.error('Error registrando vista:', error);
             window.location.href = redirectUrl;
         });
     }
 
     // Función para registrar una descarga
     function registerDownload(datasetId, downloadUrl) {
+        console.log(`Registrando descarga para dataset ${datasetId}`);
+        
         fetch(`/dataset/${datasetId}/download`, {
             method: 'POST',
             headers: { 
@@ -38,87 +45,94 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         })
         .then(response => {
+            console.log('Respuesta de descarga:', response.status);
             if (!response.ok) {
-                console.warn('Error registering download, but continuing...');
+                console.warn('Error registrando descarga, pero continuando...');
             }
             return response.json();
         })
         .then(data => {
-            console.log('Download registered:', data);
+            console.log('Descarga registrada:', data);
             window.location.href = downloadUrl;
         })
         .catch(error => {
-            console.error('Error registering download:', error);
+            console.error('Error registrando descarga:', error);
             window.location.href = downloadUrl;
         });
     }
 
     // Manejar clics en la página
     document.addEventListener('click', function (e) {
-        const target = e.target;
+        console.log('Click detectado en:', e.target.tagName, e.target.className);
         
-        // 1. Detectar clic en botón "View dataset" de Latest datasets
-        const viewButton = target.closest('a.btn[href*="doi.org"]');
-        if (viewButton && viewButton.textContent.includes('View dataset')) {
+        // 1. Detectar clic en botón "View dataset" USANDO LA CLASE dataset-view-link
+        const viewButton = e.target.closest('.dataset-view-link');
+        if (viewButton) {
+            console.log('Botón View dataset encontrado');
             e.preventDefault();
             
-            // Buscar la tarjeta contenedora
-            const card = viewButton.closest('.card');
+            const datasetId = viewButton.getAttribute('data-dataset-id');
+            const redirectUrl = viewButton.getAttribute('href');
+            
+            console.log('Dataset ID:', datasetId, 'URL:', redirectUrl);
+            
+            if (datasetId) {
+                registerView(datasetId, redirectUrl);
+            } else {
+                console.warn('No hay dataset ID, redirigiendo sin tracking');
+                window.location.href = redirectUrl;
+            }
+            return;
+        }
+        
+        // 2. Detectar clic en el título del dataset
+        const titleLink = e.target.closest('h2 a');
+        if (titleLink) {
+            console.log('Título del dataset clickeado');
+            e.preventDefault();
+            
+            // Buscar el dataset ID en la misma tarjeta
+            const card = titleLink.closest('.card');
             if (card) {
-                // Buscar el enlace de descarga que tiene el data-dataset-id
                 const downloadLink = card.querySelector('.dataset-download-link');
                 if (downloadLink) {
                     const datasetId = downloadLink.getAttribute('data-dataset-id');
-                    const redirectUrl = viewButton.getAttribute('href');
+                    const redirectUrl = titleLink.getAttribute('href');
+                    
+                    console.log('Dataset ID desde download link:', datasetId);
                     
                     if (datasetId) {
                         registerView(datasetId, redirectUrl);
                     } else {
+                        console.warn('No hay dataset ID en el download link');
                         window.location.href = redirectUrl;
                     }
-                    return; // Importante: salir después de manejar el clic
+                } else {
+                    console.warn('No se encontró download link en la tarjeta');
+                    window.location.href = titleLink.getAttribute('href');
                 }
-            }
-            window.location.href = viewButton.getAttribute('href');
-        }
-        
-        // 2. Detectar clic en el título del dataset (también es un enlace DOI)
-        const titleLink = target.closest('a[href*="doi.org"]');
-        if (titleLink && !titleLink.classList.contains('btn')) {
-            // Verificar si es el título (está dentro de un h2)
-            const h2Element = titleLink.closest('h2');
-            if (h2Element) {
-                e.preventDefault();
-                
-                const card = titleLink.closest('.card');
-                if (card) {
-                    const downloadLink = card.querySelector('.dataset-download-link');
-                    if (downloadLink) {
-                        const datasetId = downloadLink.getAttribute('data-dataset-id');
-                        const redirectUrl = titleLink.getAttribute('href');
-                        
-                        if (datasetId) {
-                            registerView(datasetId, redirectUrl);
-                        } else {
-                            window.location.href = redirectUrl;
-                        }
-                        return;
-                    }
-                }
+            } else {
+                console.warn('No se encontró la tarjeta contenedora');
                 window.location.href = titleLink.getAttribute('href');
             }
+            return;
         }
         
         // 3. Detectar clic en botón "Download"
-        const downloadLink = target.closest('.dataset-download-link');
+        const downloadLink = e.target.closest('.dataset-download-link');
         if (downloadLink) {
+            console.log('Botón Download encontrado');
             e.preventDefault();
+            
             const datasetId = downloadLink.getAttribute('data-dataset-id');
             const downloadUrl = downloadLink.getAttribute('href');
+            
+            console.log('Dataset ID:', datasetId, 'URL:', downloadUrl);
             
             if (datasetId) {
                 registerDownload(datasetId, downloadUrl);
             } else {
+                console.warn('No hay dataset ID, redirigiendo sin tracking');
                 window.location.href = downloadUrl;
             }
         }
