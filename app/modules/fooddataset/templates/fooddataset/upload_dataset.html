@@ -245,15 +245,29 @@
         document.getElementById('save_as_draft_button').addEventListener('click', function () {
             const formData = new FormData();
 
-            const form = document.querySelector('#basic_info_form form') || document.querySelector('#basic_info_form');
-            if (form) {
-                const inputs = form.querySelectorAll('input, select, textarea');
+            const basicForm = document.querySelector('#basic_info_form form') || document.querySelector('#basic_info_form');
+            if (basicForm) {
+                const inputs = basicForm.querySelectorAll('input, select, textarea');
                 inputs.forEach(input => {
                     if (input.name && !input.disabled) {
                         formData.append(input.name, input.value);
                     }
                 });
             }
+
+            const uploadedForms = document.querySelectorAll('#uploaded_models_form input, #uploaded_models_form textarea, #uploaded_models_form select');
+            uploadedForms.forEach(input => {
+                if (input.name && !input.disabled) {
+                    formData.append(input.name, input.value);
+                }
+            });
+
+            Dropzone.instances.forEach(dz => {
+                dz.files.forEach(file => {
+                    formData.append('files', file, file.name);
+                });
+            });
+
             fetch("/dataset/save_as_draft", {
                 method: "POST",
                 body: formData

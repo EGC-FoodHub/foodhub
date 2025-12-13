@@ -11,7 +11,9 @@ from app.modules.basedataset.services import BaseDatasetService
 from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData
 from app.modules.fooddataset.repositories import FoodDatasetRepository
 from app.modules.foodmodel.models import FoodMetaData, FoodModel
+from app.modules.foodmodel.repositories import FoodModelRepository
 from app.modules.hubfile.repositories import HubfileRepository
+from app.modules.basedataset.repositories import BaseAuthorRepository
 
 logger = logging.getLogger(__name__)
 
@@ -28,8 +30,9 @@ class FoodDatasetService(BaseDatasetService):
     def __init__(self):
         super().__init__(repository=FoodDatasetRepository())
         self.hubfile_repository = HubfileRepository()
-        self.author_repository = self.author_repository
+        self.author_repository = BaseAuthorRepository()
         self.dsmetadata_repository = self.dsmetadata_repository
+        self.food_model_repository = FoodModelRepository()
 
     def get_synchronized(self, current_user_id: int):
         return self.repository.get_synchronized(current_user_id)
@@ -50,6 +53,7 @@ class FoodDatasetService(BaseDatasetService):
         return self.repository.count_unsynchronized_datasets()
 
     def create_from_form(self, form, current_user) -> FoodDataset:
+
         main_author = {
             "name": f"{current_user.profile.surname}, {current_user.profile.name}",
             "affiliation": current_user.profile.affiliation,
@@ -58,7 +62,7 @@ class FoodDatasetService(BaseDatasetService):
 
         try:
             logger.info(f"Creating FoodDSMetaData...: {form.get_dsmetadata()}")
-
+            print(form.dataset_doi.data)
             dsmetadata = FoodDSMetaData(**form.get_dsmetadata())
 
             self.dsmetadata_repository.session.add(dsmetadata)
@@ -132,9 +136,42 @@ class FoodDatasetService(BaseDatasetService):
 
         new_authors = []
         for author_data in [main_author] + form.get_authors():
-            author = self.author_repository.create(commit=False, ds_meta_data_id=dsmetadata.id, **author_data)
+            author = self.author_repository.create(commit=False, food_ds_meta_data_id=dsmetadata.id, **author_data)
             new_authors.append(author)
             dsmetadata.authors = new_authors
+
+        for f in dataset.files:
+            self.author_repository.session.query(self.author_repository.model).filter_by(food_meta_data_id=f.food_meta_data.id).delete()
+            self.repository.session.delete(f.food_meta_data)
+            self.repository.session.delete(f)
+
+        dataset.files.clear()
+        self.repository.session.flush()
+
+        new_files = []
+        for file_data in form.get_food_models_metadata():
+            food_meta = FoodMetaData(**file_data)
+            self.repository.session.add(food_meta)
+            self.repository.session.flush()
+
+            file = self.food_model_repository.create(
+                commit=False,
+                data_set_id=dataset.id,
+                food_meta_data_id=food_meta.id
+            )
+
+            new_file_authors = []
+            for file_author_data in [main_author] + form.get_authors():
+                print(file_author_data)
+                file_author = self.author_repository.create(
+                    commit=False,
+                    food_meta_data_id=food_meta.id,
+                    **file_author_data
+                )
+                new_file_authors.append(file_author)
+
+            file.authors = new_file_authors
+            new_files.append(file)
 
         updated_instance = self.update_dsmetadata(dsmetadata.id, **form.get_dsmetadata())
 
@@ -146,7 +183,8 @@ class FoodDatasetService(BaseDatasetService):
                 # Optionally rollback or just report the error
                 self.repository.session.rollback()
                 return None, {"fakenodo_error": str(e)}
-            return updated_instance, None
+        
+        return updated_instance, None
 
     def increment_view_count(self, dataset_id: int) -> bool:
         if not isinstance(dataset_id, int) or dataset_id <= 0:

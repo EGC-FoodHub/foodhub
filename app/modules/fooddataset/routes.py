@@ -6,7 +6,7 @@ import shutil
 from flask import Blueprint, jsonify, render_template, request, send_from_directory, url_for
 from flask_login import current_user, login_required
 
-from app.modules.fooddataset.forms import AuthorForm, FoodDatasetForm
+from app.modules.fooddataset.forms import AuthorForm, FoodDatasetForm, FoodModelForm
 from app.modules.fooddataset.services import FoodDatasetService
 from app.modules.fakenodo.services import FakenodoService
 from app.modules.basedataset.repositories import BaseDOIMappingRepository
@@ -97,11 +97,10 @@ def create_dataset_as_draft():
     if request.method == "POST":
 
         dataset = None
-
-        form.title.data = form.title.data if form.title.data else ""
-        form.desc.data = form.desc.data if form.desc.data else ""
-        form.food_models.entries = []
-
+                
+        if not form.food_models.entries[0].filename.data:
+            form.food_models = []
+        
         try:
             logger.info("Creating dataset...")
             dataset = food_service.create_from_form(form=form, current_user=current_user)
@@ -130,6 +129,12 @@ def edit_doi_dataset(dataset_id):
     form = FoodDatasetForm()
 
     if request.method == "POST":
+        if not form.food_models.entries[0].filename.data:
+            form.food_models = []
+
+        # food_models_json = request.form.get('food_models_data', '[]')
+        # food_models_data = json.loads(food_models_json)
+                        
         sync_fakenodo = request.form.get("sync_fakenodo") == "yes"
         result, errors = food_service.edit_doi_dataset(dataset, form, sync_fakenodo=sync_fakenodo)
         return food_service.handle_service_response(
@@ -145,11 +150,31 @@ def edit_doi_dataset(dataset_id):
 
         form.authors.entries = []
         for author in dataset.ds_meta_data.authors:
-            subform = AuthorForm()
-            subform.name.data = author.name
-            subform.affiliation.data = author.affiliation
-            subform.orcid.data = author.orcid
-            form.authors.append_entry(subform.data)
+            author_subform = AuthorForm()
+            author_subform.name.data = author.name
+            author_subform.affiliation.data = author.affiliation
+            author_subform.orcid.data = author.orcid
+            form.authors.append_entry(author_subform.data)
+
+        form.food_models.entries = []
+        for food_model in dataset.files:
+            file_subform = FoodModelForm()
+            file_subform.filename.data = food_model.food_meta_data.food_filename
+            file_subform.title.data = food_model.food_meta_data.title
+            file_subform.description = food_model.food_meta_data.description
+            file_subform.publication_type = food_model.food_meta_data.publication_type
+            file_subform.publication_doi = food_model.food_meta_data.publication_doi
+            file_subform.tags = food_model.food_meta_data.tags
+
+            file_subform.authors.entries = []
+            for file_author in food_model.food_meta_data.authors:
+                file_author_subform = AuthorForm()
+                file_author_subform.name.data = file_author.name
+                file_author_subform.affiliation.data = file_author.affiliation
+                file_author_subform.orcid.data = file_author.orcid
+                file_subform.authors.append_entry(file_author_subform.data)
+            
+            form.food_models.append_entry(file_subform) 
 
     return render_template("fooddataset/edit_dataset.html", form=form, dataset=dataset)
 
