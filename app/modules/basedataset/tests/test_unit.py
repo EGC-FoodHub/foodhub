@@ -345,6 +345,10 @@ def test_route_doi_view_success(test_client):
     with (
         patch("app.modules.basedataset.services.BaseDSMetaDataService.filter_by_doi") as mock_filter,
         patch("app.modules.basedataset.routes.ds_view_record_service") as mock_view_service,
+        patch("app.modules.basedataset.routes.db.session.expunge"),
+        patch(
+            "app.modules.fooddataset.models.FoodDSMetaData"
+        ) as mock_food_metadata,  # Also mock this to prevent DB access and potential errors with Mock IDs
     ):
 
         # Mock the metadata object and its dataset relationship

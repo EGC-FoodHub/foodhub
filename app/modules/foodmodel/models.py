@@ -18,6 +18,10 @@ class FoodModel(db.Model):
     def __repr__(self):
         return f"<FoodModel {self.id}>"
 
+    @property
+    def size_in_bytes(self):
+        return sum(file.size for file in self.files)
+
 
 class FoodMetaData(db.Model):
     __tablename__ = "food_meta_data"

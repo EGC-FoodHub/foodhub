@@ -1,0 +1,10 @@
+name: Salmón
+calories: 208 kcal
+type: SEAFOOD
+nutritional_values:
+  protein: 20g
+  carbohydrates: 0g
+  fat: 13g
+  omega_3: 2.3g
+  vitamin_d: 64%
+  vitamin_b12: 51%

@@ -12,9 +12,7 @@ logger = logging.getLogger(__name__)
 def index():
     logger.info("Access index")
 
-
     dataset_service = FoodDatasetService()
-
 
     datasets_counter = dataset_service.count_synchronized_datasets()
     total_dataset_downloads = dataset_service.total_dataset_downloads()
