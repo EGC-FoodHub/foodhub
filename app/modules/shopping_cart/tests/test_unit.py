@@ -1,7 +1,8 @@
 import pytest
 
 from app.modules.auth.models import User
-from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData, PublicationType, Author
+from app.modules.basedataset.models import BaseAuthor, BasePublicationType
+from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData
 from datetime import datetime, timezone
 
 from app import db
@@ -38,7 +39,6 @@ def test_get_shopping_cart_from_current_user(test_client):
 
     html = response.data.decode("utf-8")
     assert "shopping_cart" in html
-
 
 def test_add_dataset_to_cart(test_client):
     food_dataset = FoodDataset.query.first()
@@ -80,27 +80,30 @@ def test_remove_dataset_from_cart(test_client):
 
 def create_test_dataset(user_id=1):
     """
-    Crea un fooddataset de prueba con metadata mínima y lo guarda en la DB de tests.
-    Retorna el objeto FoodDataSet.
+    Crea un FoodDataset de prueba con metadata mínima válida
+    según BaseDSMetaData y BaseDataset.
     """
 
     ds_meta = FoodDSMetaData(
         deposition_id=999,
         title="Test Dataset",
         description="This is a test food dataset",
-        publication_type=PublicationType.DATA_MANAGEMENT_PLAN,
+        publication_type=BasePublicationType.OTHER,  
         publication_doi="10.1234/testdoi",
         dataset_doi="10.1234/testfooddataset",
         tags="test",
+        calories="100 kcal",
+        type="test",
+        community="test-community",
     )
     db.session.add(ds_meta)
     db.session.commit()
 
-    author = Author(
+    author = BaseAuthor(
         name="Test Author",
         affiliation="Test Affiliation",
         orcid="0000-0000-0000-0000",
-        ds_meta_data_id=ds_meta.id
+        food_ds_meta_data_id=ds_meta.id,
     )
     db.session.add(author)
     db.session.commit()
@@ -108,7 +111,7 @@ def create_test_dataset(user_id=1):
     food_dataset = FoodDataset(
         user_id=user_id,
         ds_meta_data_id=ds_meta.id,
-        created_at=datetime.now(timezone.utc)
+        created_at=datetime.now(timezone.utc),
     )
     db.session.add(food_dataset)
     db.session.commit()
