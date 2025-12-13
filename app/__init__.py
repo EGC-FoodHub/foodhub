@@ -30,6 +30,8 @@ def create_app(config_name="development"):
     db.init_app(app)
     migrate.init_app(app, db)
 
+    from app.modules.shopping_cart.models import ShoppingCart
+
     # Register modules
     module_manager = ModuleManager(app)
     module_manager.register_modules()
@@ -54,6 +56,10 @@ def create_app(config_name="development"):
     # Initialize error handler manager
     error_handler_manager = ErrorHandlerManager(app)
     error_handler_manager.register_error_handlers()
+
+    from app.modules.fooddataset.events import register_events
+
+    register_events()
 
     # Injecting environment variables into jinja context
     @app.context_processor

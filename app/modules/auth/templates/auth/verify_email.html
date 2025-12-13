@@ -1,0 +1,33 @@
+{% extends "base_template.html" %}
+
+{% block title %}Verify Your Email{% endblock %}
+
+{% block content %}
+<h1 class="h2 mb-3"><b>Verify Your Email</b></h1>
+
+<div class="row">
+  <div class="col-md-8 col-lg-6 col-12">
+
+    <div class="alert alert-info" role="alert">
+      <h5 class="alert-heading">Almost done!</h5>
+      <p>
+        We’ve sent a verification link to your email address:
+        <strong>{{ email }}</strong>
+      </p>
+      <p>
+        Please check your inbox (and spam folder) and click the link to verify your account.
+      </p>
+      <hr>
+      <p class="mb-0">
+        Once verified, you can <a href="{{ url_for('auth.login') }}">log in here</a>.
+      </p>
+    </div>
+
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('auth.scripts') }}"></script>
+{% endblock %}
