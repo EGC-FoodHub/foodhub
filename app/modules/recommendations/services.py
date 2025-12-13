@@ -1,5 +1,6 @@
 from sqlalchemy import func, or_
-from app.modules.baseDataset.models import BaseDataset, BaseDSDownloadRecord, BaseDSMetaData, Author
+from app.modules.basedataset.models import BaseDataset, BaseDSDownloadRecord, BaseDSMetaData, BaseAuthor
+from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData
 from app import db
 from app.modules.recommendations.similarities import SimilarityService
 import logging
@@ -10,15 +11,22 @@ logger = logging.getLogger(__name__)
 class RecommendationService:
     
     @staticmethod
-    def get_related_BaseDatasets(BaseDataset: BaseDataset, limit: int = 5):
-        tags = BaseDataset.ds_meta_data.tags.split(",") if BaseDataset.ds_meta_data.tags else []
-        author_ids = [author.id for author in BaseDataset.ds_meta_data.authors] if BaseDataset.ds_meta_data.authors else []
+    def get_related_food_datasets(dataset: FoodDataset, limit: int = 5):
+
+        ds_meta = dataset.ds_meta_data
+
+        print(f"\n[DEBUG] Base Dataset ID: {dataset.id}")
+        print(f"[DEBUG] Base Dataset Title: {ds_meta.title}")
+        print(f"[DEBUG] Base Dataset Tags: {ds_meta.tags}")
+        print(f"[DEBUG] Base Dataset Authors: {[a.id for a in ds_meta.authors]}")
+
+        tags = ds_meta.tags.split(",") if ds_meta.tags else []
+        author_ids = [author.id for author in ds_meta.authors] if ds_meta.authors else []
 
         query = (
             db.session
-            .query(BaseDataset)
-            .join(BaseDSMetaData)
-            .filter(BaseDataset.id != BaseDataset.id)
+            .query(FoodDataset)
+            .filter(FoodDataset.id != dataset.id)
         )
 
         has_tags = bool(tags)
@@ -26,35 +34,42 @@ class RecommendationService:
 
         tag_condition = (
             or_(*[
-                func.lower(BaseDSMetaData.tags).like(f"%{tag.strip().lower()}%")
+                func.lower(FoodDSMetaData.tags).like(f"%{tag.strip().lower()}%")
                 for tag in tags
             ]) if has_tags else None
         )
 
-        author_condition = Author.id.in_(author_ids) if has_authors else None
+        author_condition = BaseAuthor.id.in_(author_ids) if has_authors else None
 
         if has_tags and has_authors:
             query = (
                 query
-                .join(BaseDSMetaData.authors)
+                .join(FoodDSMetaData, FoodDataset.ds_meta_data)
+                .join(FoodDSMetaData.authors)
                 .filter(or_(tag_condition, author_condition))
             )
         elif has_tags:
-            query = query.filter(tag_condition)
+            query = query.join(FoodDSMetaData, FoodDataset.ds_meta_data).filter(tag_condition)
         elif has_authors:
-            query = query.join(BaseDSMetaData.authors).filter(author_condition)
+            query = query.join(FoodDSMetaData, FoodDataset.ds_meta_data).join(FoodDSMetaData.authors).filter(author_condition)
         else:
             logger.info("BaseDataset sin tags ni autores para recomendaciones")
 
-        candidates = query.limit(50).all()
+        candidates = query.distinct(FoodDataset.id).limit(50).all()
+
+        print(f"[DEBUG] Candidate IDs: {[c.id for c in candidates]}")
+        for c in candidates:
+            meta = c.ds_meta_data
+            print(f"[DEBUG] Candidate ID {c.id}, Title: {meta.title}, Tags: {meta.tags}, Authors: {[a.id for a in meta.authors]}")
+
 
         if not candidates:
             return []
 
-        similarity_service = SimilarityService(BaseDataset, candidates)
-        ranked = similarity_service.recommendation(n_top_BaseDatasets=limit)
+        similarity_service = SimilarityService(dataset, candidates)
+        ranked = similarity_service.recommendation(n_top_datasets=limit)
 
-        top_BaseDatasets = [ds for ds, score in ranked]
+        top_datasets = [ds for ds, score in ranked]
         for ds, score in ranked:
-            print(score)
-        return top_BaseDatasets
+             print(f"[DEBUG] Ranked Dataset ID {ds.id}, Score: {score}")
+        return top_datasets
