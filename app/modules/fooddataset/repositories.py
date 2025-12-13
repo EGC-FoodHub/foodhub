@@ -91,26 +91,39 @@ class FoodDatasetRepository(BaseDatasetRepository):
         try:
             cutoff_date = datetime.now() - timedelta(days=period_days)
 
+            # Subquery para descargas recientes
             downloads_subquery = (
                 self.session.query(
-                    FoodDatasetActivity.dataset_id, func.count(FoodDatasetActivity.id).label("recent_downloads")
+                    FoodDatasetActivity.dataset_id,
+                    func.count(FoodDatasetActivity.id).label("recent_downloads")
                 )
                 .filter(
-                    and_(FoodDatasetActivity.activity_type == "download", FoodDatasetActivity.timestamp >= cutoff_date)
+                    and_(
+                        FoodDatasetActivity.activity_type == "download",
+                        FoodDatasetActivity.timestamp >= cutoff_date
+                    )
                 )
                 .group_by(FoodDatasetActivity.dataset_id)
                 .subquery()
             )
 
+            # Subquery para vistas recientes
             views_subquery = (
                 self.session.query(
-                    FoodDatasetActivity.dataset_id, func.count(FoodDatasetActivity.id).label("recent_views")
+                    FoodDatasetActivity.dataset_id,
+                    func.count(FoodDatasetActivity.id).label("recent_views")
                 )
-                .filter(and_(FoodDatasetActivity.activity_type == "view", FoodDatasetActivity.timestamp >= cutoff_date))
+                .filter(
+                    and_(
+                        FoodDatasetActivity.activity_type == "view",
+                        FoodDatasetActivity.timestamp >= cutoff_date
+                    )
+                )
                 .group_by(FoodDatasetActivity.dataset_id)
                 .subquery()
             )
 
+            # Query principal
             trending_datasets = (
                 self.session.query(
                     self.model,
@@ -120,33 +133,36 @@ class FoodDatasetRepository(BaseDatasetRepository):
                 .outerjoin(downloads_subquery, self.model.id == downloads_subquery.c.dataset_id)
                 .outerjoin(views_subquery, self.model.id == views_subquery.c.dataset_id)
                 .order_by(
-                    (
-                        func.coalesce(downloads_subquery.c.recent_downloads, 0) * 2
-                        + func.coalesce(views_subquery.c.recent_views, 0)
-                    ).desc()
+                    desc(
+                        func.coalesce(downloads_subquery.c.recent_downloads, 0) * 2 +
+                        func.coalesce(views_subquery.c.recent_views, 0)
+                    )
                 )
                 .limit(limit)
                 .all()
             )
 
+            # Procesar resultados
             result = []
             for dataset, recent_downloads, recent_views in trending_datasets:
                 trending_dict = dataset.to_trending_dict()
-
-                trending_dict.update(
-                    {
-                        "recent_downloads": recent_downloads,
-                        "recent_views": recent_views,
-                        "display_downloads": recent_downloads,
-                        "display_views": recent_views,
-                        "trending_score": (recent_downloads * 2) + recent_views,
-                        "period_days": period_days,
-                        "period_label": "This Week" if period_days == 7 else "This Month",
-                    }
-                )
-
-                if recent_downloads > 0 or recent_views > 0:
-                    result.append(trending_dict)
+                
+                # Añadir estadísticas recientes específicas del período
+                if period_days == 7:
+                    trending_dict["recent_downloads_week"] = recent_downloads
+                    trending_dict["recent_views_week"] = recent_views
+                elif period_days == 30:
+                    trending_dict["recent_downloads_month"] = recent_downloads
+                    trending_dict["recent_views_month"] = recent_views
+                
+                # Añadir información adicional
+                trending_dict.update({
+                    "period_days": period_days,
+                    "period_label": "This Week" if period_days == 7 else "This Month",
+                    "trending_score": (recent_downloads * 2) + recent_views,
+                })
+                
+                result.append(trending_dict)
 
             logger.info(f"Retrieved {len(result)} trending datasets for last {period_days} days")
             return result
@@ -169,7 +185,6 @@ class FoodDatasetRepository(BaseDatasetRepository):
                 .limit(limit)
                 .all()
             )
-
             return [dataset.to_trending_dict() for dataset in datasets]
         except Exception as e:
             logger.error(f"Error getting most viewed datasets: {e}")
@@ -183,7 +198,6 @@ class FoodDatasetRepository(BaseDatasetRepository):
                 .limit(limit)
                 .all()
             )
-
             return [dataset.to_trending_dict() for dataset in datasets]
         except Exception as e:
             logger.error(f"Error getting most downloaded datasets: {e}")
