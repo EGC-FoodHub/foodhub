@@ -28,48 +28,45 @@ def test_client(test_client):
 
 
 @pytest.fixture
-def user_with_BaseDatasets(test_client):
-    user_id = None
-    
-    with test_client.application.app_context():
+def user_with_datasets(test_client):
 
-        unique_email = f"BaseDataset_user_{uuid.uuid4()}@example.com"
-        user = User(email=unique_email, password="pass1234")
-        db.session.add(user)
+    unique_email = f"dataset_user_{uuid.uuid4()}@example.com"
+    user = User(email=unique_email, password="pass1234")
+    db.session.add(user)
+    db.session.commit()
+
+    profile = UserProfile(user_id=user.id, name="Test", surname="User")
+    db.session.add(profile)
+
+    for i in range(2):
+        meta = BaseDSMetaData(
+            title=f"Dataset {i}", 
+            description=f"Desc {i}",
+            publication_type=BasePublicationType.JOURNAL_ARTICLE,
+            tags="test"
+        )
+        db.session.add(meta)
+        db.session.flush() 
+
+        dataset = BaseDataset(
+            user_id=user.id, 
+            ds_meta_data_id=meta.id, 
+            created_at=datetime.utcnow()
+        )
+        db.session.add(dataset)
+
+    db.session.commit()
+
+    yield user.id
+
+    try:
+        BaseDataset.query.filter_by(user_id=user.id).delete()
+        UserProfile.query.filter_by(user_id=user.id).delete()
+        User.query.filter_by(id=user.id).delete()
         db.session.commit()
-        
-        user_id = user.id
-        profile = UserProfile(user_id=user_id, name="Test", surname="User")
-        db.session.add(profile)
-
-        for i in range(2):
-            meta = BaseDSMetaData(
-                title=f"BaseDataset {i}", 
-                description=f"Desc {i}",
-                publication_type=BasePublicationType.JOURNAL_ARTICLE,
-                tags="test"
-            )
-            db.session.add(meta)
-            db.session.flush() 
-
-            BaseDataset = BaseDataset(
-                user_id=user_id, 
-                ds_meta_data_id=meta.id, 
-                created_at=datetime.utcnow()
-            )
-            db.session.add(BaseDataset)
-
-        db.session.commit()
-
-    yield user_id
-
-    with test_client.application.app_context():
-        if user_id:
-            BaseDataset.query.filter_by(user_id=user_id).delete()
-            UserProfile.query.filter_by(user_id=user_id).delete()
-            User.query.filter_by(id=user_id).delete()
-            db.session.commit()
-            db.session.remove()
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error en cleanup: {e}")
 
 
 def test_edit_profile_page_get(test_client):

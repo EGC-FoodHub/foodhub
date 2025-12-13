@@ -64,14 +64,13 @@ def user_profile(user_id):
     per_page = 5
 
     user_datasets_pagination = (
-        db.session.query(DataSet)
-        .filter(DataSet.user_id == user.id)
-        .order_by(DataSet.created_at.desc())
+        db.session.query(BaseDataset)
+        .filter(BaseDataset.user_id == user.id)
+        .order_by(BaseDataset.created_at.desc())
         .paginate(page=page, per_page=per_page, error_out=False)
     )
 
-    total_datasets_count = db.session.query(DataSet).filter(DataSet.user_id == user.id).count()
-
+    total_datasets_count = db.session.query(BaseDataset).filter(BaseDataset.user_id == user.id).count()
     return render_template(
         "profile/summary.html",
         user_profile=user.profile,
