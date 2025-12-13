@@ -15,6 +15,11 @@ class RecommendationService:
 
         ds_meta = dataset.ds_meta_data
 
+        print(f"\n[DEBUG] Base Dataset ID: {dataset.id}")
+        print(f"[DEBUG] Base Dataset Title: {ds_meta.title}")
+        print(f"[DEBUG] Base Dataset Tags: {ds_meta.tags}")
+        print(f"[DEBUG] Base Dataset Authors: {[a.id for a in ds_meta.authors]}")
+
         tags = ds_meta.tags.split(",") if ds_meta.tags else []
         author_ids = [author.id for author in ds_meta.authors] if ds_meta.authors else []
 
@@ -50,7 +55,13 @@ class RecommendationService:
         else:
             logger.info("BaseDataset sin tags ni autores para recomendaciones")
 
-        candidates = query.limit(50).all()
+        candidates = query.distinct(FoodDataset.id).limit(50).all()
+
+        print(f"[DEBUG] Candidate IDs: {[c.id for c in candidates]}")
+        for c in candidates:
+            meta = c.ds_meta_data
+            print(f"[DEBUG] Candidate ID {c.id}, Title: {meta.title}, Tags: {meta.tags}, Authors: {[a.id for a in meta.authors]}")
+
 
         if not candidates:
             return []
@@ -60,5 +71,5 @@ class RecommendationService:
 
         top_datasets = [ds for ds, score in ranked]
         for ds, score in ranked:
-            print(score)
+             print(f"[DEBUG] Ranked Dataset ID {ds.id}, Score: {score}")
         return top_datasets

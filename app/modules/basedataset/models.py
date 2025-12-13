@@ -60,11 +60,7 @@ class BaseDSMetaData(db.Model):
     tags = db.Column(db.String(120))
     ds_metrics_id = db.Column(db.Integer, db.ForeignKey("ds_metrics.id"))
     ds_metrics = db.relationship("BaseDSMetrics", uselist=False, backref="ds_meta_data", cascade="all, delete")
-
-    @declared_attr
-    def authors(cls):
-        return db.relationship("BaseAuthor", backref="ds_meta_data", lazy=True, cascade="all, delete")
-
+    authors = db.relationship("BaseAuthor", backref="ds_meta_data", lazy=True, cascade="all, delete")
 
 class BaseDataset(db.Model):
     __tablename__ = "base_dataset"
@@ -282,9 +278,10 @@ class BaseDSMetrics(db.Model):
     dataset_id = db.Column(db.Integer, db.ForeignKey("base_dataset.id"))
 
     number_of_models = db.Column(db.String(100))
+    number_of_features = db.Column(db.String(120))
 
     def __repr__(self):
-        return f"DSMetrics<dataset_id={self.dataset_id}>"
+        return f"DSMetrics<models={self.number_of_models}, features={self.number_of_features}>"
 
 
 class BaseDOIMapping(db.Model):
