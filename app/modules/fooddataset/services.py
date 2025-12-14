@@ -1,9 +1,14 @@
 import hashlib
+import io
 import logging
 import os
 import shutil
+import zipfile
+from urllib.parse import urlparse
+from zipfile import ZipFile
 from typing import Any, Dict, List, Optional
 
+import requests
 from sqlalchemy import func
 
 from app.modules.auth.services import AuthenticationService
@@ -331,8 +336,115 @@ class FoodDatasetService(BaseDatasetService):
             "most_downloaded": self.get_most_downloaded_datasets(limit=5),
             "timestamp": os.getenv("SERVER_TIMESTAMP", "N/A"),
         }
-        
-            
+
+    def create_from_zip(self, form, current_user) -> FoodDataset:
+        try:
+            dataset = self._create_dataset_shell(form, current_user)
+
+            zip_file = form.zip_file.data
+            self._process_zip_file(dataset, zip_file, current_user)
+
+            self.repository.session.commit()
+
+        except Exception as exc:
+            logger.exception(f"Exception creating dataset from ZIP...: {exc}")
+            self.repository.session.rollback()
+            raise exc
+        return dataset
+
+    def _process_zip_file(self, dataset, zip_file_obj, current_user):
+        temp_folder = current_user.temp_folder()
+        os.makedirs(temp_folder, exist_ok=True)
+
+        zip_file_obj.seek(0)
+        if not zipfile.is_zipfile(zip_file_obj):
+            raise ValueError("File is not a valid ZIP archive.")
+
+        files_count = 0
+        with ZipFile(zip_file_obj, "r") as zip_ref:
+            for file_path in zip_ref.namelist():
+                # accept only .food files inside ZIP
+                if (file_path.endswith(".food")) and not file_path.startswith("__MACOSX"):
+                    filename = os.path.basename(file_path)
+                    if not filename:
+                        continue
+
+                    try:
+                        file_content = zip_ref.read(file_path)
+                        temp_file_path = os.path.join(temp_folder, filename)
+
+                        with open(temp_file_path, "wb") as f:
+                            f.write(file_content)
+
+                        fmmetadata = self.fmmetadata_repository.create(commit=False, uvl_filename=filename)
+                        fm = self.feature_model_repository.create(
+                            commit=False, data_set_id=dataset.id, fm_meta_data_id=fmmetadata.id
+                        )
+
+                        checksum, size = calculate_checksum_and_size(temp_file_path)
+                        hubfile = self.hubfilerepository.create(
+                            commit=False, name=filename, checksum=checksum, size=size, feature_model_id=fm.id
+                        )
+                        fm.files.append(hubfile)
+
+                        files_count += 1
+                    except Exception as e:
+                        logger.warning(f"Failed to process file '{filename}' from ZIP: {e}")
+
+        if files_count == 0:
+            logger.warning(f"No .food files found in the provided ZIP archive for dataset {dataset.id}.")
+
+    def create_from_github(self, form, current_user) -> FoodDataset:
+        """
+        Procesa la importación de modelos desde un repositorio de GitHub.
+        """
+        try:
+            dataset = self._create_dataset_shell(form, current_user)
+
+            repo_url = form.github_url.data
+
+            parsed_url = urlparse(repo_url)
+            path_parts = parsed_url.path.strip("/").split("/")
+
+            if parsed_url.hostname != "github.com" or len(path_parts) < 2:
+                raise ValueError("Invalid GitHub URL.")
+
+            user_name, repo_name = path_parts[0], path_parts[1]
+
+            api_url = f"https://api.github.com/repos/{user_name}/{repo_name}"
+            headers = {"Accept": "application/vnd.github.v3+json"}
+            try:
+                repo_info = requests.get(api_url, headers=headers)
+                repo_info.raise_for_status()
+                default_branch = repo_info.json().get("default_branch", "main")
+            except requests.RequestException as e:
+                logger.warning(f"Could not fetch repo info from GitHub API: {e}. Defaulting to 'main' branch.")
+                default_branch = "main"
+
+            zip_url = f"https://github.com/{user_name}/{repo_name}/archive/refs/heads/{default_branch}.zip"
+            logger.info(f"Downloading repo from {zip_url}")
+
+            response = requests.get(zip_url, stream=True)
+            response.raise_for_status()
+
+            zip_in_memory = io.BytesIO(response.content)
+
+            self._process_zip_file(dataset, zip_in_memory, current_user)
+
+            self.repository.session.commit()
+
+        except requests.RequestException as e:
+            logger.exception(f"Exception downloading from GitHub: {e}")
+            self.repository.session.rollback()
+            raise ValueError("GitHub repository or Branch not found")
+        except Exception as exc:
+            logger.exception(f"Exception creating dataset from GitHub...: {exc}")
+            self.repository.session.rollback()
+            raise exc
+
+        return dataset
+
+
 class SizeService:
 
     def __init__(self):

@@ -1,6 +1,9 @@
+import re
 from flask_wtf import FlaskForm
-from wtforms import FieldList, FormField, SelectField, StringField, TextAreaField
+from wtforms import FieldList, FormField, SelectField, StringField, TextAreaField, SubmitField
 from wtforms.validators import URL, DataRequired, Length, Optional
+
+from flask_wtf.file import FileAllowed, FileField
 
 from app.modules.basedataset.forms import AuthorForm, BaseDatasetForm
 from app.modules.basedataset.models import BasePublicationType
@@ -8,7 +11,7 @@ from app.modules.basedataset.models import BasePublicationType
 
 class FoodModelForm(FlaskForm):
 
-    filename = StringField("Filename", validators=[DataRequired()])
+    filename = StringField("Filename", validators=[Optional()])
 
     title = StringField("Title", validators=[Optional(), Length(max=200)])
     description = TextAreaField("Description", validators=[Optional()])
@@ -61,6 +64,18 @@ class FoodDatasetForm(BaseDatasetForm):
 
     food_models = FieldList(FormField(FoodModelForm), min_entries=1)
 
+    import_method = StringField("Import method", default="manual")
+
+    # --- Campo para subir el ZIP ---
+    zip_file = FileField("ZIP Archive", validators=[Optional(), FileAllowed(["zip"], "Only .zip files are allowed!")])
+
+    # --- Campo para la URL de GitHub ---
+    github_url = StringField(
+        "GitHub Repository URL",
+        validators=[Optional(), URL()],
+        render_kw={"placeholder": "https://github.com/user/repo"},
+    )
+
     def get_dsmetadata(self):
 
         base_metadata = super().get_dsmetadata()
@@ -78,12 +93,49 @@ class FoodDatasetForm(BaseDatasetForm):
         return [fm.get_food_metadata() for fm in self.food_models]
 
     def validate(self, extra_validators=None):
-
-        if not super().validate(extra_validators):
+        if not super(FoodDatasetForm, self).validate(extra_validators):
             return False
 
-        if len(self.food_models) < 1:
-            self.food_models.errors.append("At least one food model is required")
-            return False
+        is_valid = True
+        method = self.import_method.data
 
-        return True
+        models_are_present = any(fm.filename.data for fm in self.food_models)
+
+        if method == "manual":
+            if not models_are_present:
+                self.food_models.errors.append(
+                    "At least one .food file is required for manual upload."
+                )
+                is_valid = False
+
+        elif method == "zip":
+            if not models_are_present:
+                if not self.zip_file.data:
+                    self.zip_file.errors.append(
+                        "A ZIP file is required for this import method."
+                    )
+                    is_valid = False
+
+        elif method == "github":
+            if not models_are_present:
+                if not self.github_url.data:
+                    self.github_url.errors.append(
+                        "A GitHub URL is required for this import method."
+                    )
+                    is_valid = False
+                elif not re.match(r"^https://github\.com/[^/]+/[^/]+/?$", self.github_url.data):
+                    self.github_url.errors.append(
+                        "Invalid GitHub URL. Must be like https://github.com/user/repo"
+                    )
+                    is_valid = False
+
+        # Validación final de seguridad
+        if not models_are_present and is_valid:
+            self.food_models.errors.append(
+                "At least one food model is required"
+            )
+            is_valid = False
+
+        return is_valid
+
+    submit = SubmitField("Submit")

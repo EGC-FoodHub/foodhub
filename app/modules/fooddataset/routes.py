@@ -2,6 +2,10 @@ import json
 import logging
 import os
 import shutil
+import tempfile
+import urllib.error
+import urllib.request
+from zipfile import ZipFile
 
 from flask import Blueprint, jsonify, render_template, request, send_from_directory, url_for
 from flask_login import current_user, login_required
@@ -260,3 +264,196 @@ def register_download(dataset_id):
     except Exception as e:
         logger.error(f"Error registering download for dataset {dataset_id}: {e}")
         return jsonify({"success": False, "message": str(e)}), 500
+
+
+@fooddataset_bp.route("/dataset/file/upload", methods=["POST"])
+@login_required
+def upload():
+    file = request.files["file"]
+    temp_folder = current_user.temp_folder()
+
+    if not file:
+        return jsonify({"message": "No file provided"}), 400
+
+    filename = file.filename or ""
+    lower = filename.lower()
+
+    # If the uploaded file is a ZIP, delegate to upload_zip
+    if lower.endswith(".zip"):
+        # emulate request.files for upload_zip by temporarily setting file in request
+        # but simplest is to call the upload_zip logic directly
+        return upload_zip()
+
+    if not (lower.endswith(".food")):
+        return jsonify({"message": "Please upload a .food file"}), 400
+
+    # create temp folder
+    if not os.path.exists(temp_folder):
+        os.makedirs(temp_folder)
+
+    file_path = os.path.join(temp_folder, file.filename)
+
+    if os.path.exists(file_path):
+        # Generate unique filename (by recursion)
+        base_name, extension = os.path.splitext(file.filename)
+        i = 1
+        while os.path.exists(os.path.join(temp_folder, f"{base_name} ({i}){extension}")):
+            i += 1
+        new_filename = f"{base_name} ({i}){extension}"
+        file_path = os.path.join(temp_folder, new_filename)
+    else:
+        new_filename = file.filename
+
+    try:
+        file.save(file_path)
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
+
+    return (
+        jsonify(
+            {
+                "message": "UVL uploaded and validated successfully",
+                "filename": new_filename,
+            }
+        ),
+        200,
+    )
+
+
+@fooddataset_bp.route("/dataset/file/upload_zip", methods=["POST"])
+@login_required
+def upload_zip():
+    """Accept a ZIP file upload, extract files into the user's temp folder and
+    return a list of saved filenames. Only regular files are extracted; directories
+    are skipped. Collisions are resolved by appending ` (n)` like the single file upload.
+    """
+    if "file" not in request.files:
+        return jsonify({"message": "No file provided"}), 400
+
+    file = request.files["file"]
+    if not file or not file.filename.lower().endswith(".zip"):
+        return jsonify({"message": "No valid zip file"}), 400
+
+    temp_folder = current_user.temp_folder()
+    os.makedirs(temp_folder, exist_ok=True)
+
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".zip")
+    try:
+        file.save(tmp.name)
+
+        saved_files = []
+        with ZipFile(tmp.name, "r") as z:
+            for member in z.namelist():
+                if member.endswith("/"):
+                    continue
+
+                member_basename = os.path.basename(member)
+                if not member_basename:
+                    continue
+
+                dest_path = os.path.join(temp_folder, member_basename)
+
+                base_name, extension = os.path.splitext(member_basename)
+                i = 1
+                while os.path.exists(dest_path):
+                    dest_path = os.path.join(temp_folder, f"{base_name} ({i}){extension}")
+                    i += 1
+
+                # Extract member to the destination
+                with z.open(member) as src, open(dest_path, "wb") as dst:
+                    shutil.copyfileobj(src, dst)
+
+                saved_files.append(os.path.basename(dest_path))
+
+        if not saved_files:
+            return jsonify({"message": "No files extracted from the ZIP"}), 400
+
+        return jsonify({"message": "ZIP extracted successfully", "filenames": saved_files}), 200
+    except Exception as e:
+        logger.exception("Error extracting zip file: %s", e)
+        return jsonify({"message": str(e)}), 500
+    finally:
+        try:
+            tmp.close()
+            os.unlink(tmp.name)
+        except Exception:
+            pass
+
+
+@fooddataset_bp.route("/dataset/file/upload_github", methods=["POST"])
+@login_required
+def upload_github():
+    """Download a GitHub repository as a ZIP and extract files into the user's temp folder.
+
+    Accepts form/json params:
+      - repo: "owner/repo" (optional if zip_url provided)
+      - branch: branch name (optional, defaults to 'main')
+      - zip_url: full URL to a zip (optional, overrides repo/branch)
+    Returns JSON with list of saved filenames.
+    """
+    data = request.form.to_dict() or (request.get_json(silent=True) or {})
+    repo = data.get("repo")
+    branch = data.get("branch") or "main"
+    zip_url = data.get("zip_url")
+
+    if not zip_url:
+        if not repo:
+            return jsonify({"message": "Provide 'repo' (owner/repo) or 'zip_url'"}), 400
+        zip_url = f"https://github.com/{repo}/archive/refs/heads/{branch}.zip"
+
+    if "github.com" not in zip_url:
+        return jsonify({"message": "Only GitHub zip URLs are supported"}), 400
+
+    temp_folder = current_user.temp_folder()
+    os.makedirs(temp_folder, exist_ok=True)
+
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".zip")
+    try:
+        # download the zip
+        with urllib.request.urlopen(zip_url) as resp:
+            if getattr(resp, "status", None) and resp.status >= 400:
+                return jsonify({"message": f"Failed to download zip: HTTP {resp.status}"}), 400
+            with open(tmp.name, "wb") as out:
+                shutil.copyfileobj(resp, out)
+
+        # extract files as in upload_zip
+        saved_files = []
+        with ZipFile(tmp.name, "r") as z:
+            for member in z.namelist():
+                if member.endswith("/"):
+                    continue
+                member_basename = os.path.basename(member)
+                if not member_basename:
+                    continue
+
+                dest_path = os.path.join(temp_folder, member_basename)
+                base_name, extension = os.path.splitext(member_basename)
+                i = 1
+                while os.path.exists(dest_path):
+                    dest_path = os.path.join(temp_folder, f"{base_name} ({i}){extension}")
+                    i += 1
+
+                with z.open(member) as src, open(dest_path, "wb") as dst:
+                    shutil.copyfileobj(src, dst)
+
+                saved_files.append(os.path.basename(dest_path))
+
+        if not saved_files:
+            return jsonify({"message": "No files extracted from the GitHub ZIP"}), 400
+
+        return jsonify({"message": "GitHub repo extracted successfully", "filenames": saved_files}), 200
+    except urllib.error.HTTPError as he:
+        logger.exception("HTTPError downloading GitHub zip: %s", he)
+        if he.code == 404:
+            return jsonify({"message": "GitHub repository or Branch not found"}), 400
+        else:
+            return jsonify({"message": f"HTTP error: {he.code}"}), 400
+    except Exception as e:
+        logger.exception("Error downloading/extracting GitHub zip: %s", e)
+        return jsonify({"message": str(e)}), 500
+    finally:
+        try:
+            tmp.close()
+            os.unlink(tmp.name)
+        except Exception:
+            pass

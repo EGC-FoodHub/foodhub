@@ -23,6 +23,7 @@
         <div class="col-xl-6 col-lg-12 col-md-12 col-sm-12">
             <div id="basic_info_form">
                 {{ form.hidden_tag() }}
+                {{ form.import_method(type="hidden", id="import_method") }}
                 
                 <div class="row">
                     <div class="col-12">
@@ -74,15 +75,74 @@
 
         <div class="col-xl-6 col-lg-12 col-md-12 col-sm-12">
             <h1 class="h3 mb-3 mt-2">Food Models (.food)</h1>
-            <div id="uploaded_models_form" style="padding-left: 2rem">
-                
-                <form action="{{ url_for('fooddataset.upload_file_temp') }}" class="dropzone" id="myDropzone">
-                    <div class="dz-message" data-dz-message><span>Drop .food files here to upload</span></div>
-                </form>
-                
-                <span class="text-danger" id="alerts" style="display: none"></span>
-                <ul class="mt-2" id="file-list" style="list-style: none; padding: 0;"></ul>
+
+            <ul class="nav nav-tabs" id="uploadTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <a class="nav-link active" id="local-tab" data-bs-toggle="tab" href="#local_tab" role="tab" aria-controls="local_tab" aria-selected="true">Local file</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" id="github-tab" data-bs-toggle="tab" href="#github_tab" role="tab" aria-controls="github_tab" aria-selected="false">From GitHub repo</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" id="zip-tab" data-bs-toggle="tab" href="#zip_tab" role="tab" aria-controls="zip_tab" aria-selected="false">From ZIP</a>
+            </li>
+            </ul>
+            
+        <div class="tab-content mt-3">
+
+            <!-- LOCAL FILE -->
+            <div class="tab-pane fade show active"
+                id="local_tab"
+                role="tabpanel"
+                aria-labelledby="local-tab">
+
+                <div id="uploaded_models_form" style="padding-left: 2rem">
+
+                    <form action="{{ url_for('fooddataset.upload_file_temp') }}"
+                        class="dropzone"
+                        id="myDropzone">
+                        <div class="dz-message" data-dz-message>
+                            <span>Drop .food files here to upload</span>
+                        </div>
+                    </form>
+
+                    <span class="text-danger"
+                        id="alerts"
+                        style="display: none"></span>
+
+                    <ul class="mt-2"
+                        id="file-list"
+                        style="list-style: none; padding: 0;">
+                    </ul>
+
+                </div>
             </div>
+
+            <!-- GITHUB REPO -->
+            <div class="tab-pane fade"
+                id="github_tab"
+                role="tabpanel"
+                aria-labelledby="github-tab">
+
+                {% include "fooddataset/_upload_github.html" %}
+
+                <div id="gh_status"
+                    class="mt-3"
+                    style="display:none"></div>
+            </div>
+
+            <!-- ZIP -->
+            <div class="tab-pane fade"
+                id="zip_tab"
+                role="tabpanel"
+                aria-labelledby="zip-tab">
+
+                {% include "fooddataset/_upload_zip.html" %}
+
+            </div>
+
+        </div>
+
         </div>
     </div>
 
@@ -119,6 +179,359 @@
             </button>
         </div>
     </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha512-Ho8qGg5k9GkQmAl9fY2Gxg9rXkqM3nI/6s4k3q5uQ5r3a9Vxjz9u0YwK2N6m9RpXq2zGx9X0cG9Kz7TgGk4h2Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <script>
+
+            let incrementalIdCounter = 0;
+            function generateIncrementalId() {
+                return incrementalIdCounter++;
+            }
+            
+        function addFoodModelElement(filename) {
+            show_upload_dataset(); 
+
+            let formUniqueId = generateIncrementalId(); 
+            let fileList = document.getElementById('file-list'); 
+
+            function findFileListContainer() {
+                const activePane = document.querySelector('.tab-pane.show.active');
+                if (activePane) {
+                    const fl = activePane.querySelector('#file-list') || activePane.querySelector('#file-list-gh') || activePane.querySelector('#file-list-zip');
+                    if (fl) return fl;
+                }
+                return document.getElementById('file-list') || document.getElementById('file-list-gh') || document.getElementById('file-list-zip');
+            }
+
+            fileList = findFileListContainer();
+
+
+            let listItem = document.createElement('li');
+            listItem.className = "mb-3 p-3 border rounded bg-light";
+            
+            let header = document.createElement('div');
+            header.className = "d-flex justify-content-between align-items-center mb-2";
+            
+            let leftContainer = document.createElement('div');
+            leftContainer.className = "d-flex align-items-center";
+            
+            let title = document.createElement('strong');
+            title.textContent = filename;
+            
+            let statusSpan = document.createElement('span');
+            statusSpan.id = `check_status_${formUniqueId}`;
+            statusSpan.className = "ms-3";
+            
+            leftContainer.appendChild(title);
+            leftContainer.appendChild(statusSpan);
+
+            let btnGroup = document.createElement('div');
+            
+            let toggleBtn = document.createElement('button');
+            toggleBtn.className = "btn btn-sm btn-outline-secondary me-2";
+            toggleBtn.innerHTML = "Edit Metadata";
+            toggleBtn.type = "button";
+            
+            let deleteBtn = document.createElement('button');
+            deleteBtn.className = "btn btn-sm btn-outline-danger";
+            deleteBtn.innerHTML = "Delete";
+            deleteBtn.type = "button";
+
+            btnGroup.appendChild(toggleBtn);
+            btnGroup.appendChild(deleteBtn);
+
+            header.appendChild(leftContainer);
+            header.appendChild(btnGroup);
+
+            let metaForm = document.createElement('div');
+            metaForm.style.display = "none";
+            metaForm.className = "mt-2 pt-2 border-top";
+            
+            metaForm.innerHTML = `
+                <input type="hidden" name="food_models-${formUniqueId}-filename" value="${filename}">
+                
+                <div class="mb-2">
+                    <label class="form-label small">Title</label>
+                    <input type="text" class="form-control form-control-sm" name="food_models-${formUniqueId}-title">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label small">Description</label>
+                    <textarea class="form-control form-control-sm" rows="2" name="food_models-${formUniqueId}-description"></textarea>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label small">Tags</label>
+                    <input type="text" class="form-control form-control-sm" name="food_models-${formUniqueId}-tags">
+                </div>
+                
+                <div class="mb-2">
+                    <label class="form-label small">Authors</label>
+                    <div id="food_models-${formUniqueId}-authors_container"></div>
+                    <button type="button" class="btn btn-sm btn-secondary add_author_to_file"
+                            data-container="food_models-${formUniqueId}-authors_container"
+                            data-prefix="food_models-${formUniqueId}-">
+                        Add Author
+                    </button>
+                </div>
+            `;
+
+            toggleBtn.addEventListener('click', () => {
+                metaForm.style.display = metaForm.style.display === "none" ? "block" : "none";
+            });
+
+            deleteBtn.addEventListener('click', () => {
+                fetch("{{ url_for('fooddataset.delete_file_temp') }}", {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({file: filename})
+                });
+                listItem.remove();
+                if (fileList.children.length === 0) {
+                    document.getElementById("upload_dataset").style.display = "none";
+                }
+            });
+            
+            listItem.appendChild(header);
+            listItem.appendChild(metaForm);
+            fileList.appendChild(listItem);
+
+            if (typeof validateTempFile === 'function') {
+                validateTempFile(filename, `check_status_${formUniqueId}`);
+            }
+        }
+
+            /* ---------- Dropzone config  ---------- */
+
+            if (typeof Dropzone !== 'undefined') {
+                Dropzone.autoDiscover = false;
+
+                Dropzone.options.myDropzone = {
+                    url: "/dataset/file/upload",
+                    paramName: 'file',
+                    maxFilesize: 10,
+                    acceptedFiles: '.food',
+                    init: function () {
+                        let alerts = document.getElementById('alerts');
+                        this.on('addedfile', function (file) {
+                            alerts.innerHTML = '';
+                            alerts.style.display = 'none';
+                        });
+
+                        this.on('success', function (file, response) {
+                            console.log("File uploaded via Dropzone: ", response);
+                            if (response && response.filename) {
+                                addFoodModelElement(response.filename);
+                            } else if (response && response.files) {
+                                response.files.forEach(fn => addFoodModelElement(fn));
+                            } else {
+                                addFoodModelElement(file.name);
+                            }
+                        });
+
+                        this.on('error', function (file, response) {
+                            console.error("Error uploading file: ", response);
+                            let alert = document.createElement('p');
+                            alert.textContent = 'Food not valid: ' + file.name;
+                            alerts.appendChild(alert);
+                            alerts.style.display = 'block';
+                        });
+                    }
+                };
+
+                document.addEventListener('DOMContentLoaded', function () {
+                    let dzEl = document.getElementById('myDropzone');
+                    if (dzEl && !dzEl.dropzone) {
+                        new Dropzone(dzEl, Dropzone.options.myDropzone);
+                    }
+                });
+            }
+
+            /* ---------- GitHub import ---------- */
+
+            document.getElementById("import_repo_btn").addEventListener("click", function (e) {
+                e.preventDefault();
+                const urlInput = document.getElementById("gh_url").value.trim();
+                let branch = document.getElementById("gh_branch").value.trim() || 'main';
+                const status = document.getElementById("gh_status");
+                
+                // Clear previous search results
+                const fileListGh = document.getElementById("file-list-gh");
+                if (fileListGh) {
+                    fileListGh.innerHTML = "";
+                }
+                
+                status.style.display = "block";
+                status.innerHTML = "Analyzing repo...";
+
+                const m = urlInput.match(/github\.com\/([^\/]+)\/([^\/]+)(?:\/|$)/i);
+                if (!m) {
+                    status.innerHTML = "<span class='text-danger'>Invalid GitHub URL</span>";
+                    return;
+                }
+                const owner = m[1];
+                const repo = m[2];
+
+                // Usar API Git trees para listar ficheros (recursivo)
+                const treesUrl = `https://api.github.com/repos/${owner}/${repo}/git/trees/${encodeURIComponent(branch)}?recursive=1`;
+
+                fetch(treesUrl)
+                .then(r => {
+                    if (!r.ok) throw new Error("GitHub repository or Branch not found");
+                    return r.json();
+                })
+                .then(data => {
+                    if (!data.tree) throw new Error("Unexpected response from GitHub API");
+                    const FoodFiles = data.tree.filter(item => item.type === 'blob' && (item.path.endsWith('.food')));
+                    if (FoodFiles.length === 0) {
+                        status.innerHTML = "<span class='text-warning'>No .food files found in the repository</span>";
+                        return;
+                    }
+                    status.innerHTML = `Found ${FoodFiles.length} files. Downloading and uploading...`;
+
+                    let uploaded = 0;
+                    FoodFiles.forEach(item => {
+                        const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${item.path}`;
+                        fetch(rawUrl)
+                        .then(r => {
+                            if (!r.ok) throw new Error("Could not be download: " + item.path);
+                            return r.blob();
+                        })
+                        .then(blob => {
+                            const file = new File([blob], item.path.split('/').pop(), { type: 'application/octet-stream' });
+                            const form = new FormData();
+                            form.append('file', file);
+
+                            return fetch('/dataset/file/upload', {
+                                method: 'POST',
+                                body: form
+                            });
+                        })
+                        .then(r => {
+                            if (!r.ok) return r.text().then(t => { throw new Error(t || ('Server error ' + r.status)); });
+                            const ct = r.headers.get('content-type') || '';
+                            if (ct.indexOf('application/json') === -1) return r.text().then(t => { throw new Error(t || 'Invalid JSON response'); });
+                            return r.json();
+                        })
+                        .then(resp => {
+                            if (resp && resp.filename) {
+                                addFoodModelElement(resp.filename);
+                            } else {
+                                addFoodModelElement(item.path.split('/').pop());
+                            }
+                            uploaded++;
+                            status.innerHTML = `${uploaded}/${FoodFiles.length} uploaded`;
+                        })
+                        .catch(err => {
+                            console.error('Error procesando', item.path, err);
+                            status.innerHTML = "<span class='text-danger'>Error uploading " + item.path + ": " + err.message + "</span>";
+                        });
+                    });
+                })
+                .catch(err => {
+                    console.error(err);
+                    status.innerHTML = "<span class='text-danger'>Error importing repository: " + err.message + "</span>";
+                });
+            });
+
+
+            /* ---------- ZIP import ---------- */
+            // Helper to dynamically load a script and return a Promise that resolves when loaded
+            function loadScript(url) {
+                return new Promise(function (resolve, reject) {
+                    const s = document.createElement('script');
+                    s.src = url;
+                    s.async = true;
+                    s.onload = () => resolve();
+                    s.onerror = (e) => reject(new Error('Failed to load script ' + url));
+                    document.head.appendChild(s);
+                });
+            }
+
+            document.getElementById("upload_zip_btn").addEventListener("click", function (e) {
+                e.preventDefault();
+                const input = document.getElementById("zip_input");
+                const status = document.getElementById("zip_status");
+                if (!input.files || !input.files[0]) {
+                    status.style.display = "block";
+                    status.innerHTML = "<span class='text-danger'>Please select a ZIP file first</span>";
+                    return;
+                }
+
+                const proceed = function() {
+                    const zipFile = input.files[0];
+                    status.style.display = "block";
+                    status.innerHTML = "Please select a ZIP file first";
+
+                    const jszip = new JSZip();
+                    jszip.loadAsync(zipFile).then(zip => {
+                        const FoodEntries = [];
+                        zip.forEach((relativePath, zipEntry) => {
+                            if (!zipEntry.dir && (relativePath.endsWith('.food'))) {
+                                FoodEntries.push(zipEntry);
+                            }
+                        });
+
+                        if (FoodEntries.length === 0) {
+                            status.innerHTML = "<span class='text-warning'>No .food files found in the ZIP</span>";
+                            return;
+                        }
+
+                        status.innerHTML = `Found ${FoodEntries.length} files. Uploading...`;
+                        let uploaded = 0;
+
+                        FoodEntries.forEach(entry => {
+                            entry.async('blob').then(blob => {
+                                const fileName = entry.name.split('/').pop();
+                                const file = new File([blob], fileName, { type: 'application/octet-stream' });
+                                const form = new FormData();
+                                form.append('file', file);
+
+                                    return fetch('/dataset/file/upload', {
+                                        method: 'POST',
+                                        body: form
+                                    });
+                                })
+                                .then(r => {
+                                    if (!r.ok) return r.text().then(t => { throw new Error(t || ('Server error ' + r.status)); });
+                                    const ct = r.headers.get('content-type') || '';
+                                    if (ct.indexOf('application/json') === -1) return r.text().then(t => { throw new Error(t || 'Invalid JSON response'); });
+                                    return r.json();
+                                })
+                                .then(resp => {
+                                    if (resp && resp.filename) {
+                                        addFoodModelElement(resp.filename);
+                                    } else {
+                                        addFoodModelElement(entry.name.split('/').pop());
+                                    }
+                                    uploaded++;
+                                    status.innerHTML = `${uploaded}/${FoodEntries.length} uploaded`;
+                                })
+                                .catch(err => {
+                                    console.error('Error subiendo entry', entry.name, err);
+                                    status.innerHTML = "<span class='text-danger'>Error subiendo " + entry.name + ": " + err.message + "</span>";
+                                });
+                        });
+                    }).catch(err => {
+                        console.error('Error leyendo ZIP', err);
+                        status.innerHTML = "<span class='text-danger'>Error leyendo ZIP: " + err.message + "</span>";
+                    });
+                };
+
+                // Ensure JSZip is available; if not, load it dynamically
+                if (typeof JSZip === 'undefined') {
+                    loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js')
+                        .then(() => proceed())
+                        .catch(err => {
+                            console.error('Error cargando JSZip', err);
+                            status.style.display = 'block';
+                            status.innerHTML = "<span class='text-danger'>JSZip library could not be loaded</span>";
+                        });
+                } else {
+                    proceed();
+                }
+            });
+
+    </script>
 
     <script>
         Dropzone.options.myDropzone = {
@@ -269,6 +682,24 @@
             .catch(error => {
                 console.error("Error saving draft:", error);
                 alert("❌ Error saving draft: " + error);
+            });
+        });
+    </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const importMethodInput = document.getElementById("import_method");
+
+            document.getElementById("local-tab").addEventListener("shown.bs.tab", () => {
+                importMethodInput.value = "manual";
+            });
+
+            document.getElementById("github-tab").addEventListener("shown.bs.tab", () => {
+                importMethodInput.value = "github";
+            });
+
+            document.getElementById("zip-tab").addEventListener("shown.bs.tab", () => {
+                importMethodInput.value = "zip";
             });
         });
     </script>

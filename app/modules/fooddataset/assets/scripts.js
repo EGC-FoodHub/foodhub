@@ -140,16 +140,24 @@ window.onload = function () {
             const csrfToken = document.querySelector('input[name="csrf_token"]').value;
             formUploadData.append('csrf_token', csrfToken);
 
-            const basicInputs = document.querySelectorAll('#basic_info_form input, #basic_info_form select, #basic_info_form textarea');
+            // Collect basic info inputs (left column) and inputs from GitHub/ZIP tabs
+            const basicInputs = document.querySelectorAll(
+                '#basic_info_form input, #basic_info_form select, #basic_info_form textarea, ' +
+                '#github_tab input, #github_tab select, #github_tab textarea, ' +
+                '#zip_tab input, #zip_tab select, #zip_tab textarea'
+            );
             basicInputs.forEach(input => {
-                if (input.name && input.type !== 'submit') {
+                if (input.name && input.type !== 'submit' && !input.disabled) {
                     formUploadData.append(input.name, input.value);
                 }
             });
 
-            const modelInputs = document.querySelectorAll('#uploaded_models_form input, #uploaded_models_form select, #uploaded_models_form textarea');
+            // Collect any dynamically added food model fields anywhere in the page
+            const modelInputs = document.querySelectorAll(
+                'input[name^="food_models-"], select[name^="food_models-"], textarea[name^="food_models-"]'
+            );
             modelInputs.forEach(input => {
-                if (input.name) {
+                if (input.name && !input.disabled) {
                     formUploadData.append(input.name, input.value);
                 }
             });
