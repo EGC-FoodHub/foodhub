@@ -5,15 +5,14 @@ class FoodModel(db.Model):
     __tablename__ = "food_model"
 
     id = db.Column(db.Integer, primary_key=True)
-
     data_set_id = db.Column(db.Integer, db.ForeignKey("food_dataset.id"), nullable=False)
-
     dataset = db.relationship("FoodDataset", back_populates="files")
-
     food_meta_data_id = db.Column(db.Integer, db.ForeignKey("food_meta_data.id"))
     food_meta_data = db.relationship("FoodMetaData", back_populates="food_model", cascade="all, delete")
-
     files = db.relationship("Hubfile", back_populates="food_model", cascade="all, delete-orphan")
+    # Counters to track views/downloads for feature models
+    download_count = db.Column(db.Integer, default=0, nullable=False)
+    view_count = db.Column(db.Integer, default=0, nullable=False)
 
     def __repr__(self):
         return f"<FoodModel {self.id}>"
