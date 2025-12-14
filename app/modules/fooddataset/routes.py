@@ -101,10 +101,10 @@ def create_dataset_as_draft():
     if request.method == "POST":
 
         dataset = None
-                
+
         if not form.food_models.entries[0].filename.data:
             form.food_models = []
-        
+
         try:
             logger.info("Creating dataset...")
             dataset = food_service.create_from_form(form=form, current_user=current_user)
@@ -134,7 +134,12 @@ def upload_draft_dataset(dataset_id):
     os.makedirs(temp_folder, exist_ok=True)
 
     working_dir = os.getenv("WORKING_DIR", "")
-    dataset_dir = os.path.join(working_dir, "uploads", f"user_{current_user.id}", f"dataset_{dataset.id}")
+    dataset_dir = os.path.join(
+        working_dir,
+        "uploads",
+        f"user_{current_user.id}",
+        f"dataset_{dataset.id}"
+    )
 
     for food_model in dataset.files:
         for file in food_model.files:
@@ -157,6 +162,18 @@ def upload_draft_dataset(dataset_id):
     fakenodo_service = FakenodoService()
     dataset = food_service.get_or_404(dataset_id)
 
+    os.makedirs(dataset_dir, exist_ok=True)
+
+    for food_model in dataset.files:
+        food_filename = food_model.food_meta_data.food_filename
+        src = os.path.join(temp_folder, food_filename)
+        dst = os.path.join(dataset_dir, food_filename)
+
+        if not os.path.exists(dst):
+            if not os.path.exists(src):
+                raise FileNotFoundError(f"Missing file for upload: {food_filename}")
+            shutil.copy(src, dst)
+
     data = {}
     try:
         fakenodo_response_json = fakenodo_service.create_new_deposition(dataset)
@@ -174,8 +191,14 @@ def upload_draft_dataset(dataset_id):
 
             fakenodo_service.publish_deposition(deposition_id)
             doi = fakenodo_service.get_doi(deposition_id)
-            base_doi_mapping_repository.create(dataset.ds_meta_data_id, dataset_doi_old=doi)
-            dsmetadata_service.update(dataset.ds_meta_data_id, dataset_doi=doi)
+            base_doi_mapping_repository.create(
+                dataset.ds_meta_data_id,
+                dataset_doi_old=doi
+            )
+            dsmetadata_service.update(
+                dataset.ds_meta_data_id,
+                dataset_doi=doi
+            )
 
         except Exception as e:
             msg = f"Error uploading to Fakenodo: {e}"
@@ -194,18 +217,17 @@ def edit_doi_dataset(dataset_id):
     dataset = food_service.get_or_404(dataset_id)
 
     form = FoodDatasetForm()
-    
+
     temp_folder = current_user.temp_folder()
     os.makedirs(temp_folder, exist_ok=True)
-    
+
     working_dir = os.getenv("WORKING_DIR", "")
     dataset_dir = os.path.join(working_dir, "uploads", f"user_{current_user.id}", f"dataset_{dataset.id}")
 
     if request.method == "POST":
         if not form.food_models.entries[0].filename.data:
             form.food_models = []
-                        
-        sync_fakenodo = request.form.get("sync_fakenodo") == "yes"
+
         result, errors = food_service.edit_doi_dataset(dataset, form)
         return food_service.handle_service_response(
             result, errors, "basedataset.list_dataset", "Dataset updated", "dataset/edit_dataset.html", form
@@ -260,12 +282,10 @@ def edit_doi_dataset(dataset_id):
                 file_author_subform.affiliation.data = file_author.affiliation
                 file_author_subform.orcid.data = file_author.orcid
                 file_subform.authors.append_entry(file_author_subform.data)
-            
+
             form.food_models.append_entry(file_subform) 
 
     return render_template("fooddataset/edit_dataset.html", form=form, dataset=dataset)
-
-
 
 
 @fooddataset_bp.route("/dataset/file/upload", methods=["POST"])
