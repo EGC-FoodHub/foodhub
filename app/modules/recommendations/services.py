@@ -39,7 +39,9 @@ class RecommendationService:
             ]) if has_tags else None
         )
 
-        author_condition = BaseAuthor.id.in_(author_ids) if has_authors else None
+        author_names = [author.name.strip() for author in ds_meta.authors] if ds_meta.authors else []
+
+        author_condition = BaseAuthor.name.in_(author_names) if author_names else None
 
         if has_tags and has_authors:
             query = (
