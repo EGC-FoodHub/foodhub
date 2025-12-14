@@ -79,7 +79,7 @@
                         <span class="text-secondary">Publication DOI</span>
                     </div>
                     <div class="col-md-8 col-12">
-                        <a href="{{ dataset.ds_meta_data.publication_doi }}" target="_blank">
+                        <a href="{{ url_for('basedataset.subdomain_index', doi=dataset.ds_meta_data.dataset_doi) }}" target="_blank">
                             {{ dataset.ds_meta_data.publication_doi }}
                         </a>
                     </div>
@@ -124,29 +124,15 @@
 
             {% if dataset.ds_meta_data.dataset_doi %}
             <div class="card-body pt-0">
-                <div id="dataset_doi_uvlhub" style="display: none">
+                <div id="dataset_doi_foodhub" style="display: none">
                     {{ request.host_url }}doi/{{ dataset.ds_meta_data.dataset_doi }}
                 </div>
-                <button type="button" class="btn btn-sm btn-outline-primary" onclick="copyText('dataset_doi_uvlhub')">
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="copyText('dataset_doi_foodhub')">
                     <i data-feather="clipboard" class="me-1"></i>
                     <b>Copy DOI:</b> {{ dataset.ds_meta_data.dataset_doi }}
                 </button>
             </div>
             {% endif %}
-        </div>
-
-        <div class="card">
-            <div class="card-body">
-                <h3>Related publication</h3>
-                David Romero-Organvidez, et al., <i>UVLHub...</i>
-                <a href="https://doi.org/10.1016/j.jss.2024.112150" target="_blank">10.1016/j.jss.2024.112150</a>
-            </div>
-            <div class="card-body mt-0 pt-0">
-                <button onclick="copyText('bibtex_cite')" class="btn btn-light btn-sm me-2"><i data-feather="clipboard"></i> BibTex</button>
-                <button onclick="copyText('ris_cite')" class="btn btn-light btn-sm me-2"><i data-feather="clipboard"></i> RIS</button>
-                <button onclick="copyText('apa_cite')" class="btn btn-light btn-sm me-2"><i data-feather="clipboard"></i> APA</button>
-                <button onclick="copyText('text_cite')" class="btn btn-light btn-sm"><i data-feather="clipboard"></i> Text</button>
-            </div>
         </div>
 
     </div>
