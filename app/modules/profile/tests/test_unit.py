@@ -1,15 +1,15 @@
 import uuid
+
 import pytest
 
 from app import db
 from app.modules.auth.models import User
+from app.modules.basedataset.models import BaseDatasetVersion, BaseDSDownloadRecord, BasePublicationType
 from app.modules.conftest import login, logout
-from app.modules.profile.models import UserProfile
-from app.modules.basedataset.models import BasePublicationType, BaseDatasetVersion
 from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData
 from app.modules.foodmodel.models import FoodModel
 from app.modules.hubfile.models import Hubfile
-from app.modules.basedataset.models import BaseDSDownloadRecord
+from app.modules.profile.models import UserProfile
 from app.modules.profile.services import UserProfileService
 
 pytestmark = pytest.mark.unit
@@ -47,16 +47,11 @@ def user_with_datasets(test_client):
         meta = FoodDSMetaData(
             title=f"Food Dataset {i}",
             description=f"Nutritional Data {i}",
-            publication_type=BasePublicationType.JOURNAL_ARTICLE
+            publication_type=BasePublicationType.JOURNAL_ARTICLE,
         )
         db.session.add(meta)
         db.session.flush()
-        dataset = FoodDataset(
-            user_id=user.id,
-            ds_meta_data_id=meta.id,
-            view_count=10,
-            download_count=5
-        )
+        dataset = FoodDataset(user_id=user.id, ds_meta_data_id=meta.id, view_count=10, download_count=5)
         db.session.add(dataset)
         db.session.flush()
         version = BaseDatasetVersion(
@@ -65,7 +60,7 @@ def user_with_datasets(test_client):
             title=meta.title,
             description=meta.description,
             created_by_id=user.id,
-            version_type="base"
+            version_type="base",
         )
         db.session.add(version)
 
@@ -98,7 +93,7 @@ def test_user_profile_not_found(test_client):
 def test_my_profile_authenticated(test_client, user_with_datasets):
     # Log in the user so current_user is populated
     with test_client.session_transaction() as sess:
-        sess['user_id'] = user_with_datasets.id
+        sess["user_id"] = user_with_datasets.id
 
     response = test_client.get("/profile/summary")
     assert response.status_code == 200 or response.status_code == 302
@@ -113,12 +108,13 @@ def test_user_profile_view(test_client, user_with_datasets):
     response = test_client.get(f"/profile/{user_id}")
 
     assert response.status_code == 200, "La vista de perfil público no respondió con 200 OK."
-    response_content = response.data.decode('utf-8')
+    response_content = response.data.decode("utf-8")
 
     assert "Test" in response_content, "El nombre del perfil no aparece."
     assert "User" in response_content, "El apellido del perfil no aparece."
-    assert "Food Dataset 0" in response_content or "BaseDataset 1" in response_content, \
-        "Los BaseDatasets del usuario no aparecen en la página."
+    assert (
+        "Food Dataset 0" in response_content or "BaseDataset 1" in response_content
+    ), "Los BaseDatasets del usuario no aparecen en la página."
 
 
 def test_user_profile_view2(test_client, user_with_datasets):
@@ -223,7 +219,7 @@ def test_dashboard_metrics_route_renders(test_client):
         user_id = user.id
 
     with test_client.session_transaction() as sess:
-        sess['user_id'] = user_id
+        sess["user_id"] = user_id
 
     response = test_client.get("/profile/metrics")
     assert response.status_code in (200, 302)
@@ -232,18 +228,11 @@ def test_dashboard_metrics_route_renders(test_client):
 def test_userprofile_save_new(test_client):
     """Cubre el caso: if not self.id -> db.session.add"""
     with test_client.application.app_context():
-        user = User(
-            email=f"save_new_{uuid.uuid4()}@example.com",
-            password="pass1234"
-        )
+        user = User(email=f"save_new_{uuid.uuid4()}@example.com", password="pass1234")
         db.session.add(user)
         db.session.commit()
 
-        profile = UserProfile(
-            user_id=user.id,
-            name="Save",
-            surname="New"
-        )
+        profile = UserProfile(user_id=user.id, name="Save", surname="New")
 
         profile.save()
 

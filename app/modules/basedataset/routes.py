@@ -4,7 +4,6 @@ import tempfile
 import uuid
 from datetime import datetime, timezone
 from zipfile import ZipFile
-from app.modules.recommendations.services import RecommendationService
 
 from flask import (
     Blueprint,
@@ -26,6 +25,7 @@ from app.modules.basedataset.services import (
     BaseDSMetaDataService,
     BaseDSViewRecordService,
 )
+from app.modules.recommendations.services import RecommendationService
 
 logger = logging.getLogger(__name__)
 
@@ -228,7 +228,9 @@ def subdomain_index(doi):
 
     user_cookie = ds_view_record_service.create_cookie(dataset=dataset)
 
-    resp = make_response(render_template("basedataset/view_dataset.html", dataset=dataset, related_datasets=related_datasets))
+    resp = make_response(
+        render_template("basedataset/view_dataset.html", dataset=dataset, related_datasets=related_datasets)
+    )
     resp.set_cookie("view_cookie", user_cookie)
 
     return resp

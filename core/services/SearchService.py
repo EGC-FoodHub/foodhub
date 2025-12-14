@@ -1,8 +1,8 @@
 import os
 
+from dotenv import load_dotenv
 from elasticsearch import Elasticsearch
 
-from dotenv import load_dotenv
 load_dotenv()
 
 

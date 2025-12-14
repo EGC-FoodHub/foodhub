@@ -1,14 +1,14 @@
-import time
 import os
+import time
+
 import pytest
-
 from selenium.webdriver.common.by import By
-from core.selenium.common import initialize_driver
-from core.environment.host import get_host_for_selenium_testing
 
-from app import db, app
-from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData
+from app import app, db
 from app.modules.basedataset.models import BaseAuthor, BaseDSViewRecord
+from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData
+from core.environment.host import get_host_for_selenium_testing
+from core.selenium.common import initialize_driver
 
 pytestmark = pytest.mark.selenium
 
@@ -53,11 +53,11 @@ class TestDatasetRecommendations:
         self.driver.find_element(By.ID, "tags").send_keys("fakenodo")
         file_input = self.driver.find_element(By.CSS_SELECTOR, "input[type='file']")
         self.driver.execute_script(
-            "arguments[0].style.display = 'block'; arguments[0].style.visibility = 'visible';",
-            file_input
+            "arguments[0].style.display = 'block'; arguments[0].style.visibility = 'visible';", file_input
         )
-        upload_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "../..",
-                                                   "fooddataset/food_examples/espinacas.food"))
+        upload_file = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "../..", "fooddataset/food_examples/espinacas.food")
+        )
         file_input.send_keys(upload_file)
         time.sleep(2)
 

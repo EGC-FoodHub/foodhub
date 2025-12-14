@@ -1,16 +1,16 @@
+import os
 import uuid
+
 import pytest
 
 from app import db
 from app.modules.auth.models import User
-from app.modules.profile.models import UserProfile
-from app.modules.profile.services import UserProfileService
 from app.modules.basedataset.models import BaseDSDownloadRecord, BasePublicationType
 from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData
 from app.modules.foodmodel.models import FoodModel
-from app.modules.hubfile.models import Hubfile
-from app.modules.hubfile.models import HubfileDownloadRecord
-import os
+from app.modules.hubfile.models import Hubfile, HubfileDownloadRecord
+from app.modules.profile.models import UserProfile
+from app.modules.profile.services import UserProfileService
 
 pytestmark = pytest.mark.integration
 
@@ -151,7 +151,7 @@ def test_hubfile_download_creates_record(test_client):
 
     assert resp.status_code in (200, 302, 404)
     # cookie may be set by the response
-    assert any(k == 'file_download_cookie' for k in resp.headers.get_all('Set-Cookie')) or True
+    assert any(k == "file_download_cookie" for k in resp.headers.get_all("Set-Cookie")) or True
 
 
 def test_dataset_download_creates_record_with_file(test_client, tmp_path):
@@ -186,7 +186,7 @@ def test_dataset_download_creates_record_with_file(test_client, tmp_path):
 
     # authenticate
     with test_client.session_transaction() as sess:
-        sess['user_id'] = user_id
+        sess["user_id"] = user_id
 
     resp = test_client.get(f"/dataset/download/{dataset.id}")
 

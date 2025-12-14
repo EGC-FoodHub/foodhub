@@ -1,16 +1,16 @@
+from datetime import datetime, timezone
+
 import pytest
 
+from app import db
 from app.modules.auth.models import User
 from app.modules.basedataset.models import BaseAuthor, BasePublicationType
 from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData
-from datetime import datetime, timezone
-
-from app import db
 
 pytestmark = pytest.mark.unit
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def test_client(test_client):
     """
     Extends the test_client fixture to add additional specific data for module testing.
@@ -41,6 +41,7 @@ def test_get_shopping_cart_from_current_user(test_client):
 
     html = response.data.decode("utf-8")
     assert "shopping_cart" in html
+
 
 def test_add_dataset_to_cart(test_client):
     food_dataset = FoodDataset.query.first()
@@ -90,7 +91,7 @@ def create_test_dataset(user_id=1):
         deposition_id=999,
         title="Test Dataset",
         description="This is a test food dataset",
-        publication_type=BasePublicationType.OTHER,  
+        publication_type=BasePublicationType.OTHER,
         publication_doi="10.1234/testdoi",
         dataset_doi="10.1234/testfooddataset",
         tags="test",

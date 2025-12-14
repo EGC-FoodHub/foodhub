@@ -1,12 +1,12 @@
-import time
 import os
+import time
 
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import NoSuchElementException
 import pytest
+from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 from core.environment.host import get_host_for_selenium_testing
@@ -174,10 +174,7 @@ def test_upload_zip_without_file_shows_error():
 
         # Algún mensaje de error debe aparecer
         assert (
-            "zip" in page_source
-            or "file" in page_source
-            or "required" in page_source
-            or "error" in page_source
+            "zip" in page_source or "file" in page_source or "required" in page_source or "error" in page_source
         ), "Expected error message when uploading ZIP without file"
 
         print("ZIP upload without file Selenium test passed")
@@ -222,10 +219,7 @@ def test_upload_invalid_zip_shows_error():
 
         # Debe aparecer error
         assert (
-            "invalid" in page_source
-            or "error" in page_source
-            or "zip" in page_source
-            or "format" in page_source
+            "invalid" in page_source or "error" in page_source or "zip" in page_source or "format" in page_source
         ), "Expected error message for invalid ZIP upload"
 
     finally:
@@ -258,7 +252,8 @@ def test_upload_valid_food_files_from_github():
 
     finally:
         close_driver(driver)
-        
+
+
 def test_valid_repo_with_no_food_file():
     driver = initialize_driver()
     try:

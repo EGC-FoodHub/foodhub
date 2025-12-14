@@ -1,13 +1,14 @@
-import pytest
+import uuid
 from datetime import datetime, timezone
 
+import pytest
+
 from app import db
-from app.modules.basedataset.models import BaseDataset, BaseAuthor, BaseDSMetrics, BasePublicationType
-from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData
 from app.modules.auth.models import User
+from app.modules.basedataset.models import BaseAuthor, BaseDSMetrics, BasePublicationType
+from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData
 from app.modules.recommendations.services import RecommendationService
 from app.modules.recommendations.similarities import SimilarityService
-import uuid
 
 pytestmark = pytest.mark.unit
 
@@ -35,7 +36,7 @@ def user_with_datasets(test_client):
             description="Base dataset description",
             publication_type=BasePublicationType.JOURNAL_ARTICLE,
             tags="tag1,tag2",
-            ds_metrics_id=base_metrics.id
+            ds_metrics_id=base_metrics.id,
         )
 
         db.session.add(base_meta)
@@ -45,11 +46,7 @@ def user_with_datasets(test_client):
         db.session.add(author)
         db.session.commit()
 
-        base_dataset = FoodDataset(
-            user_id=user.id,
-            ds_meta_data_id=base_meta.id,
-            created_at=datetime.now(timezone.utc)
-        )
+        base_dataset = FoodDataset(user_id=user.id, ds_meta_data_id=base_meta.id, created_at=datetime.now(timezone.utc))
 
         db.session.add(base_dataset)
         db.session.flush()
@@ -65,7 +62,7 @@ def user_with_datasets(test_client):
             description="Base dataset description",
             publication_type=BasePublicationType.JOURNAL_ARTICLE,
             tags="tag1",
-            ds_metrics_id=cand1_metrics.id
+            ds_metrics_id=cand1_metrics.id,
         )
 
         db.session.add(cand1_meta)
@@ -76,9 +73,7 @@ def user_with_datasets(test_client):
         db.session.commit()
 
         cand1_dataset = FoodDataset(
-            user_id=user.id,
-            ds_meta_data_id=cand1_meta.id,
-            created_at=datetime.now(timezone.utc)
+            user_id=user.id, ds_meta_data_id=cand1_meta.id, created_at=datetime.now(timezone.utc)
         )
 
         db.session.add(cand1_dataset)
@@ -95,7 +90,7 @@ def user_with_datasets(test_client):
             description="Completely different description",
             publication_type=BasePublicationType.CONFERENCE_PAPER,
             tags="tag3",
-            ds_metrics_id=cand2_metrics.id
+            ds_metrics_id=cand2_metrics.id,
         )
 
         db.session.add(cand2_meta)
@@ -106,11 +101,9 @@ def user_with_datasets(test_client):
         db.session.commit()
 
         cand2_dataset = FoodDataset(
-            user_id=user.id,
-            ds_meta_data_id=cand2_meta.id,
-            created_at=datetime.now(timezone.utc)
+            user_id=user.id, ds_meta_data_id=cand2_meta.id, created_at=datetime.now(timezone.utc)
         )
-        
+
         db.session.add(cand2_dataset)
         db.session.flush()
 
@@ -125,7 +118,7 @@ def user_with_datasets(test_client):
             description="Some overlapping description with base",
             publication_type=BasePublicationType.CONFERENCE_PAPER,
             tags="tag2,tag4",
-            ds_metrics_id=cand3_metrics.id
+            ds_metrics_id=cand3_metrics.id,
         )
 
         db.session.add(cand3_meta)
@@ -136,9 +129,7 @@ def user_with_datasets(test_client):
         db.session.commit()
 
         cand3_dataset = FoodDataset(
-            user_id=user.id,
-            ds_meta_data_id=cand3_meta.id,
-            created_at=datetime.now(timezone.utc)
+            user_id=user.id, ds_meta_data_id=cand3_meta.id, created_at=datetime.now(timezone.utc)
         )
 
         db.session.add(cand3_dataset)
@@ -178,6 +169,7 @@ def test_similarity_service_completo(user_with_datasets):
     # El más similar (cand1) debería estar primero
     assert recs[0][0] == candidates[0]
 
+
 # ---------------------------
 # Test RecommendationService
 # ---------------------------
@@ -197,6 +189,6 @@ def test_recommendation_service(user_with_datasets):
     for i in range(min(len(expected_order), len(related))):
         assert related[i].id == expected_order[i].id
     assert len(related) > 0
-    
+
     # Al menos el candidato más relevante debería estar en la lista
     assert candidates[0] in related

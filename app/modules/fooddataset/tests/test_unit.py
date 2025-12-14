@@ -1,24 +1,25 @@
+import io
+import logging
+import zipfile
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
-from types import SimpleNamespace
-import zipfile
-import io
-import logging
-
 import requests
+
 from app import db
 from app.modules.auth.models import User
 from app.modules.basedataset.models import BaseAuthor, BasePublicationType
-from app.modules.fooddataset.services import FoodDatasetService
 from app.modules.fooddataset.models import (
     FoodDataset,
     FoodDatasetActivity,
     FoodDSMetaData,
     FoodNutritionalValue,
 )
+from app.modules.fooddataset.services import FoodDatasetService
 
 pytestmark = pytest.mark.unit
+
 
 @pytest.fixture
 def mock_user(tmp_path):
@@ -207,9 +208,6 @@ def test_activity_log_creation(test_client):
 
 
 def test_service_get_uvlhub_doi(test_client):
-    from app.modules.fooddataset.services import FoodDatasetService
-
-    service = FoodDatasetService()
 
     dataset = MagicMock()
     dataset.ds_meta_data.dataset_doi = "10.1234/test"
@@ -925,9 +923,7 @@ def test_service_edit_doi_dataset_success():
 
         # Formulario
         mock_form = MagicMock()
-        mock_form.get_authors.return_value = [
-            {"name": "Second Author", "affiliation": "Org", "orcid": "1111"}
-        ]
+        mock_form.get_authors.return_value = [{"name": "Second Author", "affiliation": "Org", "orcid": "1111"}]
         mock_form.get_dsmetadata.return_value = {"title": "Updated title"}
 
         # Food model form
@@ -937,9 +933,7 @@ def test_service_edit_doi_dataset_success():
             "title": "Food title",
             "description": "Desc",
         }
-        food_model_form.get_authors.return_value = [
-            {"name": "Food Author", "affiliation": "Lab", "orcid": "2222"}
-        ]
+        food_model_form.get_authors.return_value = [{"name": "Food Author", "affiliation": "Lab", "orcid": "2222"}]
         mock_form.food_models = [food_model_form]
 
         # Ejecutar

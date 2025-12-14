@@ -3,7 +3,6 @@ from datetime import datetime
 from enum import Enum
 
 from sqlalchemy import Enum as SQLAlchemyEnum
-from sqlalchemy.ext.declarative import declared_attr
 
 from app import db
 

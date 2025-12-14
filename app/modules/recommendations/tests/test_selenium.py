@@ -1,27 +1,22 @@
 import time
-import pytest
 import uuid
+from datetime import datetime, timezone
 
+import pytest
 from selenium.webdriver.common.by import By
 
-from core.selenium.common import initialize_driver
-from core.environment.host import get_host_for_selenium_testing
-
-from app import db, app
+from app import app, db
 from app.modules.auth.models import User
-from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData
 from app.modules.basedataset.models import BaseAuthor, BasePublicationType
-from app.modules.auth.models import User
-from datetime import datetime, timezone
+from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData
+from core.environment.host import get_host_for_selenium_testing
+from core.selenium.common import initialize_driver
 
 pytestmark = pytest.mark.selenium
 
 
 def create_test_datasets_for_ranking(user):
-    author = BaseAuthor(
-        name="Selenium Test Author",
-        affiliation="Test University"
-    )
+    author = BaseAuthor(name="Selenium Test Author", affiliation="Test University")
     db.session.add(author)
     db.session.flush()
 
@@ -34,7 +29,7 @@ def create_test_datasets_for_ranking(user):
             tags="apple,quality,fruit",
             publication_type=BasePublicationType.REPORT,
             dataset_doi=f"10.1234/selenium-{uuid.uuid4()}",
-            authors=[author]
+            authors=[author],
         )
         db.session.add(meta)
         db.session.flush()
@@ -49,7 +44,7 @@ def create_test_datasets_for_ranking(user):
         tags="apple",
         publication_type=BasePublicationType.REPORT,
         dataset_doi=f"10.1234/selenium-{uuid.uuid4()}",
-        authors=[author]
+        authors=[author],
     )
     db.session.add(meta_partial)
     db.session.flush()
@@ -73,7 +68,7 @@ class TestDatasetRecommendations:
 
     def teardown_method(self, method):
         self.driver.quit()
-    
+
     def login(self):
         self.driver.get(f"{self.host}/")
         self.driver.set_window_size(1200, 900)
@@ -101,14 +96,12 @@ class TestDatasetRecommendations:
         first_doi_link.click()
         time.sleep(2)
 
-        related_title = self.driver.find_element(
-            By.XPATH, "//h3[contains(text(), 'Related Datasets')]"
-        )
+        related_title = self.driver.find_element(By.XPATH, "//h3[contains(text(), 'Related Datasets')]")
 
         assert related_title.is_displayed()
 
     def test_related_datasets_ranking(self):
-        
+
         with app.app_context():
             user = User.query.filter_by(email="user1@example.com").first()
             datasets_identical, ds_partial = create_test_datasets_for_ranking(user)
@@ -130,30 +123,29 @@ class TestDatasetRecommendations:
         finally:
 
             with app.app_context():
-                from app.modules.basedataset.models import BaseAuthor, BaseDSViewRecord # Adjust imports
-                
+                from app.modules.basedataset.models import BaseAuthor, BaseDSViewRecord
+
                 # 1. Identify Metadata records for the test datasets
                 target_titles = ["Selenium Apple Dataset%", "Partial Apple Dataset"]
                 metadatas = FoodDSMetaData.query.filter(
                     db.or_(*[FoodDSMetaData.title.like(pat) for pat in target_titles])
                 ).all()
-                
+
                 for meta in metadatas:
                     ds_id = meta.id
-                    
+
                     # A. Delete Authors (related to metadata)
                     db.session.query(BaseAuthor).filter_by(food_ds_meta_data_id=meta.id).delete()
-                    
+
                     # B. Delete View Records (related to dataset) - This fixes the current error
                     db.session.query(BaseDSViewRecord).filter_by(dataset_id=ds_id).delete()
-                    
+
                     # C. Delete Metadata
                     db.session.delete(meta)
-                    
+
                     # D. Delete the Dataset
                     dataset = FoodDataset.query.get(ds_id)
                     if dataset:
                         db.session.delete(dataset)
-                        
+
                 db.session.commit()
-        

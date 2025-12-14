@@ -10,11 +10,11 @@ from zipfile import ZipFile
 from flask import Blueprint, jsonify, render_template, request, send_from_directory, url_for
 from flask_login import current_user, login_required
 
-from app.modules.fooddataset.forms import AuthorForm, FoodDatasetForm, FoodModelForm
-from app.modules.fooddataset.services import FoodDatasetService
-from app.modules.fakenodo.services import FakenodoService
 from app.modules.basedataset.repositories import BaseDOIMappingRepository
 from app.modules.basedataset.services import BaseDSMetaDataService
+from app.modules.fakenodo.services import FakenodoService
+from app.modules.fooddataset.forms import AuthorForm, FoodDatasetForm, FoodModelForm
+from app.modules.fooddataset.services import FoodDatasetService
 from core.services.SearchService import SearchService
 
 logger = logging.getLogger(__name__)
@@ -126,7 +126,7 @@ def create_dataset_as_draft():
 
 @fooddataset_bp.route("/dataset/publish/<int:dataset_id>", methods=["GET", "POST"])
 @login_required
-def upload_draft_dataset(dataset_id):   
+def upload_draft_dataset(dataset_id):
     dataset = food_service.get_or_404(dataset_id)
     form = FoodDatasetForm()
 
@@ -134,12 +134,7 @@ def upload_draft_dataset(dataset_id):
     os.makedirs(temp_folder, exist_ok=True)
 
     working_dir = os.getenv("WORKING_DIR", "")
-    dataset_dir = os.path.join(
-        working_dir,
-        "uploads",
-        f"user_{current_user.id}",
-        f"dataset_{dataset.id}"
-    )
+    dataset_dir = os.path.join(working_dir, "uploads", f"user_{current_user.id}", f"dataset_{dataset.id}")
 
     for food_model in dataset.files:
         for file in food_model.files:
@@ -191,24 +186,15 @@ def upload_draft_dataset(dataset_id):
 
             fakenodo_service.publish_deposition(deposition_id)
             doi = fakenodo_service.get_doi(deposition_id)
-            base_doi_mapping_repository.create(
-                dataset.ds_meta_data_id,
-                dataset_doi_old=doi
-            )
-            dsmetadata_service.update(
-                dataset.ds_meta_data_id,
-                dataset_doi=doi
-            )
+            base_doi_mapping_repository.create(dataset.ds_meta_data_id, dataset_doi_old=doi)
+            dsmetadata_service.update(dataset.ds_meta_data_id, dataset_doi=doi)
 
         except Exception as e:
             msg = f"Error uploading to Fakenodo: {e}"
             logger.error(msg)
             return jsonify({"message": msg}), 400
 
-    return jsonify({
-        "message": "Dataset published successfully",
-        "redirect": url_for("basedataset.list_dataset")
-    }), 200
+    return jsonify({"message": "Dataset published successfully", "redirect": url_for("basedataset.list_dataset")}), 200
 
 
 @fooddataset_bp.route("/dataset/edit/<int:dataset_id>", methods=["GET", "POST"])
@@ -283,7 +269,7 @@ def edit_doi_dataset(dataset_id):
                 file_author_subform.orcid.data = file_author.orcid
                 file_subform.authors.append_entry(file_author_subform.data)
 
-            form.food_models.append_entry(file_subform) 
+            form.food_models.append_entry(file_subform)
 
     return render_template("fooddataset/edit_dataset.html", form=form, dataset=dataset)
 

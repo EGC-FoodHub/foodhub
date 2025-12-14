@@ -1,20 +1,19 @@
 import os
 import time
+
 import pytest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 
 from core.environment.host import get_host_for_selenium_testing
-from core.selenium.common import initialize_driver, close_driver
+from core.selenium.common import close_driver, initialize_driver
 
 pytestmark = pytest.mark.selenium
 
 
 def wait_for_page_to_load(driver, timeout=5):
-    WebDriverWait(driver, timeout).until(
-        lambda d: d.execute_script("return document.readyState") == "complete"
-    )
+    WebDriverWait(driver, timeout).until(lambda d: d.execute_script("return document.readyState") == "complete")
 
 
 def test_viewuserprofilep1():
@@ -80,6 +79,3 @@ def test_metrics_after_upload():
 
     finally:
         close_driver(driver)
- 
-
-

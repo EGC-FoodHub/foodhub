@@ -7,8 +7,8 @@ from dotenv import load_dotenv
 from flask import Response, jsonify
 from flask_login import current_user
 
-from app.modules.fooddataset.models import FoodDataset
 from app.modules.fakenodo.repositories import FakenodoRepository
+from app.modules.fooddataset.models import FoodDataset
 from app.modules.foodmodel.models import FoodModel
 from core.configuration.configuration import uploads_folder_name
 from core.services.BaseService import BaseService
@@ -195,7 +195,6 @@ class FakenodoService(BaseService):
             dict: The response in JSON format with the details of the uploaded file.
         """
         food_filename = feature_model.food_meta_data.food_filename
-        data = {"name": food_filename}
         user_id = current_user.id if user is None else user.id
         file_path = os.path.join(uploads_folder_name(), f"user_{str(user_id)}", f"dataset_{dataset.id}/", food_filename)
         files = {"file": (food_filename, open(file_path, "rb"))}
@@ -211,7 +210,7 @@ class FakenodoService(BaseService):
         food_filename = feature_model.food_meta_data.food_filename
         user_id = current_user.id if user is None else user.id
         file_path = os.path.join(uploads_folder_name(), f"user_{str(user_id)}", f"dataset_{dataset.id}/", food_filename)
-        
+
         # Use 'with' to ensure the file is closed after the request
         with open(file_path, "rb") as f:
             files = {"file": (food_filename, f)}
@@ -222,10 +221,10 @@ class FakenodoService(BaseService):
             # Safely handle non-JSON responses to avoid "Expecting value: line 1 column 1"
             try:
                 err_details = response.json()
-            except:
+            except ValueError:
                 err_details = response.text
             raise Exception(f"Failed to upload. Status: {response.status_code}. Details: {err_details}")
-            
+
         return response.json()
 
     def publish_deposition2(self, deposition_id: int) -> dict:
@@ -245,14 +244,14 @@ class FakenodoService(BaseService):
         return response.json()
 
     def publish_deposition(self, deposition_id: int) -> dict:
-        publish_url = f"{self.FAKENODO_API_URL}/{deposition_id}/publish" # Match the route in blueprint
+        publish_url = f"{self.FAKENODO_API_URL}/{deposition_id}/publish"  # Match the route in blueprint
         response = requests.post(publish_url, params=self.params, headers=self.headers)
-        
+
         # Change check from 202 to 201 to match your blueprint's return code
         if response.status_code not in [200, 201]:
             raise Exception(f"Failed to publish deposition. Status: {response.status_code}")
         return response.json()
-    
+
     def get_deposition(self, deposition_id: int) -> dict:
         """
         Get a deposition from Fakenodo.

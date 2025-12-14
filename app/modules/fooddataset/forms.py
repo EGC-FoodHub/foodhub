@@ -1,9 +1,9 @@
 import re
-from flask_wtf import FlaskForm
-from wtforms import FieldList, FormField, SelectField, StringField, TextAreaField, SubmitField
-from wtforms.validators import URL, DataRequired, Length, Optional
 
+from flask_wtf import FlaskForm
 from flask_wtf.file import FileAllowed, FileField
+from wtforms import FieldList, FormField, SelectField, StringField, SubmitField, TextAreaField
+from wtforms.validators import URL, Length, Optional
 
 from app.modules.basedataset.forms import AuthorForm, BaseDatasetForm
 from app.modules.basedataset.models import BasePublicationType
@@ -103,37 +103,27 @@ class FoodDatasetForm(BaseDatasetForm):
 
         if method == "manual":
             if not models_are_present:
-                self.food_models.errors.append(
-                    "At least one .food file is required for manual upload."
-                )
+                self.food_models.errors.append("At least one .food file is required for manual upload.")
                 is_valid = False
 
         elif method == "zip":
             if not models_are_present:
                 if not self.zip_file.data:
-                    self.zip_file.errors.append(
-                        "A ZIP file is required for this import method."
-                    )
+                    self.zip_file.errors.append("A ZIP file is required for this import method.")
                     is_valid = False
 
         elif method == "github":
             if not models_are_present:
                 if not self.github_url.data:
-                    self.github_url.errors.append(
-                        "A GitHub URL is required for this import method."
-                    )
+                    self.github_url.errors.append("A GitHub URL is required for this import method.")
                     is_valid = False
                 elif not re.match(r"^https://github\.com/[^/]+/[^/]+/?$", self.github_url.data):
-                    self.github_url.errors.append(
-                        "Invalid GitHub URL. Must be like https://github.com/user/repo"
-                    )
+                    self.github_url.errors.append("Invalid GitHub URL. Must be like https://github.com/user/repo")
                     is_valid = False
 
         # Validación final de seguridad
         if not models_are_present and is_valid:
-            self.food_models.errors.append(
-                "At least one food model is required"
-            )
+            self.food_models.errors.append("At least one food model is required")
             is_valid = False
 
         return is_valid

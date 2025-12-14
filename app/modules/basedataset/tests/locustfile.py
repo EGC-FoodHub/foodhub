@@ -1,6 +1,6 @@
 import re
-import pytest
 
+import pytest
 from locust import HttpUser, TaskSet, task
 
 from core.environment.host import get_host_for_locust_testing

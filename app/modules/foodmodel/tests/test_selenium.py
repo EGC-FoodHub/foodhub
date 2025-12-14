@@ -1,6 +1,6 @@
 import time
-import pytest
 
+import pytest
 from selenium.common.exceptions import NoSuchElementException
 
 from core.environment.host import get_host_for_selenium_testing

@@ -1,9 +1,10 @@
-from locust import HttpUser, TaskSet, task
 import os
+
 import pytest
-from core.locust.common import get_csrf_token
+from locust import HttpUser, TaskSet, task
 
 from core.environment.host import get_host_for_locust_testing
+from core.locust.common import get_csrf_token
 
 pytestmark = pytest.mark.load
 
@@ -15,10 +16,7 @@ class ProfileBehavior(TaskSet):
 
     def login(self):
         """Login inicial"""
-        response = self.client.post("/login", data={
-            "email": "user1@example.com",
-            "password": "1234"
-        })
+        response = self.client.post("/login", data={"email": "user1@example.com", "password": "1234"})
         if response.status_code != 200:
             print(f"Login failed: {response.status_code}")
 
@@ -32,12 +30,15 @@ class ProfileBehavior(TaskSet):
     @task(1)
     def edit_profile(self):
         """Simula editar perfil de usuario"""
-        response = self.client.post("/profile/edit", data={
-            "name": "LocustTestName",
-            "surname": "LocustTestSurname",
-            "affiliation": "LocustClub",
-            "orcid": "0000-0000-0000-0000"
-        })
+        response = self.client.post(
+            "/profile/edit",
+            data={
+                "name": "LocustTestName",
+                "surname": "LocustTestSurname",
+                "affiliation": "LocustClub",
+                "orcid": "0000-0000-0000-0000",
+            },
+        )
         if response.status_code != 200:
             print(f"Edit profile failed: {response.status_code}")
 

@@ -1,6 +1,5 @@
 from sqlalchemy.exc import SQLAlchemyError
 
-from app import db
 from app.modules.profile.models import UserProfile
 from app.modules.profile.repositories import UserProfileRepository
 from core.services.BaseService import BaseService
@@ -24,15 +23,15 @@ class UserProfileService(BaseService):
             if not profile:
                 return None, "User profile not found."
 
-            from app.modules.basedataset.models import BaseDataset
-
             # Count only datasets that have been actually uploaded (have files),
             # excluding drafts which are saved without associated files.
             from app import db
+            from app.modules.basedataset.models import BaseDataset
+            from app.modules.fooddataset.models import FoodDataset
+
             # Import food-specific models locally to avoid circular imports
             from app.modules.foodmodel.models import FoodModel
             from app.modules.hubfile.models import Hubfile
-            from app.modules.fooddataset.models import FoodDataset
 
             uploaded_datasets_count = (
                 db.session.query(FoodModel.data_set_id)

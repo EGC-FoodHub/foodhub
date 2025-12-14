@@ -1,9 +1,8 @@
-from app.modules.shopping_cart.repositories import ShoppingCartRepository
-from core.services.BaseService import BaseService
+from flask_login import current_user
 
 from app.modules.fooddataset.repositories import FoodDatasetRepository
-
-from flask_login import current_user
+from app.modules.shopping_cart.repositories import ShoppingCartRepository
+from core.services.BaseService import BaseService
 
 
 class ShoppingCartService(BaseService):

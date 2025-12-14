@@ -4,21 +4,21 @@ import logging
 import os
 import shutil
 import zipfile
+from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 from zipfile import ZipFile
-from typing import Any, Dict, List, Optional
 
 import requests
 from sqlalchemy import func
 
 from app.modules.auth.services import AuthenticationService
+from app.modules.basedataset.repositories import BaseAuthorRepository
 from app.modules.basedataset.services import BaseDatasetService
 from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData
 from app.modules.fooddataset.repositories import FoodDatasetRepository
 from app.modules.foodmodel.models import FoodMetaData, FoodModel
 from app.modules.foodmodel.repositories import FoodModelRepository
 from app.modules.hubfile.repositories import HubfileRepository
-from app.modules.basedataset.repositories import BaseAuthorRepository
 
 logger = logging.getLogger(__name__)
 
@@ -146,11 +146,7 @@ class FoodDatasetService(BaseDatasetService):
 
             new_authors = []
             for author_data in [main_author] + form.get_authors():
-                author = self.author_repository.create(
-                    commit=False, 
-                    food_ds_meta_data_id=dsmetadata.id, 
-                    **author_data
-                )
+                author = self.author_repository.create(commit=False, food_ds_meta_data_id=dsmetadata.id, **author_data)
                 new_authors.append(author)
             dsmetadata.authors = new_authors
 
@@ -173,24 +169,20 @@ class FoodDatasetService(BaseDatasetService):
                 file_authors = []
                 for author_data in food_model_form.get_authors():
                     file_author = self.author_repository.create(
-                        commit=False,
-                        food_meta_data_id=food_metadata.id,
-                        **author_data
+                        commit=False, food_meta_data_id=food_metadata.id, **author_data
                     )
                     file_authors.append(file_author)
 
                 file = self.food_model_repository.create(
-                    commit=False,
-                    data_set_id=dataset.id,
-                    food_meta_data_id=food_metadata.id
+                    commit=False, data_set_id=dataset.id, food_meta_data_id=food_metadata.id
                 )
-                
+
                 new_files.append(file)
 
             updated_instance = self.update_dsmetadata(dsmetadata.id, **form.get_dsmetadata())
 
             self.repository.session.commit()
-            
+
             return updated_instance, None
 
         except Exception as exc:
