@@ -1,6 +1,5 @@
 from locust import HttpUser, TaskSet, task
 from core.environment.host import get_host_for_locust_testing
-from core.locust.common import get_csrf_token
 
 
 class FakenodoBehavior(TaskSet):
@@ -53,7 +52,6 @@ class FakenodoBehavior(TaskSet):
         payload = {"files": ["file1.txt", "file2.json"]}
         self.client.post(f"/fakenodo/records/{self.record_id}/files", json=payload)
     
-
 
 class FakenodoUser(HttpUser):
     tasks = [FakenodoBehavior]
