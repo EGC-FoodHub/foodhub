@@ -153,6 +153,7 @@ def user_with_datasets(test_client):
 # Test SimilarityService
 # ---------------------------
 
+
 def test_similarity_service_completo(user_with_datasets):
     _, base_ds, candidates = user_with_datasets
     service = SimilarityService(base_ds, candidates)
@@ -163,7 +164,6 @@ def test_similarity_service_completo(user_with_datasets):
         metric = service.metric_score(cand)
         text_sim = service.text_similarity(i)
         final = service.final_score(i)
-
 
         assert 0 <= author_sim <= 1
         assert 0 <= pub_type_sim <= 1
@@ -179,6 +179,7 @@ def test_similarity_service_completo(user_with_datasets):
 # ---------------------------
 # Test RecommendationService
 # ---------------------------
+
 
 def test_recommendation_service(user_with_datasets):
     _, base_ds, candidates = user_with_datasets

@@ -31,6 +31,6 @@ class TestViewuserprofilep1():
     self.driver.find_element(By.ID, "password").click()
     self.driver.find_element(By.ID, "password").send_keys("1234")
     self.driver.find_element(By.ID, "submit").click()
-    self.driver.find_element(By.LINK_TEXT, "Sample dataset 4").click()
+    self.driver.find_element(By.LINK_TEXT, "Food Dataset 4").click()
     self.driver.find_element(By.LINK_TEXT, "Doe, Jane").click()
   
