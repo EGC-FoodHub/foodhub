@@ -20,7 +20,6 @@
 </div>
 
 <div class="row">
-    <!-- LEFT PANEL: Basic info + Authors -->
     <div class="col-xl-6 col-lg-12 col-md-12 col-sm-12">
         <form method="POST" action="{{ url_for('fooddataset.edit_doi_dataset', dataset_id=dataset.id) }}" class="needs-validation" novalidate>
             <div id="basic_info_form">
@@ -136,7 +135,6 @@
         </form>
     </div>
 
-    <!-- RIGHT PANEL: Dropzone -->
     <div class="col-xl-6 col-lg-12 col-md-12 col-sm-12">
         <h1 class="h3 mb-3 mt-4">Food Models (.food)</h1>
         <form action="{{ url_for('fooddataset.upload_file_temp') }}" class="dropzone" id="myDropzone">

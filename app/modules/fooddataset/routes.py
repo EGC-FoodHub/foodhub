@@ -105,7 +105,6 @@ def create_dataset_as_draft():
             logger.info("Creating dataset...")
             dataset = food_service.create_from_form(form=form, current_user=current_user)
             logger.info(f"Created dataset: {dataset}")
-            food_service._move_dataset_files(dataset, current_user)
         except Exception as exc:
             logger.exception(f"Exception while create dataset data in local {exc}")
             return jsonify({"Exception while create dataset data in local: ": str(exc)}), 400
@@ -119,6 +118,70 @@ def create_dataset_as_draft():
         return jsonify({"message": msg}), 200
 
     return render_template("fooddataset/upload_dataset.html", form=form)
+
+
+@fooddataset_bp.route("/dataset/publish/<int:dataset_id>", methods=["GET", "POST"])
+@login_required
+def upload_draft_dataset(dataset_id):   
+    dataset = food_service.get_or_404(dataset_id)
+    form = FoodDatasetForm()
+
+    temp_folder = current_user.temp_folder()
+    os.makedirs(temp_folder, exist_ok=True)
+
+    working_dir = os.getenv("WORKING_DIR", "")
+    dataset_dir = os.path.join(working_dir, "uploads", f"user_{current_user.id}", f"dataset_{dataset.id}")
+
+    for food_model in dataset.files:
+        for file in food_model.files:
+            src_file = os.path.join(dataset_dir, file.name)
+            dest_file = os.path.join(temp_folder, file.name)
+
+            if not os.path.exists(src_file):
+                continue
+
+            if os.path.exists(dest_file):
+                base_name, ext = os.path.splitext(file.name)
+                i = 1
+                while os.path.exists(os.path.join(temp_folder, f"{base_name} ({i}){ext}")):
+                    i += 1
+                dest_file = os.path.join(temp_folder, f"{base_name} ({i}){ext}")
+
+            shutil.copy(src_file, dest_file)
+
+    result, errors = food_service.edit_doi_dataset(dataset, form)
+    fakenodo_service = FakenodoService()
+    dataset = food_service.get_or_404(dataset_id)
+
+    data = {}
+    try:
+        fakenodo_response_json = fakenodo_service.create_new_deposition(dataset)
+        response_data = json.dumps(fakenodo_response_json)
+        data = json.loads(response_data)
+    except Exception as exc:
+        logger.exception(f"Exception creating Fakenodo deposition: {exc}")
+
+    if data.get("doi"):
+        deposition_id = data.get("id")
+
+        try:
+            for food_model in dataset.files:
+                fakenodo_service.upload_file(dataset, deposition_id, food_model)
+
+            fakenodo_service.publish_deposition(deposition_id)
+            doi = fakenodo_service.get_doi(deposition_id)
+            base_doi_mapping_repository.create(dataset.ds_meta_data_id, dataset_doi_old=doi)
+            dsmetadata_service.update(dataset.ds_meta_data_id, dataset_doi=doi)
+
+        except Exception as e:
+            msg = f"Error uploading to Fakenodo: {e}"
+            logger.error(msg)
+            return jsonify({"message": msg}), 400
+
+    return jsonify({
+        "message": "Dataset published successfully",
+        "redirect": url_for("basedataset.list_dataset")
+    }), 200
 
 
 @fooddataset_bp.route("/dataset/edit/<int:dataset_id>", methods=["GET", "POST"])
@@ -137,12 +200,9 @@ def edit_doi_dataset(dataset_id):
     if request.method == "POST":
         if not form.food_models.entries[0].filename.data:
             form.food_models = []
-
-        # food_models_json = request.form.get('food_models_data', '[]')
-        # food_models_data = json.loads(food_models_json)
                         
         sync_fakenodo = request.form.get("sync_fakenodo") == "yes"
-        result, errors = food_service.edit_doi_dataset(dataset, form, sync_fakenodo=sync_fakenodo)
+        result, errors = food_service.edit_doi_dataset(dataset, form)
         return food_service.handle_service_response(
             result, errors, "basedataset.list_dataset", "Dataset updated", "dataset/edit_dataset.html", form
         )
@@ -153,7 +213,6 @@ def edit_doi_dataset(dataset_id):
                 dest_file = os.path.join(temp_folder, file.name)
 
                 if not os.path.exists(src_file):
-                    print(f"⚠️ El archivo original no existe: {file.name}")
                     continue
 
                 if os.path.exists(dest_file):
@@ -164,7 +223,6 @@ def edit_doi_dataset(dataset_id):
                     dest_file = os.path.join(temp_folder, f"{base_name} ({i}){ext}")
 
                 shutil.copy(src_file, dest_file)
-                print(f"✅ Archivo temporal recreado: {dest_file}")
 
         form.title.data = dataset.ds_meta_data.title
         form.desc.data = dataset.ds_meta_data.description
@@ -202,6 +260,8 @@ def edit_doi_dataset(dataset_id):
             form.food_models.append_entry(file_subform) 
 
     return render_template("fooddataset/edit_dataset.html", form=form, dataset=dataset)
+
+
 
 
 @fooddataset_bp.route("/dataset/file/upload", methods=["POST"])
