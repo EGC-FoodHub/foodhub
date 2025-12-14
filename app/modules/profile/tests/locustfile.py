@@ -1,6 +1,9 @@
 from locust import HttpUser, TaskSet, task
+import pytest
 
 from core.environment.host import get_host_for_locust_testing
+
+pytestmark = pytest.mark.unit
 
 
 class ProfileBehavior(TaskSet):
@@ -43,8 +46,9 @@ class ProfileBehavior(TaskSet):
         if response.status_code != 200:
             print(f"List datasets failed: {response.status_code}")
 
+
 class ProfileUser(HttpUser):
     tasks = [ProfileBehavior]
-    min_wait = 5000  
-    max_wait = 9000  
+    min_wait = 5000
+    max_wait = 9000
     host = get_host_for_locust_testing()
