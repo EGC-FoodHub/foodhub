@@ -3,9 +3,6 @@ import pytest
 import uuid
 
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 
 from core.selenium.common import initialize_driver
 from core.environment.host import get_host_for_selenium_testing
@@ -16,6 +13,8 @@ from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData
 from app.modules.basedataset.models import BaseAuthor, BasePublicationType
 from app.modules.auth.models import User
 from datetime import datetime, timezone
+
+pytestmark = pytest.mark.selenium
 
 
 def create_test_datasets_for_ranking(user):

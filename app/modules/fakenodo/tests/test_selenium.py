@@ -1,5 +1,6 @@
 import time
 import os
+import pytest
 
 from selenium.webdriver.common.by import By
 from core.selenium.common import initialize_driver
@@ -8,6 +9,8 @@ from core.environment.host import get_host_for_selenium_testing
 from app import db, app
 from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData
 from app.modules.basedataset.models import BaseAuthor, BaseDSViewRecord
+
+pytestmark = pytest.mark.selenium
 
 
 class TestDatasetRecommendations:
@@ -18,7 +21,7 @@ class TestDatasetRecommendations:
 
     def teardown_method(self, method):
         self.driver.quit()
-    
+
     def login(self):
         self.driver.get(f"{self.host}/")
         self.driver.set_window_size(1200, 900)
@@ -33,7 +36,7 @@ class TestDatasetRecommendations:
 
         self.driver.find_element(By.ID, "submit").click()
         time.sleep(2)
-    
+
     def create_test_datasets_fakenodo(self):
         self.driver.set_window_size(1854, 1048)
         self.driver.find_element(By.ID, "title").click()
@@ -65,7 +68,7 @@ class TestDatasetRecommendations:
     def test_related_datasets_block_exists(self):
         try:
             self.login()
-            
+
             upload_dataset = self.driver.find_element(By.CSS_SELECTOR, "a[href*='/dataset/upload']")
             upload_dataset.click()
             time.sleep(1)
@@ -74,7 +77,7 @@ class TestDatasetRecommendations:
             dataset_DOI = self.driver.find_element(By.CSS_SELECTOR, "a[href^='/doi/fakenodo']")
 
             assert dataset_DOI.is_displayed()
-    
+
         finally:
             with app.app_context():
                 metadatas = FoodDSMetaData.query.filter_by(title="FakenodoTesting").all()

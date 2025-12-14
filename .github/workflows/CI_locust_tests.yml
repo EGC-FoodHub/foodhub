@@ -85,12 +85,16 @@ jobs:
 
       - name: Run load tests with Locust
         run: |
-          locust -f app/modules/dataset/tests/locustfile.py \
-                -f app/modules/auth/tests/locustfile.py \
-                -f app/modules/featuremodel/tests/locustfile.py \
-                -f app/modules/flamapy/tests/locustfile.py \
+          locust -f app/modules/auth/tests/locustfile.py \
+                -f app/modules/basedataset/tests/locustfile.py \
+                -f app/modules/fakenodo/tests/locustfile.py \
+                -f app/modules/food_checker/tests/locustfile.py \
+                -f app/modules/fooddataset/tests/locustfile.py \
+                -f app/modules/foodmodel/tests/locustfile.py \
                 -f app/modules/hubfile/tests/locustfile.py \
                 -f app/modules/profile/tests/locustfile.py \
+                -f app/modules/recommendations/tests/locustfile.py \
+                -f app/modules/shopping_cart/tests/locustfile.py \
                 --host=http://localhost:5000 \
                 --users 50 \
                 --spawn-rate 5 \

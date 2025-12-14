@@ -8,6 +8,7 @@ from core.selenium.common import close_driver, initialize_driver
 
 pytestmark = pytest.mark.selenium
 
+
 def test_foodmodel_index():
 
     driver = initialize_driver()

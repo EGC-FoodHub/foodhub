@@ -1,5 +1,8 @@
+import pytest
 from locust import HttpUser, TaskSet, task
 from core.environment.host import get_host_for_locust_testing
+
+pytestmark = pytest.mark.load
 
 
 class ShoppingCartBehavior(TaskSet):
@@ -35,4 +38,3 @@ class ShoppingCartUser(HttpUser):
     min_wait = 5000
     max_wait = 9000
     host = get_host_for_locust_testing()
-
