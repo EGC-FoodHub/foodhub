@@ -11,8 +11,8 @@ class FoodModel(db.Model):
     food_meta_data = db.relationship("FoodMetaData", back_populates="food_model", cascade="all, delete")
     files = db.relationship("Hubfile", back_populates="food_model", cascade="all, delete-orphan")
     # Counters to track views/downloads for feature models
-    download_count = db.Column(db.Integer, default=0, nullable=False)
-    view_count = db.Column(db.Integer, default=0, nullable=False)
+    download_count = db.Column(db.Integer, default=0, server_default=db.text("0"), nullable=False)
+    view_count = db.Column(db.Integer, default=0, server_default=db.text("0"), nullable=False)
 
     def __repr__(self):
         return f"<FoodModel {self.id}>"
