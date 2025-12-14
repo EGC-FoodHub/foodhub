@@ -125,11 +125,11 @@
                 <div class="row mb-2">
                     <div class="col-12">
                         <a href="{{ dataset.get_doi() }}">{{ dataset.get_doi() }}</a>
-                        <div id="dataset_doi_uvlhub_{{ dataset.id }}" style="display: none">
+                        <div id="dataset_doi_foodhub_{{ dataset.id }}" style="display: none">
                             {{ dataset.get_doi() }}
                         </div>
                         <i data-feather="clipboard" class="center-button-icon" style="cursor: pointer"
-                            onclick="copyText('dataset_doi_uvlhub_{{ dataset.id }}')"></i>
+                            onclick="copyText('dataset_doi_foodhub_{{ dataset.id }}')"></i>
                     </div>
                 </div>
 
@@ -179,7 +179,7 @@
                             </h4>
                             <h4 class="h4 mb-3 stats-color">
                                 <i data-feather="file" class="align-middle mr-2 stats-color"></i>&nbsp;{{
-                                feature_models_counter }} feature models
+                                food_models_counter }} food models
                             </h4>
                             <h4 class="h4 mb-3 stats-color">
                                 <i data-feather="eye" class="align-middle mr-2 stats-color"></i>&nbsp;{{
@@ -187,7 +187,7 @@
                             </h4>
                             <h4 class="h4 mb-3 stats-color">
                                 <i data-feather="eye" class="align-middle mr-2 stats-color"></i>&nbsp;{{
-                                total_feature_model_views }} feature models viewed
+                                total_food_model_views }} food models viewed
                             </h4>
                             <h4 class="h4 mb-3 stats-color">
                                 <i data-feather="download" class="align-middle mr-2 stats-color"></i>&nbsp;{{
@@ -195,7 +195,7 @@
                             </h4>
                             <h4 class="h4 stats-color">
                                 <i data-feather="download" class="align-middle mr-2 stats-color"></i>&nbsp;{{
-                                total_feature_model_downloads }} feature models downloaded
+                                total_food_model_downloads }} food models downloaded
                             </h4>
                         </h1>
                     </div>
@@ -204,28 +204,7 @@
 
             <div class="col-12">
                 <div class="card">
-                    <div class="card-body">
-                        <h2><b>Related publication</b></h2>
-                        David Romero-Organvidez, José A. Galindo, Chico Sundermann, Jose-Miguel Horcas, David Benavides.
-                        <i>UVLHub: A feature model data repository using UVL and open science principles</i>,
-                        Journal of Systems and Software,
-                        2024,
-                        112150,
-                        ISSN 0164-1212,
-                        <a href="https://doi.org/10.1016/j.jss.2024.112150"
-                            target="_blank">https://doi.org/10.1016/j.jss.2024.112150</a>
-                    </div>
-                    <div class="card-body mt-0 pt-0">
-                        <button onclick="copyText('bibtex_cite')" class="btn btn-light"
-                            style="border-radius: 5px; margin-right: 10px">
-                            <i data-feather="clipboard" class="center-button-icon"></i>
-                            Copy in BibTex
-                        </button>
-                        <button onclick="copyText('ris_cite')" class="btn btn-light" style="border-radius: 5px;">
-                            <i data-feather="clipboard" class="center-button-icon"></i>
-                            Copy in RIS
-                        </button>
-                    </div>
+                    
                 </div>
             </div>
 
@@ -234,7 +213,7 @@
                 <div class="card card-welcome">
                     <h2 class="card-title card-title-light">Let's get started!</h2>
                     <div class="card-body card-body-slim">
-                        What are you waiting for to upload your fantastic feature models in UVL format?
+                        What are you waiting for to upload your fantastic food models in .food format?
                         <div class="row mt-2">
                             <div class="col-12">
                                 <a href="/signup" class="btn btn-dark"
@@ -257,17 +236,17 @@
 
             <div class="col-12">
                 <div class="card card-dark">
-                    <h2 class="card-title card-title-light">What is <b>uvlhub.io</b>?</h2>
+                    <h2 class="card-title card-title-light">What is <b>FoodHub</b>?</h2>
                     <div class="card-body card-body-slim">
-                        <strong>uvlhub.io</strong> is a repository of feature models in UVL format integrated with
-                        Zenodo and FlamaPy developed by DiversoLab
+                        <strong>FoodHub</strong> is a repository of food models in .food format integrated with
+                        Fakenodo and a food_checker developed by foodhub-1 and foodhub-2 projects members
                     </div>
                     <h2 class="card-title card-title-light">Can I contribute?</h2>
                     <div class="card-body card-body-slim">
                         Sure! You can make a fork of our official repository on GitHub,
                         create fantastic features and then make a pull request to us.
                         <br><br>
-                        <a href="https://github.com/diverso-lab/uvlhub" target="_blank" class="btn btn-primary">
+                        <a href="https://github.com/EGC-FoodHub/foodhub" target="_blank" class="btn btn-primary">
                             Go to GitHub</a>
                     </div>
                 </div>

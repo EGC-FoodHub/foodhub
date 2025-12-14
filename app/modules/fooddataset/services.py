@@ -263,44 +263,44 @@ class FoodDatasetService(BaseDatasetService):
             logger.error(f"Error getting total views: {e}")
             return 0
 
-    def total_feature_model_downloads(self) -> int:
+    def total_food_model_downloads(self) -> int:
         try:
             from app.modules.foodmodel.models import FoodModel
 
             total = self.repository.session.query(func.sum(FoodModel.download_count)).scalar()
             return total or 0
         except Exception as e:
-            logger.error(f"Error getting total feature model downloads: {e}")
+            logger.error(f"Error getting total food model downloads: {e}")
             return 0
 
-    def total_feature_model_views(self) -> int:
+    def total_food_model_views(self) -> int:
         try:
             from app.modules.foodmodel.models import FoodModel
 
             total = self.repository.session.query(func.sum(FoodModel.view_count)).scalar()
             return total or 0
         except Exception as e:
-            logger.error(f"Error getting total feature model views: {e}")
+            logger.error(f"Error getting total food model views: {e}")
             return 0
 
-    def count_feature_models(self) -> int:
+    def count_food_models(self) -> int:
         try:
             from app.modules.foodmodel.models import FoodModel
 
             total = self.repository.session.query(FoodModel).count()
             return total or 0
         except Exception as e:
-            logger.error(f"Error counting feature models: {e}")
+            logger.error(f"Error counting food models: {e}")
             return 0
 
     def get_all_statistics(self) -> Dict[str, Any]:
         return {
             "datasets_counter": self.count_synchronized_datasets(),
-            "feature_models_counter": self.count_feature_models(),
+            "food_models_counter": self.count_food_models(),
             "total_dataset_downloads": self.total_dataset_downloads(),
             "total_dataset_views": self.total_dataset_views(),
-            "total_feature_model_downloads": self.total_feature_model_downloads(),
-            "total_feature_model_views": self.total_feature_model_views(),
+            "total_food_model_downloads": self.total_food_model_downloads(),
+            "total_food_model_views": self.total_food_model_views(),
             "trending_weekly": self.get_trending_weekly(limit=3),
             "trending_monthly": self.get_trending_monthly(limit=3),
             "most_viewed": self.get_most_viewed_datasets(limit=5),
