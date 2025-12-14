@@ -1,0 +1,33 @@
+name: CI_CD_package_box
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Get Release Asset URL
+        id: get_asset
+        run: |
+          ASSET_URL=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/${{ github.event.release.id }} \
+            | jq -r '.assets[] | select(.name | endswith(".box")) | .browser_download_url')
+          echo "url=$ASSET_URL" >> $GITHUB_OUTPUT
+
+      - name: Download Box from Release
+        run: |
+          curl -L -o latest_box.box ${{ steps.get_asset.outputs.url }}
+
+      - name: Push to Vagrant Cloud
+        uses: hashicorp/vagrant-cloud-action@v1
+        with:
+          account: "TU_USUARIO_VAGRANT_CLOUD"
+          box: "foodhub"
+          version: "${{ github.event.release.tag_name }}"
+          provider: "virtualbox"
+          token: "${{ secrets.VAGRANT_CLOUD_TOKEN }}"
+          file: "latest_box.box"
