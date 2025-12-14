@@ -155,6 +155,137 @@ class FoodDatasetBehavior(TaskSet):
             else:
                 print(f"⚠ GitHub import failed: {r.status_code}")
 
+    @task
+    def create_dataset_as_draft(self):
+        """Crear un dataset como borrador"""
+        response = self.client.get("/dataset/save_as_draft")
+        csrf = get_csrf_token(response)
+        if not csrf:
+            print("⚠ CSRF token not found")
+            return
+
+        data = {
+            "title": "Load Test Draft Dataset",
+            "description": "Dataset de prueba en borrador",
+            "publication_type": "dataset",
+            "tags": "test,locust,draft",
+            "csrf_token": csrf,
+        }
+
+        zip_path = os.path.abspath("app/modules/dataset/zip_examples/food.zip")
+        if not os.path.exists(zip_path):
+            print(f"⚠ ZIP not found: {zip_path}")
+            return
+
+        with open(zip_path, "rb") as f:
+            files = {"food_models-0-filename": ("food.zip", f, "application/zip")}
+            
+            response = self.client.post("/dataset/save_as_draft", data=data, files=files)
+
+        if response.status_code == 200:
+            print("✔ Dataset creado como borrador correctamente")
+            try:
+                response_data = response.json()
+                if "dataset_id" in response_data:
+                    self.dataset_ids.append(response_data["dataset_id"])
+            except:
+                pass
+        else:
+            print(f"⚠ Draft dataset creation failed: {response.status_code}")
+
+    @task
+    def publish_draft_dataset(self):
+        """Publicar un dataset en borrador (convertir a DOI)"""
+        if not self.dataset_ids:
+            print("⚠ No dataset IDs available for publishing")
+            return
+
+        dataset_id = self.dataset_ids[0]
+
+        response = self.client.get(f"/dataset/publish/{dataset_id}")
+        csrf = get_csrf_token(response)
+        if not csrf:
+            print("⚠ CSRF token not found")
+            return
+
+        data = {
+            "title": f"Published Dataset {dataset_id}",
+            "description": "Dataset publicado con DOI",
+            "publication_type": "dataset",
+            "publication_doi": "10.5281/zenodo.example",
+            "tags": "published,doi,test",
+            "csrf_token": csrf,
+        }
+
+        response = self.client.post(
+            f"/dataset/publish/{dataset_id}",
+            data=data,
+            catch_response=True
+        )
+
+        if response.status_code == 200:
+            print(f"✔ Dataset {dataset_id} publicado correctamente")
+            try:
+                response_data = response.json()
+                if response_data.get("message") == "Dataset published successfully":
+                    response.success()
+                else:
+                    response.failure(f"Unexpected response: {response_data}")
+            except:
+                response.failure("Invalid JSON response")
+        else:
+            print(f"⚠ Dataset publish failed: {response.status_code}")
+            response.failure(f"Status code: {response.status_code}")
+
+    @task
+    def edit_doi_dataset(self):
+        """Editar un dataset ya publicado con DOI"""
+        if not self.dataset_ids:
+            print("⚠ No dataset IDs available for editing")
+            return
+
+        dataset_id = self.dataset_ids[0]
+
+        response = self.client.get(f"/dataset/edit/{dataset_id}")
+        csrf = get_csrf_token(response)
+        if not csrf:
+            print("⚠ CSRF token not found")
+            return
+
+        data = {
+            "title": f"Edited Dataset {dataset_id}",
+            "description": "Dataset editado con nueva descripción",
+            "publication_type": "dataset",
+            "publication_doi": "10.5281/zenodo.example.v2",
+            "tags": "edited,test,updated",
+            "csrf_token": csrf,
+        }
+
+        file_path = os.path.abspath("app/modules/dataset/food_examples/test.food")
+        
+        if os.path.exists(file_path):
+            with open(file_path, "rb") as f:
+                files = {"food_models-0-filename": ("test.food", f, "application/octet-stream")}
+                response = self.client.post(
+                    f"/dataset/edit/{dataset_id}",
+                    data=data,
+                    files=files,
+                    catch_response=True
+                )
+        else:
+            response = self.client.post(
+                f"/dataset/edit/{dataset_id}",
+                data=data,
+                catch_response=True
+            )
+
+        if response.status_code in [200, 302]:
+            print(f"✔ Dataset {dataset_id} editado correctamente")
+            response.success()
+        else:
+            print(f"⚠ Dataset edit failed: {response.status_code}")
+            response.failure(f"Status code: {response.status_code}")
+
 
 class FoodDatasetUser(HttpUser):
     tasks = [FoodDatasetBehavior]
