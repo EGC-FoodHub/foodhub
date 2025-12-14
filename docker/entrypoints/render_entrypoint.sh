@@ -51,6 +51,7 @@ fi
 #     flask db upgrade
 # fi
 
+echo "DEBUG: MARIADB_HOSTNAME is '$MARIADB_HOSTNAME'"
 echo "Resetting database..."
 rosemary db:reset -y
 
