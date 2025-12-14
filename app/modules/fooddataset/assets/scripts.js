@@ -87,17 +87,19 @@ document.getElementById('add_author').addEventListener('click', function () {
     authors.appendChild(newAuthor);
 });
 
-document.addEventListener('click', function (event) {
-    if (event.target && event.target.classList.contains('add_author_to_file')) {
-        let button = event.target;
-        let containerId = button.getAttribute('data-container');
-        let prefix = button.getAttribute('data-prefix'); // ej: food_models-0-
-        
-        let authorsContainer = document.getElementById(containerId);
-        let newAuthor = createAuthorBlock(amount_authors++, prefix);
-        authorsContainer.appendChild(newAuthor);
-    }
-});
+if (window.location.pathname === "/dataset/upload") {
+    document.addEventListener('click', function (event) {
+        if (event.target && event.target.classList.contains('add_author_to_file')) {
+            let button = event.target;
+            let containerId = button.getAttribute('data-container');
+            let prefix = button.getAttribute('data-prefix'); // ej: food_models-0-
+
+            let authorsContainer = document.getElementById(containerId);
+            let newAuthor = createAuthorBlock(amount_authors++, prefix);
+            authorsContainer.appendChild(newAuthor);
+        }
+    });
+}
 
 function show_loading() {
     document.getElementById("upload_button").style.display = "none";
@@ -163,30 +165,63 @@ window.onload = function () {
             });
 
             console.log('Sending FormData...');
-            
-            fetch('/dataset/upload', {
-                method: 'POST',
-                body: formUploadData
-            })
-            .then(response => {
-                if (response.ok) {
-                    response.json().then(data => {
-                        console.log(data.message);
-                        window.location.href = data.redirect || "/dataset/list";
-                    });
-                } else {
-                    response.json().then(data => {
-                        console.error('Error: ' + data.message);
-                        hide_loading();
-                        write_upload_error(data.message || "Unknown error occurred");
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error in POST request:', error);
-                hide_loading();
-                write_upload_error("Network error");
+                            
+const datasetId = window.location.pathname.split("/").pop(); 
+
+if (window.location.pathname === "/dataset/upload") {
+    
+    fetch('/dataset/upload', {
+        method: 'POST',
+        body: formUploadData
+    })
+    .then(response => {
+        if (response.ok) {
+            response.json().then(data => {
+                console.log(data.message);
+                window.location.href = data.redirect || "/dataset/list";
             });
+        } else {
+            response.json().then(data => {
+                console.error('Error: ' + data.message);
+                hide_loading();
+                write_upload_error(data.message || "Unknown error occurred");
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error in POST request:', error);
+        hide_loading();
+        write_upload_error("Network error");
+    });
+    
+} else if (window.location.pathname.startsWith("/dataset/edit/")) {
+    
+    const idToPublish = window.location.pathname.split("/").pop();
+
+    fetch(`/dataset/publish/${idToPublish}`, {
+        method: 'POST',
+        body: formUploadData
+    })
+    .then(response => {
+        if (response.ok) {
+            response.json().then(data => {
+                console.log(data.message);
+                window.location.href = data.redirect || "/dataset/list";
+            });
+        } else {
+            response.json().then(data => {
+                console.error('Error: ' + data.message);
+                hide_loading();
+                write_upload_error(data.message || "Unknown error occurred");
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error in POST request:', error);
+        hide_loading();
+        write_upload_error("Network error");
+    });
+}
 
         } else {
             hide_loading();

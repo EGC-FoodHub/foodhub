@@ -3,7 +3,6 @@
 
 require 'pathname'
 require 'fileutils'
-
 # Method to load environment variables from an .env file and return them as a hash
 def load_env(file)
   env_vars = {}
@@ -58,7 +57,16 @@ Vagrant.configure("2") do |config|
       mariadb_user: ENV['MARIADB_USER'],
       mariadb_password: ENV['MARIADB_PASSWORD'],
       mariadb_root_password: ENV['MARIADB_ROOT_PASSWORD'],
-      working_dir: ENV['WORKING_DIR']
+      working_dir: ENV['WORKING_DIR'],
+      master_key: ENV['MASTER_KEY'],
+      brevo_api_key: ENV['BREVO_API_KEY'],
+      sender_email: ENV['SENDER_EMAIL'],
+      sender_name: ENV['SENDER_NAME'],
+      email_verification_key: ENV['EMAIL_VERIFICATION_KEY'],
+      elasticsearch_url: ENV['ELASTICSEARCH_URL'],
+      elasticsearch_user: ENV['ELASTICSEARCH_USER'],
+      elasticsearch_password: ENV['ELASTICSEARCH_PASSWORD'],
+      elasticsearch_enabled: ENV['ELASTICSEARCH_ENABLED']
     }
   end
 

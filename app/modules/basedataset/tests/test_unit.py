@@ -396,3 +396,133 @@ def test_route_doi_mapping_redirect(test_client):
         response = test_client.get("/doi/10.1234/old-doi/")
         assert response.status_code == 302
         assert "10.1234/new-doi" in response.headers["Location"]
+
+
+def test_download_datasets_no_ids(test_client):
+    """Test that 400 is returned when no dataset IDs are provided."""
+    login(test_client, "test@example.com", "test1234")
+    
+    response = test_client.get("/dataset/download")
+    assert response.status_code == 400
+
+
+def test_download_datasets_single_dataset(test_client):
+    """Test downloading a single dataset."""
+    login(test_client, "test@example.com", "test1234")
+    
+    with test_client.application.app_context():
+        dataset = ConcreteDataset.query.first()
+        ds_id = dataset.id
+    
+    with (
+        patch("app.modules.basedataset.routes.tempfile.mkdtemp") as mock_mkdtemp,
+        patch("app.modules.basedataset.routes.os.path.exists") as mock_exists,
+        patch("app.modules.basedataset.routes.os.walk") as mock_walk,
+        patch("app.modules.basedataset.routes.ZipFile") as mock_zip,
+        patch("app.modules.basedataset.routes.send_from_directory") as mock_send,
+        patch("app.modules.basedataset.routes.ds_download_record_service") as mock_record_service,
+    ):
+        mock_mkdtemp.return_value = "/tmp/test"
+        mock_exists.return_value = True
+        mock_walk.return_value = [("/path", [], ["file1.txt"])]
+        mock_send.return_value = "File Content"
+        
+        mock_record_service.repository.model.query.filter_by.return_value.first.return_value = None
+        mock_record_service.create.return_value = None
+        
+        response = test_client.get(f"/dataset/download?ids={ds_id}")
+        assert response.status_code == 200
+        mock_zip.assert_called_once()
+        mock_send.assert_called_once()
+
+
+def test_download_datasets_multiple_datasets(test_client):
+    """Test downloading multiple datasets."""
+    login(test_client, "test@example.com", "test1234")
+    
+    with test_client.application.app_context():
+        ds_metadata2 = ConcreteDSMetaData(
+            title="Test Dataset 2",
+            description="A second description",
+            publication_type=BasePublicationType.JOURNAL_ARTICLE,
+            tags="tag3,tag4",
+        )
+        dataset2 = ConcreteDataset(user_id=1, ds_meta_data=ds_metadata2)
+        db.session.add(dataset2)
+        db.session.commit()
+        
+        dataset1 = ConcreteDataset.query.first()
+        ds_id1 = dataset1.id
+        ds_id2 = dataset2.id
+    
+    with (
+        patch("app.modules.basedataset.routes.tempfile.mkdtemp") as mock_mkdtemp,
+        patch("app.modules.basedataset.routes.os.path.exists") as mock_exists,
+        patch("app.modules.basedataset.routes.os.walk") as mock_walk,
+        patch("app.modules.basedataset.routes.ZipFile") as mock_zip,
+        patch("app.modules.basedataset.routes.send_from_directory") as mock_send,
+        patch("app.modules.basedataset.routes.ds_download_record_service") as mock_record_service,
+    ):
+        mock_mkdtemp.return_value = "/tmp/test"
+        mock_exists.return_value = True
+        mock_walk.return_value = [("/path", [], ["file1.txt"])]
+        mock_send.return_value = "File Content"
+        
+        mock_record_service.repository.model.query.filter_by.return_value.first.return_value = None
+        mock_record_service.create.return_value = None
+        
+        response = test_client.get(f"/dataset/download?ids={ds_id1},{ds_id2}")
+        assert response.status_code == 200
+        mock_zip.assert_called_once()
+        assert mock_record_service.create.call_count == 2
+
+
+def test_download_datasets_creates_download_records(test_client):
+    """Test that download records are created for each dataset."""
+    login(test_client, "test@example.com", "test1234")
+    
+    with test_client.application.app_context():
+        dataset = ConcreteDataset.query.first()
+        ds_id = dataset.id
+    
+    with (
+        patch("app.modules.basedataset.routes.tempfile.mkdtemp") as mock_mkdtemp,
+        patch("app.modules.basedataset.routes.os.path.exists") as mock_exists,
+        patch("app.modules.basedataset.routes.os.walk") as mock_walk,
+        patch("app.modules.basedataset.routes.ZipFile") as mock_zip,
+        patch("app.modules.basedataset.routes.send_from_directory") as mock_send,
+        patch("app.modules.basedataset.routes.ds_download_record_service") as mock_record_service,
+    ):
+        mock_mkdtemp.return_value = "/tmp/test"
+        mock_exists.return_value = True
+        mock_walk.return_value = [("/path", [], ["file1.txt"])]
+        mock_send.return_value = "File Content"
+        
+        mock_record_service.repository.model.query.filter_by.return_value.first.return_value = None
+        
+        response = test_client.get(f"/dataset/download?ids={ds_id}")
+        assert response.status_code == 200
+        mock_record_service.create.assert_called_once()
+
+
+def test_download_datasets_zip_structure(test_client):
+    """Test that files are added to the zip with correct structure."""
+    login(test_client, "test@example.com", "test1234")
+    
+    with test_client.application.app_context():
+        dataset = ConcreteDataset.query.first()
+        ds_id = dataset.id
+    
+    with (
+        patch("app.modules.basedataset.routes.tempfile.mkdtemp") as mock_mkdtemp,
+        patch("app.modules.basedataset.routes.os.path.exists") as mock_exists,
+        patch("app.modules.basedataset.routes.os.walk") as mock_walk,
+        patch("app.modules.basedataset.routes.ZipFile") as mock_zipfile_class,
+        patch("app.modules.basedataset.routes.send_from_directory") as mock_send,
+        patch("app.modules.basedataset.routes.ds_download_record_service") as mock_record_service,
+    ):
+        mock_mkdtemp.return_value = "/tmp/test"
+        mock_exists.return_value = True
+        mock_walk.return_value = [
+            (f"/uploads/user_1/dataset_{ds_id}/", [], ["file1.txt", "file2.txt"])
+        ]

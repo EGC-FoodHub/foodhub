@@ -824,3 +824,163 @@ def test_upload_file_invalid_extension(test_client, mock_user, monkeypatch, tmp_
     assert resp.status_code == 400
     j = resp.get_json()
     assert j["message"] == "Please upload a .food file"
+
+
+def test_route_dataset_save_as_draft_get(test_client):
+    from app.modules.conftest import login
+
+    login(test_client, "test_food@example.com", "test1234")
+
+    response = test_client.get("/dataset/save_as_draft")
+    assert response.status_code == 200
+    assert b"upload_dataset.html" in response.data or b"Upload" in response.data
+
+
+def test_route_dataset_save_as_draft_post_success(test_client):
+    from app.modules.conftest import login
+
+    login(test_client, "test_food@example.com", "test1234")
+
+    with (
+        patch("app.modules.fooddataset.routes.food_service") as mock_service,
+        patch("app.modules.fooddataset.routes.shutil.rmtree") as mock_rmtree,
+        patch("app.modules.fooddataset.routes.os.path.exists") as mock_exists,
+        patch("app.modules.fooddataset.routes.FoodDatasetForm") as MockForm,
+        patch("app.modules.auth.models.User.temp_folder") as mock_temp_folder,
+    ):
+        mock_dataset = MagicMock()
+        mock_service.create_from_form.return_value = mock_dataset
+
+        mock_temp_folder.return_value = "/tmp"
+        mock_exists.return_value = True
+
+        mock_form = MockForm.return_value
+        mock_form.food_models.entries = [MagicMock()]
+        mock_form.food_models.entries[0].filename.data = "test.food"
+
+        response = test_client.post("/dataset/save_as_draft", data={"title": "Draft DS"})
+
+        assert response.status_code == 200
+        assert response.json["message"] == "Everything works!"
+
+        mock_service.create_from_form.assert_called()
+        mock_rmtree.assert_called()
+
+
+def test_service_edit_doi_dataset_success():
+    from app.modules.fooddataset.services import FoodDatasetService
+
+    service = FoodDatasetService()
+
+    # Mock repositorios
+    service.repository = MagicMock()
+    service.food_model_repository = MagicMock()
+    service.author_repository = MagicMock()
+
+    service.repository.session = MagicMock()
+    service.author_repository.session = MagicMock()
+
+    updated_dsmetadata = MagicMock()
+    service.update_dsmetadata = MagicMock(return_value=updated_dsmetadata)
+
+    # Usuario autenticado
+    mock_user = MagicMock()
+    mock_user.profile.surname = "Doe"
+    mock_user.profile.name = "John"
+    mock_user.profile.affiliation = "Test Org"
+    mock_user.profile.orcid = "0000-0000-0000-0000"
+
+    with patch(
+        "app.modules.fooddataset.services.AuthenticationService.get_authenticated_user",
+        return_value=mock_user,
+    ):
+        # Dataset y metadata
+        dsmetadata = MagicMock()
+        dsmetadata.id = 10
+        dsmetadata.authors = []
+
+        # Archivo existente a borrar
+        old_food_metadata = MagicMock()
+        old_food_metadata.id = 20
+
+        old_file = MagicMock()
+        old_file.food_meta_data = old_food_metadata
+
+        dataset = MagicMock()
+        dataset.id = 1
+        dataset.ds_meta_data = dsmetadata
+        dataset.files = [old_file]
+
+        # Formulario
+        mock_form = MagicMock()
+        mock_form.get_authors.return_value = [
+            {"name": "Second Author", "affiliation": "Org", "orcid": "1111"}
+        ]
+        mock_form.get_dsmetadata.return_value = {"title": "Updated title"}
+
+        # Food model form
+        food_model_form = MagicMock()
+        food_model_form.get_food_metadata.return_value = {
+            "food_filename": "f1",
+            "title": "Food title",
+            "description": "Desc",
+        }
+        food_model_form.get_authors.return_value = [
+            {"name": "Food Author", "affiliation": "Lab", "orcid": "2222"}
+        ]
+        mock_form.food_models = [food_model_form]
+
+        # Ejecutar
+        result, error = service.edit_doi_dataset(dataset, mock_form)
+
+        # Asserts
+        assert error is None
+        assert result == updated_dsmetadata
+
+        service.author_repository.session.query.assert_called()
+        service.repository.session.delete.assert_called()
+        service.repository.session.commit.assert_called()
+
+
+def test_service_edit_doi_dataset_exception_rollbacks():
+    from app.modules.fooddataset.services import FoodDatasetService
+
+    service = FoodDatasetService()
+
+    service.repository = MagicMock()
+    service.author_repository = MagicMock()
+    service.food_model_repository = MagicMock()
+
+    service.repository.session = MagicMock()
+    service.author_repository.session = MagicMock()
+
+    # Forzamos excepción en update_dsmetadata
+    service.update_dsmetadata = MagicMock(side_effect=Exception("DB Error"))
+
+    mock_user = MagicMock()
+    mock_user.profile.surname = "Doe"
+    mock_user.profile.name = "John"
+    mock_user.profile.affiliation = "Org"
+    mock_user.profile.orcid = "0000"
+
+    with patch(
+        "app.modules.fooddataset.services.AuthenticationService.get_authenticated_user",
+        return_value=mock_user,
+    ):
+        dsmetadata = MagicMock()
+        dsmetadata.id = 99
+
+        dataset = MagicMock()
+        dataset.id = 1
+        dataset.ds_meta_data = dsmetadata
+        dataset.files = []
+
+        mock_form = MagicMock()
+        mock_form.get_authors.return_value = []
+        mock_form.food_models = []
+        mock_form.get_dsmetadata.return_value = {}
+
+        with pytest.raises(Exception, match="DB Error"):
+            service.edit_doi_dataset(dataset, mock_form)
+
+        service.repository.session.rollback.assert_called()

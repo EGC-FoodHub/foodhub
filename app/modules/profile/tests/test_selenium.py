@@ -17,6 +17,24 @@ def wait_for_page_to_load(driver, timeout=5):
     )
 
 
+def test_viewuserprofilep1():
+    driver = initialize_driver()
+
+    try:
+        driver.get("http://127.0.0.1:5000/")
+        driver.set_window_size(862, 1132)
+        driver.find_element(By.LINK_TEXT, "Login").click()
+        driver.find_element(By.ID, "email").click()
+        driver.find_element(By.ID, "email").send_keys("user1@example.com")
+        driver.find_element(By.ID, "password").click()
+        driver.find_element(By.ID, "password").send_keys("1234")
+        driver.find_element(By.ID, "submit").click()
+        driver.find_element(By.LINK_TEXT, "Food Dataset 4").click()
+        driver.find_element(By.LINK_TEXT, "Doe, Jane").click()
+    finally:
+        close_driver(driver)
+
+
 def test_metrics_after_upload():
     driver = initialize_driver()
 
@@ -50,17 +68,11 @@ def test_metrics_after_upload():
         driver.find_element(By.ID, "upload_button").send_keys(Keys.RETURN)
         time.sleep(1)
 
-        # 6. Open first dataset
-        driver.find_element(
-            By.CSS_SELECTOR, "tr:nth-child(1) .btn-outline-primary"
-        ).click()
-        wait_for_page_to_load(driver)
-
-        # 7. Go to metrics
+        # 6. Go to metrics
         driver.find_element(By.LINK_TEXT, "My metrics").click()
         wait_for_page_to_load(driver)
 
-        # 8. Assertions
+        # 7. Assertions
         assert "metrics" in driver.current_url.lower()
         assert "No metrics" not in driver.page_source
 
@@ -68,3 +80,6 @@ def test_metrics_after_upload():
 
     finally:
         close_driver(driver)
+ 
+
+
