@@ -62,6 +62,7 @@ class BaseDSMetaData(db.Model):
     ds_metrics = db.relationship("BaseDSMetrics", uselist=False, backref="ds_meta_data", cascade="all, delete")
     authors = db.relationship("BaseAuthor", backref="ds_meta_data", lazy=True, cascade="all, delete")
 
+
 class BaseDataset(db.Model):
     __tablename__ = "base_dataset"
 

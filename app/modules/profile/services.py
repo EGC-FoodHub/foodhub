@@ -24,19 +24,20 @@ class UserProfileService(BaseService):
             if not profile:
                 return None, "User profile not found."
 
-            # Contar datasets subidos por el usuario
-            from app.modules.basedataset.models import BaseDataSet
+            from app.modules.basedataset.models import BaseDataset
 
-            uploaded_datasets_count = BaseDataSet.query.filter_by(user_id=user_id).count()
+            uploaded_datasets_count = BaseDataset.query.filter_by(user_id=user_id).count()
 
             # Contar datasets sincronizados (con DOI) por el usuario
-            from app.modules.basedataset.models import DataSet, BaseDSMetaData
-
-            synchronized_datasets_count = (
-                DataSet.query.join(BaseDSMetaData)
-                .filter(DataSet.user_id == user_id, BaseDSMetaData.dataset_doi.isnot(None))
-                .count()
-            )
+            # Algunos subtipos de dataset (por ejemplo FoodDataset) almacenan metadata en tablas
+            # específicas; para evitar imports frágiles, obtenemos los datasets del usuario
+            # y contamos aquellos cuya metadata (`ds_meta_data.dataset_doi`) no sea None.
+            user_datasets = BaseDataset.query.filter_by(user_id=user_id).all()
+            synchronized_datasets_count = 0
+            for ds in user_datasets:
+                ds_meta = getattr(ds, "ds_meta_data", None)
+                if ds_meta and getattr(ds_meta, "dataset_doi", None):
+                    synchronized_datasets_count += 1
 
             # Contar descargas hechas por el usuario autenticado
             from app.modules.basedataset.models import BaseDSDownloadRecord
