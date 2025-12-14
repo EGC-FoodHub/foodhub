@@ -232,6 +232,33 @@ def test_upload_invalid_zip_shows_error():
         close_driver(driver)
 
 
+def test_upload_valid_food_files_from_github():
+    driver = initialize_driver()
+    try:
+        host = get_host_for_selenium_testing()
+        login_as_user(driver, host)
+
+        driver.get(f"{host}/dataset/upload")
+        wait_for_page_to_load(driver)
+        driver.find_element(By.ID, "github-tab").click()
+        time.sleep(1)
+        driver.find_element(By.ID, "gh_url").send_keys("https://github.com/EGC-FoodHub/foodhub")
+        driver.find_element(By.ID, "gh_branch").send_keys("main")
+        driver.find_element(By.ID, "title").send_keys("test")
+        driver.find_element(By.ID, "desc").send_keys("test")
+        time.sleep(1)
+        driver.find_element(By.ID, "import_repo_btn").click()
+
+        # Wait for agree checkbox and click upload flow to proceed
+        WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.ID, "agreeCheckbox"))).click()
+        WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.ID, "upload_button"))).click()
+
+        # Quick check: ensure we're still on an app page and no exception thrown
+        assert "/dataset" in driver.current_url
+
+    finally:
+        close_driver(driver)
+        
 def test_valid_repo_with_no_food_file():
     driver = initialize_driver()
     try:
