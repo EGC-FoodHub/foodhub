@@ -16,7 +16,9 @@ from app.modules.basedataset.services import BaseDatasetService
 from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData
 from app.modules.fooddataset.repositories import FoodDatasetRepository
 from app.modules.foodmodel.models import FoodMetaData, FoodModel
+from app.modules.foodmodel.repositories import FoodModelRepository
 from app.modules.hubfile.repositories import HubfileRepository
+from app.modules.basedataset.repositories import BaseAuthorRepository
 
 logger = logging.getLogger(__name__)
 
@@ -33,8 +35,9 @@ class FoodDatasetService(BaseDatasetService):
     def __init__(self):
         super().__init__(repository=FoodDatasetRepository())
         self.hubfile_repository = HubfileRepository()
-        self.author_repository = self.author_repository
+        self.author_repository = BaseAuthorRepository()
         self.dsmetadata_repository = self.dsmetadata_repository
+        self.food_model_repository = FoodModelRepository()
 
     def get_synchronized(self, current_user_id: int):
         return self.repository.get_synchronized(current_user_id)
@@ -55,6 +58,7 @@ class FoodDatasetService(BaseDatasetService):
         return self.repository.count_unsynchronized_datasets()
 
     def create_from_form(self, form, current_user) -> FoodDataset:
+
         main_author = {
             "name": f"{current_user.profile.surname}, {current_user.profile.name}",
             "affiliation": current_user.profile.affiliation,
@@ -63,7 +67,7 @@ class FoodDatasetService(BaseDatasetService):
 
         try:
             logger.info(f"Creating FoodDSMetaData...: {form.get_dsmetadata()}")
-
+            print(form.dataset_doi.data)
             dsmetadata = FoodDSMetaData(**form.get_dsmetadata())
 
             self.dsmetadata_repository.session.add(dsmetadata)
@@ -124,7 +128,7 @@ class FoodDatasetService(BaseDatasetService):
                 if os.path.exists(src_file):
                     shutil.move(src_file, dest_dir)
 
-    def edit_doi_dataset(self, dataset, form, sync_fakenodo):
+    def edit_doi_dataset(self, dataset, form):
         current_user = AuthenticationService().get_authenticated_user()
 
         main_author = {
@@ -133,25 +137,66 @@ class FoodDatasetService(BaseDatasetService):
             "orcid": current_user.profile.orcid,
         }
 
-        dsmetadata = dataset.ds_meta_data
+        try:
+            dsmetadata = dataset.ds_meta_data
 
-        new_authors = []
-        for author_data in [main_author] + form.get_authors():
-            author = self.author_repository.create(commit=False, ds_meta_data_id=dsmetadata.id, **author_data)
-            new_authors.append(author)
+            self.author_repository.session.query(self.author_repository.model).filter_by(
+                food_ds_meta_data_id=dsmetadata.id
+            ).delete()
+
+            new_authors = []
+            for author_data in [main_author] + form.get_authors():
+                author = self.author_repository.create(
+                    commit=False, 
+                    food_ds_meta_data_id=dsmetadata.id, 
+                    **author_data
+                )
+                new_authors.append(author)
             dsmetadata.authors = new_authors
 
-        updated_instance = self.update_dsmetadata(dsmetadata.id, **form.get_dsmetadata())
+            for f in dataset.files:
+                self.author_repository.session.query(self.author_repository.model).filter_by(
+                    food_meta_data_id=f.food_meta_data.id
+                ).delete()
+                self.repository.session.delete(f.food_meta_data)
+                self.repository.session.delete(f)
 
-        self.repository.session.commit()
-        if sync_fakenodo:
-            try:
-                self.fakenodo.publish(dataset)
-            except Exception as e:
-                # Optionally rollback or just report the error
-                self.repository.session.rollback()
-                return None, {"fakenodo_error": str(e)}
+            dataset.files.clear()
+            self.repository.session.flush()
+
+            new_files = []
+            for food_model_form in form.food_models:
+                food_metadata = FoodMetaData(**food_model_form.get_food_metadata())
+                self.repository.session.add(food_metadata)
+                self.repository.session.flush()
+
+                file_authors = []
+                for author_data in food_model_form.get_authors():
+                    file_author = self.author_repository.create(
+                        commit=False,
+                        food_meta_data_id=food_metadata.id,
+                        **author_data
+                    )
+                    file_authors.append(file_author)
+
+                file = self.food_model_repository.create(
+                    commit=False,
+                    data_set_id=dataset.id,
+                    food_meta_data_id=food_metadata.id
+                )
+                
+                new_files.append(file)
+
+            updated_instance = self.update_dsmetadata(dsmetadata.id, **form.get_dsmetadata())
+
+            self.repository.session.commit()
+            
             return updated_instance, None
+
+        except Exception as exc:
+            logger.error(f"Exception editing food dataset: {exc}")
+            self.repository.session.rollback()
+            raise exc
 
     def increment_view_count(self, dataset_id: int) -> bool:
         if not isinstance(dataset_id, int) or dataset_id <= 0:
