@@ -10,6 +10,8 @@ from selenium.webdriver.support.wait import WebDriverWait
 from core.environment.host import get_host_for_selenium_testing
 from core.selenium.common import close_driver, initialize_driver
 
+pytestmark = pytest.mark.selenium
+
 
 @pytest.mark.selenium
 def test_login_and_check_element():
@@ -47,10 +49,9 @@ def test_login_and_check_element():
     finally:
         # Close the browser
         close_driver(driver)
-<<<<<<< HEAD
-=======
 
 
+@pytest.mark.selenium
 def test_inserting_invalid_2fa_when_login():
     driver = initialize_driver()
     try:
@@ -70,6 +71,7 @@ def test_inserting_invalid_2fa_when_login():
         close_driver(driver)
 
 
+@pytest.mark.selenium
 def test_fail_activate_2fa():
     driver = initialize_driver()
     try:
@@ -91,10 +93,3 @@ def test_fail_activate_2fa():
         driver.find_element(By.ID, "submit").click()
     finally:
         close_driver(driver)
-
-
-# Call the test function
-test_login_and_check_element()
-test_inserting_invalid_2fa_when_login()
-test_fail_activate_2fa()
->>>>>>> fix-g2/57-fakenodo-connection

@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 
 from app import db
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.fixture(scope='module')
 def test_client(test_client):

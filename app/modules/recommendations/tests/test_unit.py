@@ -2,13 +2,14 @@ import pytest
 from datetime import datetime, timezone
 
 from app import db
-from app.modules.basedataset.models import BaseDataset, BaseAuthor, BaseDSMetrics, BasePublicationType, BaseDSMetaData
+from app.modules.basedataset.models import BaseDataset, BaseAuthor, BaseDSMetrics, BasePublicationType
 from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData
 from app.modules.auth.models import User
 from app.modules.recommendations.services import RecommendationService
 from app.modules.recommendations.similarities import SimilarityService
 import uuid
 
+pytestmark = pytest.mark.unit
 
 @pytest.fixture
 def user_with_datasets(test_client):
