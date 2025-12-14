@@ -87,17 +87,7 @@ document.getElementById('add_author').addEventListener('click', function () {
     authors.appendChild(newAuthor);
 });
 
-document.addEventListener('click', function (event) {
-    if (event.target && event.target.classList.contains('add_author_to_file')) {
-        let button = event.target;
-        let containerId = button.getAttribute('data-container');
-        let prefix = button.getAttribute('data-prefix'); // ej: food_models-0-
-        
-        let authorsContainer = document.getElementById(containerId);
-        let newAuthor = createAuthorBlock(amount_authors++, prefix);
-        authorsContainer.appendChild(newAuthor);
-    }
-});
+
 
 function show_loading() {
     document.getElementById("upload_button").style.display = "none";
