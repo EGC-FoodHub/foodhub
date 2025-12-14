@@ -13,6 +13,8 @@ from app.modules.basedataset.models import (
 from app.modules.basedataset.services import BaseDatasetService, BaseDSViewRecordService
 from app.modules.conftest import login
 
+pytestmark = pytest.mark.unit
+
 
 # --- Concrete implementation for Abstract BaseDataset for testing ---
 class ConcreteDSMetaData(BaseDSMetaData):

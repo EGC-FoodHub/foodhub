@@ -1,10 +1,12 @@
 import time
+import pytest
 
 from selenium.common.exceptions import NoSuchElementException
 
 from core.environment.host import get_host_for_selenium_testing
 from core.selenium.common import close_driver, initialize_driver
 
+pytestmark = pytest.mark.selenium
 
 def test_foodmodel_index():
 
@@ -30,7 +32,3 @@ def test_foodmodel_index():
 
         # Close the browser
         close_driver(driver)
-
-
-# Call the test function
-test_foodmodel_index()

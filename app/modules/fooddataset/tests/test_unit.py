@@ -18,6 +18,7 @@ from app.modules.fooddataset.models import (
     FoodNutritionalValue,
 )
 
+pytestmark = pytest.mark.unit
 
 @pytest.fixture
 def mock_user(tmp_path):
