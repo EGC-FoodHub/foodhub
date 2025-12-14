@@ -68,3 +68,21 @@ def test_metrics_after_upload():
 
     finally:
         close_driver(driver)
+ 
+
+def test_viewuserprofilep1():
+    driver = initialize_driver()
+
+    try:
+        driver.get("http://127.0.0.1:5000/")
+        driver.set_window_size(862, 1132)
+        driver.find_element(By.LINK_TEXT, "Login").click()
+        driver.find_element(By.ID, "email").click()
+        driver.find_element(By.ID, "email").send_keys("user1@example.com")
+        driver.find_element(By.ID, "password").click()
+        driver.find_element(By.ID, "password").send_keys("1234")
+        driver.find_element(By.ID, "submit").click()
+        driver.find_element(By.LINK_TEXT, "Food Dataset 4").click()
+        driver.find_element(By.LINK_TEXT, "Doe, Jane").click()
+    finally:
+        close_driver(driver)
