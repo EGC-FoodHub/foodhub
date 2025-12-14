@@ -127,6 +127,12 @@ def edit_doi_dataset(dataset_id):
     dataset = food_service.get_or_404(dataset_id)
 
     form = FoodDatasetForm()
+    
+    temp_folder = current_user.temp_folder()
+    os.makedirs(temp_folder, exist_ok=True)
+    
+    working_dir = os.getenv("WORKING_DIR", "")
+    dataset_dir = os.path.join(working_dir, "uploads", f"user_{current_user.id}", f"dataset_{dataset.id}")
 
     if request.method == "POST":
         if not form.food_models.entries[0].filename.data:
@@ -141,6 +147,25 @@ def edit_doi_dataset(dataset_id):
             result, errors, "basedataset.list_dataset", "Dataset updated", "dataset/edit_dataset.html", form
         )
     else:
+        for food_model in dataset.files:
+            for file in food_model.files:
+                src_file = os.path.join(dataset_dir, file.name)
+                dest_file = os.path.join(temp_folder, file.name)
+
+                if not os.path.exists(src_file):
+                    print(f"⚠️ El archivo original no existe: {file.name}")
+                    continue
+
+                if os.path.exists(dest_file):
+                    base_name, ext = os.path.splitext(file.name)
+                    i = 1
+                    while os.path.exists(os.path.join(temp_folder, f"{base_name} ({i}){ext}")):
+                        i += 1
+                    dest_file = os.path.join(temp_folder, f"{base_name} ({i}){ext}")
+
+                shutil.copy(src_file, dest_file)
+                print(f"✅ Archivo temporal recreado: {dest_file}")
+
         form.title.data = dataset.ds_meta_data.title
         form.desc.data = dataset.ds_meta_data.description
         form.publication_type.data = dataset.ds_meta_data.publication_type.value

@@ -295,14 +295,12 @@ function renderFoodModel(response) {
     listItem.appendChild(metaForm);
     fileList.appendChild(listItem);
 
-    // Añadir event listeners para botones de eliminar autor
     metaForm.querySelectorAll('.remove-author-file-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             this.closest('.author-row').remove();
         });
     });
 
-    // Añadir event listener para el botón de añadir autor
     metaForm.querySelector('.add_author_to_file').addEventListener('click', function() {
         addAuthorToFile(this.dataset.modelId, this.dataset.container);
     });
@@ -346,7 +344,6 @@ function addAuthorToFile(modelId, containerId) {
 
     container.appendChild(authorDiv);
 
-    // Añadir event listener al botón de eliminar
     authorDiv.querySelector('.remove-author-file-btn').addEventListener('click', function() {
         authorDiv.remove();
     });

@@ -135,12 +135,10 @@ class FoodDatasetService(BaseDatasetService):
         try:
             dsmetadata = dataset.ds_meta_data
 
-            # Eliminar autores anteriores del dataset
             self.author_repository.session.query(self.author_repository.model).filter_by(
                 food_ds_meta_data_id=dsmetadata.id
             ).delete()
 
-            # Crear nuevos autores para el dataset
             new_authors = []
             for author_data in [main_author] + form.get_authors():
                 author = self.author_repository.create(
@@ -151,28 +149,22 @@ class FoodDatasetService(BaseDatasetService):
                 new_authors.append(author)
             dsmetadata.authors = new_authors
 
-            # Eliminar food models anteriores y sus metadatos
             for f in dataset.files:
-                # Eliminar autores del food model
                 self.author_repository.session.query(self.author_repository.model).filter_by(
                     food_meta_data_id=f.food_meta_data.id
                 ).delete()
-                # Eliminar metadata y el food model
                 self.repository.session.delete(f.food_meta_data)
                 self.repository.session.delete(f)
 
             dataset.files.clear()
             self.repository.session.flush()
 
-            # Crear nuevos food models con sus autores
             new_files = []
             for food_model_form in form.food_models:
-                # Crear metadata del food model
                 food_metadata = FoodMetaData(**food_model_form.get_food_metadata())
                 self.repository.session.add(food_metadata)
                 self.repository.session.flush()
 
-                # Crear autores para este food model
                 file_authors = []
                 for author_data in food_model_form.get_authors():
                     file_author = self.author_repository.create(
@@ -182,7 +174,6 @@ class FoodDatasetService(BaseDatasetService):
                     )
                     file_authors.append(file_author)
 
-                # Crear el food model
                 file = self.food_model_repository.create(
                     commit=False,
                     data_set_id=dataset.id,
@@ -191,19 +182,15 @@ class FoodDatasetService(BaseDatasetService):
                 
                 new_files.append(file)
 
-            # Actualizar metadata del dataset
             updated_instance = self.update_dsmetadata(dsmetadata.id, **form.get_dsmetadata())
 
-            # Commit de todos los cambios
             self.repository.session.commit()
 
-            # Sincronizar con Fakenodo si está habilitado
             if sync_fakenodo:
                 try:
                     self.fakenodo.publish(dataset)
                 except Exception as e:
                     logger.error(f"Error syncing with Fakenodo: {e}")
-                    # No hacer rollback aquí, los datos locales ya están guardados
                     return updated_instance, {"fakenodo_error": str(e)}
             
             return updated_instance, None
