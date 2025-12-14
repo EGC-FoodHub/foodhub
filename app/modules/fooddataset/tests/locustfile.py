@@ -80,7 +80,7 @@ class FoodDatasetBehavior(TaskSet):
         }
 
         # 3. ZIP de prueba
-        zip_path = os.path.abspath("app/modules/dataset/zip_examples/food.zip")
+        zip_path = os.path.abspath("app/modules/fooddataset/food_examples.zip")
 
         if not os.path.exists(zip_path):
             print(f"⚠ ZIP not found: {zip_path}")
