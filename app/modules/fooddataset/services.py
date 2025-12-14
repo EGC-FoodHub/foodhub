@@ -2,8 +2,7 @@ import hashlib
 import logging
 import os
 import shutil
-from datetime import datetime
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
 from sqlalchemy import func
 
@@ -150,7 +149,7 @@ class FoodDatasetService(BaseDatasetService):
                 dataset["recent_downloads_week"] = dataset.get("recent_downloads", 0)
             if "recent_views_week" not in dataset:
                 dataset["recent_views_week"] = dataset.get("recent_views", 0)
-        
+
         return trending_data
 
     def get_trending_monthly(self, limit: int = 10) -> List[Dict[str, Any]]:
@@ -195,6 +194,7 @@ class FoodDatasetService(BaseDatasetService):
         """Cuenta el total de food models"""
         try:
             from app.modules.foodmodel.models import FoodModel
+
             total = self.repository.session.query(FoodModel).count()
             return total or 0
         except Exception as e:

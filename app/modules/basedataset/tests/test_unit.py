@@ -348,7 +348,7 @@ def test_route_doi_view_success(test_client):
         patch("app.modules.basedataset.routes.db.session.expunge"),
         patch(
             "app.modules.fooddataset.models.FoodDSMetaData"
-        ) as mock_food_metadata,  # Also mock this to prevent DB access and potential errors with Mock IDs
+        ),  # Also mock this to prevent DB access and potential errors with Mock IDs
     ):
 
         # Mock the metadata object and its dataset relationship

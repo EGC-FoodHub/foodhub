@@ -94,14 +94,10 @@ class FoodDatasetRepository(BaseDatasetRepository):
             # Subquery para descargas recientes
             downloads_subquery = (
                 self.session.query(
-                    FoodDatasetActivity.dataset_id,
-                    func.count(FoodDatasetActivity.id).label("recent_downloads")
+                    FoodDatasetActivity.dataset_id, func.count(FoodDatasetActivity.id).label("recent_downloads")
                 )
                 .filter(
-                    and_(
-                        FoodDatasetActivity.activity_type == "download",
-                        FoodDatasetActivity.timestamp >= cutoff_date
-                    )
+                    and_(FoodDatasetActivity.activity_type == "download", FoodDatasetActivity.timestamp >= cutoff_date)
                 )
                 .group_by(FoodDatasetActivity.dataset_id)
                 .subquery()
@@ -110,15 +106,9 @@ class FoodDatasetRepository(BaseDatasetRepository):
             # Subquery para vistas recientes
             views_subquery = (
                 self.session.query(
-                    FoodDatasetActivity.dataset_id,
-                    func.count(FoodDatasetActivity.id).label("recent_views")
+                    FoodDatasetActivity.dataset_id, func.count(FoodDatasetActivity.id).label("recent_views")
                 )
-                .filter(
-                    and_(
-                        FoodDatasetActivity.activity_type == "view",
-                        FoodDatasetActivity.timestamp >= cutoff_date
-                    )
-                )
+                .filter(and_(FoodDatasetActivity.activity_type == "view", FoodDatasetActivity.timestamp >= cutoff_date))
                 .group_by(FoodDatasetActivity.dataset_id)
                 .subquery()
             )
@@ -134,8 +124,8 @@ class FoodDatasetRepository(BaseDatasetRepository):
                 .outerjoin(views_subquery, self.model.id == views_subquery.c.dataset_id)
                 .order_by(
                     desc(
-                        func.coalesce(downloads_subquery.c.recent_downloads, 0) * 2 +
-                        func.coalesce(views_subquery.c.recent_views, 0)
+                        func.coalesce(downloads_subquery.c.recent_downloads, 0) * 2
+                        + func.coalesce(views_subquery.c.recent_views, 0)
                     )
                 )
                 .limit(limit)
@@ -146,7 +136,7 @@ class FoodDatasetRepository(BaseDatasetRepository):
             result = []
             for dataset, recent_downloads, recent_views in trending_datasets:
                 trending_dict = dataset.to_trending_dict()
-                
+
                 # Añadir estadísticas recientes específicas del período
                 if period_days == 7:
                     trending_dict["recent_downloads_week"] = recent_downloads
@@ -154,14 +144,16 @@ class FoodDatasetRepository(BaseDatasetRepository):
                 elif period_days == 30:
                     trending_dict["recent_downloads_month"] = recent_downloads
                     trending_dict["recent_views_month"] = recent_views
-                
+
                 # Añadir información adicional
-                trending_dict.update({
-                    "period_days": period_days,
-                    "period_label": "This Week" if period_days == 7 else "This Month",
-                    "trending_score": (recent_downloads * 2) + recent_views,
-                })
-                
+                trending_dict.update(
+                    {
+                        "period_days": period_days,
+                        "period_label": "This Week" if period_days == 7 else "This Month",
+                        "trending_score": (recent_downloads * 2) + recent_views,
+                    }
+                )
+
                 result.append(trending_dict)
 
             logger.info(f"Retrieved {len(result)} trending datasets for last {period_days} days")

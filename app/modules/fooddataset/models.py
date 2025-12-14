@@ -1,8 +1,14 @@
+import logging
 from datetime import datetime, timedelta
+
 from sqlalchemy import and_, event, func
+
 from app import db
 from app.modules.basedataset.models import BaseDataset, BaseDSMetaData
 from core.services.SearchService import SearchService
+
+logger = logging.getLogger(__name__)
+
 
 class FoodDataset(BaseDataset):
     __tablename__ = "food_dataset"
@@ -42,12 +48,8 @@ class FoodDataset(BaseDataset):
         try:
             self.view_count += 1
             self.last_viewed_at = datetime.now()
-            
-            activity = FoodDatasetActivity(
-                dataset_id=self.id, 
-                activity_type="view", 
-                timestamp=datetime.now()
-            )
+
+            activity = FoodDatasetActivity(dataset_id=self.id, activity_type="view", timestamp=datetime.now())
             db.session.add(activity)
             db.session.commit()
             return True
@@ -61,12 +63,8 @@ class FoodDataset(BaseDataset):
         try:
             self.download_count += 1
             self.last_downloaded_at = datetime.now()
-            
-            activity = FoodDatasetActivity(
-                dataset_id=self.id, 
-                activity_type="download", 
-                timestamp=datetime.now()
-            )
+
+            activity = FoodDatasetActivity(dataset_id=self.id, activity_type="download", timestamp=datetime.now())
             db.session.add(activity)
             db.session.commit()
             return True
@@ -138,7 +136,7 @@ class FoodDataset(BaseDataset):
             # Asegurarse de que ds_meta_data esté cargado
             if not self.ds_meta_data:
                 return None
-                
+
             return {
                 "id": self.id,
                 "title": self.ds_meta_data.title if self.ds_meta_data else "Sin título",
@@ -167,14 +165,10 @@ class FoodDataset(BaseDataset):
 
             downloads_subquery = (
                 db.session.query(
-                    FoodDatasetActivity.dataset_id, 
-                    func.count(FoodDatasetActivity.id).label("recent_downloads")
+                    FoodDatasetActivity.dataset_id, func.count(FoodDatasetActivity.id).label("recent_downloads")
                 )
                 .filter(
-                    and_(
-                        FoodDatasetActivity.activity_type == "download", 
-                        FoodDatasetActivity.timestamp >= cutoff_date
-                    )
+                    and_(FoodDatasetActivity.activity_type == "download", FoodDatasetActivity.timestamp >= cutoff_date)
                 )
                 .group_by(FoodDatasetActivity.dataset_id)
                 .subquery()
@@ -182,15 +176,9 @@ class FoodDataset(BaseDataset):
 
             views_subquery = (
                 db.session.query(
-                    FoodDatasetActivity.dataset_id, 
-                    func.count(FoodDatasetActivity.id).label("recent_views")
+                    FoodDatasetActivity.dataset_id, func.count(FoodDatasetActivity.id).label("recent_views")
                 )
-                .filter(
-                    and_(
-                        FoodDatasetActivity.activity_type == "view", 
-                        FoodDatasetActivity.timestamp >= cutoff_date
-                    )
-                )
+                .filter(and_(FoodDatasetActivity.activity_type == "view", FoodDatasetActivity.timestamp >= cutoff_date))
                 .group_by(FoodDatasetActivity.dataset_id)
                 .subquery()
             )
@@ -215,49 +203,12 @@ class FoodDataset(BaseDataset):
                 dict_data = dataset.to_trending_dict()
                 if dict_data:  # Solo agregar si no es None
                     result.append(dict_data)
-            
+
             return result
-            
+
         except Exception as e:
             logger.error(f"Error getting trending datasets: {e}")
             return []
-
-    @staticmethod
-    def get_trending(period_days=7, limit=10):
-
-        cutoff_date = datetime.now() - timedelta(days=period_days)
-
-        downloads_subquery = (
-            db.session.query(
-                FoodDatasetActivity.dataset_id, func.count(FoodDatasetActivity.id).label("recent_downloads")
-            )
-            .filter(and_(FoodDatasetActivity.activity_type == "download", FoodDatasetActivity.timestamp >= cutoff_date))
-            .group_by(FoodDatasetActivity.dataset_id)
-            .subquery()
-        )
-
-        views_subquery = (
-            db.session.query(FoodDatasetActivity.dataset_id, func.count(FoodDatasetActivity.id).label("recent_views"))
-            .filter(and_(FoodDatasetActivity.activity_type == "view", FoodDatasetActivity.timestamp >= cutoff_date))
-            .group_by(FoodDatasetActivity.dataset_id)
-            .subquery()
-        )
-
-        trending_datasets = (
-            db.session.query(FoodDataset)
-            .outerjoin(downloads_subquery, FoodDataset.id == downloads_subquery.c.dataset_id)
-            .outerjoin(views_subquery, FoodDataset.id == views_subquery.c.dataset_id)
-            .order_by(
-                (
-                    func.coalesce(downloads_subquery.c.recent_downloads, 0) * 2
-                    + func.coalesce(views_subquery.c.recent_views, 0)
-                ).desc()
-            )
-            .limit(limit)
-            .all()
-        )
-
-        return [dataset.to_trending_dict() for dataset in trending_datasets]
 
 
 class FoodDSMetaData(BaseDSMetaData):
