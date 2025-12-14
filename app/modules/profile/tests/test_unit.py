@@ -6,14 +6,9 @@ import pytest
 from app import db
 from app.modules.auth.models import User
 from app.modules.conftest import login, logout
-from app.modules.dataset.models import DataSet, DSMetaData, PublicationType
 from app.modules.profile.models import UserProfile
-<<<<<<< HEAD
-
-pytestmark = pytest.mark.unit
-=======
-from app.modules.basedataset.models import BaseDSMetaData, BaseDataset, BasePublicationType
->>>>>>> fix-g2/57-fakenodo-connection
+from app.modules.basedataset.models import BaseDSMetaData, BaseDataset, BasePublicationType, BaseDatasetVersion
+from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData
 
 
 @pytest.fixture(scope="module")
@@ -33,10 +28,8 @@ def test_client(test_client):
 
     yield test_client
 
-
 @pytest.fixture
 def user_with_datasets(test_client):
-
     unique_email = f"dataset_user_{uuid.uuid4()}@example.com"
     user = User(email=unique_email, password="pass1234")
     db.session.add(user)
@@ -46,35 +39,33 @@ def user_with_datasets(test_client):
     db.session.add(profile)
 
     for i in range(2):
-        meta = BaseDSMetaData(
-            title=f"Dataset {i}", 
-            description=f"Desc {i}",
-            publication_type=BasePublicationType.JOURNAL_ARTICLE,
-            tags="test"
+        meta = FoodDSMetaData(
+            title=f"Food Dataset {i}",
+            description=f"Nutritional Data {i}",
+            publication_type=BasePublicationType.JOURNAL_ARTICLE
         )
         db.session.add(meta)
-        db.session.flush() 
-
-        dataset = BaseDataset(
-            user_id=user.id, 
-            ds_meta_data_id=meta.id, 
-            created_at=datetime.utcnow()
+        db.session.flush()
+        dataset = FoodDataset(
+            user_id=user.id,
+            ds_meta_data_id=meta.id,
+            view_count=10,
+            download_count=5
         )
         db.session.add(dataset)
+        db.session.flush()
+        version = BaseDatasetVersion(
+            dataset_id=dataset.id,
+            version_number=f"1.{i}",
+            title=meta.title,
+            description=meta.description,
+            created_by_id=user.id,
+            version_type="base"
+        )
+        db.session.add(version)
 
     db.session.commit()
-
-    yield user.id
-
-    try:
-        BaseDataset.query.filter_by(user_id=user.id).delete()
-        UserProfile.query.filter_by(user_id=user.id).delete()
-        User.query.filter_by(id=user.id).delete()
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-        print(f"Error en cleanup: {e}")
-
+    yield user
 
 def test_edit_profile_page_get(test_client):
     """
@@ -98,12 +89,21 @@ def test_user_profile_not_found(test_client):
     assert response.status_code == 404, "Un perfil inexistente debería devolver 404."
 
 
-def test_user_profile_view(test_client, user_with_BaseDatasets):
+def test_my_profile_authenticated(test_client, user_with_datasets):
+    # Log in the user so current_user is populated
+    with test_client.session_transaction() as sess:
+        sess['user_id'] = user_with_datasets.id
+    
+    response = test_client.get("/profile/summary")
+    assert response.status_code == 200 or response.status_code == 302
+
+
+def test_user_profile_view(test_client, user_with_datasets):
     """
     Verifica que la vista /profile/<id> muestra correctamente
     el perfil y los BaseDatasets.
     """
-    user_id = user_with_BaseDatasets
+    user_id = user_with_datasets.id
     response = test_client.get(f"/profile/{user_id}")
     
     assert response.status_code == 200, "La vista de perfil público no respondió con 200 OK."
@@ -111,18 +111,16 @@ def test_user_profile_view(test_client, user_with_BaseDatasets):
 
     assert "Test" in response_content, "El nombre del perfil no aparece."
     assert "User" in response_content, "El apellido del perfil no aparece."
-
-
-    assert "BaseDataset 0" in response_content or "BaseDataset 1" in response_content, \
+    assert "Food Dataset 0" in response_content or "BaseDataset 1" in response_content, \
         "Los BaseDatasets del usuario no aparecen en la página."
     
 
-def test_user_profile_view2(test_client, user_with_BaseDatasets):
+def test_user_profile_view2(test_client, user_with_datasets):
     """
     Test de diagnóstico para encontrar por qué da 404.
     """
-    user_id = user_with_BaseDatasets
-    print(f"\n--- DIAGNÓSTICO ---")
+    user_id = int(user_with_datasets.get_id())
+    print("\n--- DIAGNÓSTICO ---")
     print(f"1. ID del usuario creado: {user_id}")
     
     # Comprobamos si el usuario existe en la DB ahora mismo

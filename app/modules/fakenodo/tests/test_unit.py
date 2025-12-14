@@ -76,7 +76,7 @@ def test_add_files_to_record(test_client):
         f"/fakenodo/records/{record_id}/files", data=json.dumps(files_data), content_type="application/json"
     )
 
-    assert response.status_code == 200
+    assert response.status_code == 201
     result = response.get_json()
     assert result["status"] == "files added"
     assert any(f["filename"] == "test.txt" for f in result["files"])

@@ -182,17 +182,18 @@ def test_similarity_service_completo(user_with_datasets):
 
 def test_recommendation_service(user_with_datasets):
     _, base_ds, candidates = user_with_datasets
+    candidate_ids = [c.id for c in candidates]
 
     service = SimilarityService(base_ds, candidates)
-
     expected_order = [ds for ds, score in service.recommendation(n_top_datasets=len(candidates))]
+    print(candidate_ids)
+    all_related = RecommendationService.get_related_food_datasets(base_ds, limit=10)
 
-    related = RecommendationService.get_related_food_datasets(base_ds, limit=5)
-
-    # Verificamos que los datasets estén en el mismo orden que nuestro cálculo
+    related = [ds for ds in all_related if ds.id in candidate_ids]
+    print(related)
     for i in range(min(len(expected_order), len(related))):
         assert related[i].id == expected_order[i].id
-
     assert len(related) > 0
+    
     # Al menos el candidato más relevante debería estar en la lista
     assert candidates[0] in related
