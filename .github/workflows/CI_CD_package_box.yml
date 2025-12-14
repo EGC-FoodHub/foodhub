@@ -23,9 +23,9 @@ jobs:
           curl -L -o latest_box.box ${{ steps.get_asset.outputs.url }}
 
       - name: Push to Vagrant Cloud
-        uses: hashicorp/vagrant-cloud-action@v1
+        uses: hashicorp/vagrant-cloud-action@v2
         with:
-          account: "TU_USUARIO_VAGRANT_CLOUD"
+          account: "NQP9307"
           box: "foodhub"
           version: "${{ github.event.release.tag_name }}"
           provider: "virtualbox"
