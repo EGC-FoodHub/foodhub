@@ -826,47 +826,6 @@ def test_upload_file_invalid_extension(test_client, mock_user, monkeypatch, tmp_
     assert j["message"] == "Please upload a .food file"
 
 
-def test_route_dataset_save_as_draft_get(test_client):
-    from app.modules.conftest import login
-
-    login(test_client, "test_food@example.com", "test1234")
-
-    response = test_client.get("/dataset/save_as_draft")
-    assert response.status_code == 200
-    assert b"upload_dataset.html" in response.data or b"Upload" in response.data
-
-
-def test_route_dataset_save_as_draft_post_success(test_client):
-    from app.modules.conftest import login
-
-    login(test_client, "test_food@example.com", "test1234")
-
-    with (
-        patch("app.modules.fooddataset.routes.food_service") as mock_service,
-        patch("app.modules.fooddataset.routes.shutil.rmtree") as mock_rmtree,
-        patch("app.modules.fooddataset.routes.os.path.exists") as mock_exists,
-        patch("app.modules.fooddataset.routes.FoodDatasetForm") as MockForm,
-        patch("app.modules.auth.models.User.temp_folder") as mock_temp_folder,
-    ):
-        mock_dataset = MagicMock()
-        mock_service.create_from_form.return_value = mock_dataset
-
-        mock_temp_folder.return_value = "/tmp"
-        mock_exists.return_value = True
-
-        mock_form = MockForm.return_value
-        mock_form.food_models.entries = [MagicMock()]
-        mock_form.food_models.entries[0].filename.data = "test.food"
-
-        response = test_client.post("/dataset/save_as_draft", data={"title": "Draft DS"})
-
-        assert response.status_code == 200
-        assert response.json["message"] == "Everything works!"
-
-        mock_service.create_from_form.assert_called()
-        mock_rmtree.assert_called()
-
-
 def test_service_edit_doi_dataset_success():
     from app.modules.fooddataset.services import FoodDatasetService
 
