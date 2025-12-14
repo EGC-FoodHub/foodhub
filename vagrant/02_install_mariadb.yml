@@ -8,6 +8,7 @@
         name:
           - mariadb-server
           - python3-pymysql
+        state: present
         update_cache: yes
 
     - name: Start and enable MariaDB service
