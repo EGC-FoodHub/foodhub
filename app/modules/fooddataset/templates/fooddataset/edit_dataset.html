@@ -1,35 +1,34 @@
 {% extends "base_template.html" %}
 
-{% block title %}Upload Food Dataset{% endblock %}
+{% block title %}Edit Food Dataset{% endblock %}
 
 {% block content %}
 
-    <h1 class="h2 mb-3"><b>Upload</b> Food Dataset</h1>
+<h1 class="h2 mb-3"><b>Edit</b> Food Dataset</h1>
 
-    <div class="row">
-        <div class="col-12 mb-3">
-            <div class="alert alert-warning" role="alert" id="test_fakenodo_connection_error" style="display: none">
-                <div class="alert-message">
-                    <h4 class="alert-heading"><i class="align-middle" data-feather="alert-triangle"></i> Fakenodo Connection Issue</h4>
-                    <p class="p-0 m-0">
-                        There seems to be a problem with the Fakenodo API. We will save your files locally and synchronize later.
-                    </p>
-                </div>
+<div class="row">
+    <div class="col-12 mb-3">
+        <div class="alert alert-warning" role="alert" id="test_fakenodo_connection_error" style="display: none">
+            <div class="alert-message">
+                <h4 class="alert-heading"><i class="align-middle" data-feather="alert-triangle"></i> Fakenodo Connection Issue</h4>
+                <p class="p-0 m-0">
+                    There seems to be a problem with the Fakenodo API. We will save your files locally and synchronize later.
+                </p>
             </div>
         </div>
     </div>
+</div>
 
-    <div class="row">
-        <div class="col-xl-6 col-lg-12 col-md-12 col-sm-12">
-            <form method="POST" action="{{ url_for('fooddataset.edit_doi_dataset', dataset_id=dataset.id) }}" class="needs-validation" novalidate>
-                <div id="basic_info_form">
-                    {{ form.hidden_tag() }}
+<div class="row">
+    <div class="col-xl-6 col-lg-12 col-md-12 col-sm-12">
+        <form method="POST" action="{{ url_for('fooddataset.edit_doi_dataset', dataset_id=dataset.id) }}" class="needs-validation" novalidate>
+            <div id="basic_info_form">
+                {{ form.hidden_tag() }}
 
-                    <div class="row">
-                        <div class="col-12">
-                            <h1 class="h3 mb-3">Basic info</h1>
-                            <div class="row" style="padding-left: 2rem">
-                            
+                <div class="row">
+                    <div class="col-12">
+                        <h1 class="h3 mb-3">Basic info</h1>
+                        <div class="row" style="padding-left: 2rem">
                             <div class="col-12 mb-3">
                                 {{ form.title.label(class="form-label") }} *
                                 {{ form.title(class="form-control") }}
@@ -54,6 +53,7 @@
                                 {{ form.tags.label(class="form-label") }}
                                 {{ form.tags(class="form-control") }}
                             </div>
+
                             <div class="col-12 mb-3 mt-3">
                                 <label class="form-check">
                                     <input class="form-check-input" type="checkbox" id="sync_fakenodo" name="sync_fakenodo">
@@ -66,245 +66,376 @@
 
                         <h1 class="h3 mb-3 mt-4">Authors</h1>
                         <div class="row" style="padding-left: 2rem">
-                            <div class="col-12">
-                                <div class="mb-3">
-                                    <div id="authors">
-                                        {% for subform in form.authors %}
-                                        <div class="row author" 
-                                             {% if not loop.first %}
-                                                style="border:2px dotted #ccc;border-radius:10px;padding:10px; background-color: white"
-                                            {% endif %}
-                                        >
-                                            <div class="col-lg-6 col-12 mb-3">
-                                                {{ subform.form.name.label(class="form-label") }}
-                                                  {{ subform.form.name(class="form-control", disabled=loop.first) }}
-                                                {% for error in subform.name.errors %}
-                                                    <span style="color: red;">{{ error }}</span>
-                                                {% endfor %}
-                                            </div>
-
-                                              <div class="col-lg-6 col-12 mb-3">
-                                                {{ subform.form.affiliation.label(class="form-label") }}
-                                                {{ subform.form.affiliation(class="form-control", disabled=loop.first) }}
-                                                {% for error in subform.name.errors %}
-                                                    <span style="color: red;">{{ error }}</span>
-                                                {% endfor %}
-                                            </div>
-
-                                            <div class="col-lg-6 col-12 mb-3">
-                                                {{ subform.orcid.label(class="form-label") }}
-                                                {{ subform.orcid(class="form-control", disabled=loop.first) }}
-                                                {% for error in subform.orcid.errors %}
-                                                    <span style="color: red;">{{ error }}</span>
-                                                {% endfor %}
-                                            </div>
-
-                                            {% if not loop.first %}
-                                            <div class="col-12 mb-2">
-                                                <button type="button" class="btn btn-danger btn-sm remove-author-btn">
-                                                    Remove author
-                                                </button>
-                                            </div>
-                                            {% endif %}
-                                        </div>
-                                        {% endfor %}
-                                    </div>
-                                    <div class="col-12">
-                                        <div id="authors"></div>
-                                        <button type="button" class="btn btn-secondary mt-2" id="add_author">Add author</button>
-                                    </div>
-                                </div>
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Main Author (You)</label>
+                                <input class="form-control" disabled value="{{ current_user.profile.surname }}, {{ current_user.profile.name }}">
                             </div>
-                    </div>
+
+                            <div class="col-12">
+                                <div id="authors">
+                                    {% for subform in form.authors %}
+                                    <div class="row author" 
+                                         {% if not loop.first %}
+                                            style="border:2px dotted #ccc;border-radius:10px;padding:10px; background-color: white"
+                                         {% endif %}
+                                    >
+                                        <div class="col-lg-6 col-12 mb-3">
+                                            {{ subform.form.name.label(class="form-label") }}
+                                            {{ subform.form.name(class="form-control", disabled=loop.first) }}
+                                            {% for error in subform.name.errors %}
+                                                <span style="color: red;">{{ error }}</span>
+                                            {% endfor %}
+                                        </div>
+
+                                        <div class="col-lg-6 col-12 mb-3">
+                                            {{ subform.form.affiliation.label(class="form-label") }}
+                                            {{ subform.form.affiliation(class="form-control", disabled=loop.first) }}
+                                            {% for error in subform.affiliation.errors %}
+                                                <span style="color: red;">{{ error }}</span>
+                                            {% endfor %}
+                                        </div>
+
+                                        <div class="col-lg-6 col-12 mb-3">
+                                            {{ subform.orcid.label(class="form-label") }}
+                                            {{ subform.orcid(class="form-control", disabled=loop.first) }}
+                                            {% for error in subform.orcid.errors %}
+                                                <span style="color: red;">{{ error }}</span>
+                                            {% endfor %}
+                                        </div>
+
+                                        {% if not loop.first %}
+                                        <div class="col-12 mb-2">
+                                            <button type="button" class="btn btn-danger btn-sm remove-author-btn">
+                                                Remove author
+                                            </button>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <button type="button" class="btn btn-secondary mt-2" id="add_author">Add author</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
+                <div id="uploaded_models_form" 
+                    style="position: absolute; top: 0; right: 0; width: 32.5%; margin-top: 425px; margin-right: 170px;">
+                    <ul class="mt-2" id="file-list" style="list-style: none; padding: 0;"></ul>
                 </div>
-                <div class="row form-group">
-                
-                    <div class="col-12 mt-3">
-                        <button id="edit_dataset_button" class="btn btn-primary mt-2">
+                <input type="hidden" name="food_models_data" id="food_models_data">
+                <div class="row form-group mt-4">
+                    <div class="col-12 mt-3 text-start">
+                        <button type="submit" id="edit_dataset_button" class="btn btn-primary mt-2">
                             Update
                         </button>
                     </div>
-
                 </div>
-            </form>
-        </div>
-
-        <div class="col-xl-6 col-lg-12 col-md-12 col-sm-12">
-            <h1 class="h3 mb-3 mt-2">Food Models (.food)</h1>
-            <div id="uploaded_models_form" style="padding-left: 2rem">
-                
-                <form action="{{ url_for('fooddataset.upload_file_temp') }}" class="dropzone" id="myDropzone">
-                    <div class="dz-message" data-dz-message><span>Drop .food files here to upload</span></div>
-                </form>
-                
-                <span class="text-danger" id="alerts" style="display: none"></span>
-                <ul class="mt-2" id="file-list" style="list-style: none; padding: 0;"></ul>
             </div>
-        </div>
+        </form>
     </div>
 
-    <div class="row" id="upload_dataset" style="display: none">
-        <div class="col-12">
-            <hr>
-            <div style="padding-left: 2rem">
-                <label class="form-check mb-3">
-                    <input id="agreeCheckbox" class="form-check-input" type="checkbox">
-                    <span class="form-check-label">
-                        I agree to upload my food models to Fakenodo (Open Science).
-                    </span>
-                </label>
+    <div class="col-xl-6 col-lg-12 col-md-12 col-sm-12">
+        <h1 class="h3 mb-3 mt-4">Food Models (.food)</h1>
+        <form action="{{ url_for('fooddataset.upload_file_temp') }}" class="dropzone" id="myDropzone">
+            <div class="dz-message" data-dz-message><span>Drop .food files here to upload</span></div>
+        </form>
+        <span class="text-danger" id="alerts" style="display: none"></span>
+    </div>
+</div>
 
-                <button id="upload_button" class="btn btn-primary" disabled>
-                    <i data-feather="upload" class="me-1"></i> Upload Dataset
-                </button>
-                
-                <div id="loading" style="display: none" class="mt-2">
-                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
-                    Uploading dataset, please wait...
-                </div>
-                
-                <div id="upload_error" class="text-danger mt-2" style="display: none"></div>
+<div class="row" id="upload_dataset" style="display: none">
+    <div class="col-12">
+        <hr>
+        <div style="padding-left: 2rem">
+            <label class="form-check mb-3">
+                <input id="agreeCheckbox" class="form-check-input" type="checkbox">
+                <span class="form-check-label">
+                    I agree to upload my food models to Fakenodo (Open Science).
+                </span>
+            </label>
+
+            <button id="upload_button" class="btn btn-primary" disabled>
+                <i data-feather="upload" class="me-1"></i> Upload Dataset
+            </button>
+
+            <div id="loading" style="display: none" class="mt-2">
+                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                Uploading dataset, please wait...
             </div>
+
+            <div id="upload_error" class="text-danger mt-2" style="display: none"></div>
         </div>
     </div>
+</div>
 
-    <script>
-        Dropzone.options.myDropzone = {
-            url: "{{ url_for('fooddataset.upload_file_temp') }}",
-            paramName: 'file',
-            maxFilesize: 10,
-            acceptedFiles: '.food',
-            init: function () {
-                let fileList = document.getElementById('file-list');
-                let alerts = document.getElementById('alerts');
+<script>
+let foodModelCounter = 0;
 
-                this.on('success', function (file, response) {
-                    show_upload_dataset(); 
+function renderFoodModel(response) {
+    show_upload_dataset();
+    let fileList = document.getElementById('file-list');
+    let formUniqueId = foodModelCounter++;
 
-                    let formUniqueId = generateIncrementalId(); 
+    let listItem = document.createElement('li');
+    listItem.className = "mb-3 p-3 border rounded bg-light";
+    listItem.setAttribute('data-model-id', formUniqueId);
 
-                    let listItem = document.createElement('li');
-                    listItem.className = "mb-3 p-3 border rounded bg-light";
-                    
-                    let header = document.createElement('div');
-                    header.className = "d-flex justify-content-between align-items-center mb-2";
-                    
-                    let leftContainer = document.createElement('div');
-                    leftContainer.className = "d-flex align-items-center";
-                    
-                    let title = document.createElement('strong');
-                    title.textContent = response.filename;
-                    
-                    let statusSpan = document.createElement('span');
-                    statusSpan.id = `check_status_${formUniqueId}`;
-                    statusSpan.className = "ms-3";
-                    
-                    leftContainer.appendChild(title);
-                    leftContainer.appendChild(statusSpan);
+    let header = document.createElement('div');
+    header.className = "d-flex justify-content-between align-items-center mb-2";
 
-                    let btnGroup = document.createElement('div');
-                    
-                    let toggleBtn = document.createElement('button');
-                    toggleBtn.className = "btn btn-sm btn-outline-secondary me-2";
-                    toggleBtn.innerHTML = "Edit Metadata";
-                    toggleBtn.type = "button";
-                    
-                    let deleteBtn = document.createElement('button');
-                    deleteBtn.className = "btn btn-sm btn-outline-danger";
-                    deleteBtn.innerHTML = "Delete";
-                    deleteBtn.type = "button";
+    let leftContainer = document.createElement('div');
+    leftContainer.className = "d-flex align-items-center";
 
-                    btnGroup.appendChild(toggleBtn);
-                    btnGroup.appendChild(deleteBtn);
+    let title = document.createElement('strong');
+    title.textContent = response.filename;
+    leftContainer.appendChild(title);
 
-                    header.appendChild(leftContainer);
-                    header.appendChild(btnGroup);
+    let btnGroup = document.createElement('div');
 
-                    let metaForm = document.createElement('div');
-                    metaForm.style.display = "none";
-                    metaForm.className = "mt-2 pt-2 border-top";
-                    
-                    metaForm.innerHTML = `
-                        <input type="hidden" name="food_models-${formUniqueId}-filename" value="${response.filename}">
-                        
-                        <div class="mb-2">
-                            <label class="form-label small">Title</label>
-                            <input type="text" class="form-control form-control-sm" name="food_models-${formUniqueId}-title">
+    let toggleBtn = document.createElement('button');
+    toggleBtn.type = "button";
+    toggleBtn.className = "btn btn-sm btn-outline-secondary me-2";
+    toggleBtn.innerHTML = "Edit Metadata";
+
+    let deleteBtn = document.createElement('button');
+    deleteBtn.type = "button";
+    deleteBtn.className = "btn btn-sm btn-outline-danger";
+    deleteBtn.innerHTML = "Delete";
+
+    btnGroup.appendChild(toggleBtn);
+    btnGroup.appendChild(deleteBtn);
+
+    header.appendChild(leftContainer);
+    header.appendChild(btnGroup);
+
+    let metaForm = document.createElement('div');
+    metaForm.style.display = "none";
+    metaForm.className = "mt-2 pt-2 border-top";
+
+    // Generar los campos de autores
+    let authorsHTML = '';
+    if (response.authors && response.authors.length > 0) {
+        response.authors.forEach((author, index) => {
+            authorsHTML += `
+                <div class="author-row mb-2 p-2 border rounded" data-author-index="${index}">
+                    <div class="row">
+                        <div class="col-12 mb-1">
+                            <input type="text" class="form-control form-control-sm" 
+                                   name="food_models-${formUniqueId}-authors-${index}-name" 
+                                   value="${author.name || ''}" 
+                                   placeholder="Name">
                         </div>
-                        <div class="mb-2">
-                            <label class="form-label small">Description</label>
-                            <textarea class="form-control form-control-sm" rows="2" name="food_models-${formUniqueId}-description"></textarea>
+                        <div class="col-12 mb-1">
+                            <input type="text" class="form-control form-control-sm" 
+                                   name="food_models-${formUniqueId}-authors-${index}-affiliation" 
+                                   value="${author.affiliation || ''}" 
+                                   placeholder="Affiliation">
                         </div>
-                        <div class="mb-2">
-                            <label class="form-label small">Tags</label>
-                            <input type="text" class="form-control form-control-sm" name="food_models-${formUniqueId}-tags">
+                        <div class="col-12 mb-1">
+                            <input type="text" class="form-control form-control-sm" 
+                                   name="food_models-${formUniqueId}-authors-${index}-orcid" 
+                                   value="${author.orcid || ''}" 
+                                   placeholder="ORCID">
                         </div>
-                        
-                        <div class="mb-2">
-                            <label class="form-label small">Authors</label>
-                            <div id="food_models-${formUniqueId}-authors_container"></div>
-                            <button type="button" class="btn btn-sm btn-secondary add_author_to_file"
-                                    data-container="food_models-${formUniqueId}-authors_container"
-                                    data-prefix="food_models-${formUniqueId}-">
-                                Add Author
+                        <div class="col-12">
+                            <button type="button" class="btn btn-sm btn-danger remove-author-file-btn">
+                                Remove Author
                             </button>
                         </div>
-                    `;
-
-                    toggleBtn.addEventListener('click', () => {
-                        metaForm.style.display = metaForm.style.display === "none" ? "block" : "none";
-                    });
-
-                    deleteBtn.addEventListener('click', () => {
-                        fetch("{{ url_for('fooddataset.delete_file_temp') }}", {
-                            method: 'POST',
-                            headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify({file: response.filename})
-                        });
-                        listItem.remove();
-                        this.removeFile(file);
-                        if (this.files.length === 0) {
-                            document.getElementById("upload_dataset").style.display = "none";
-                        }
-                    });
-                    
-                    listItem.appendChild(header);
-                    listItem.appendChild(metaForm);
-                    fileList.appendChild(listItem);
-
-                    if (typeof validateTempFile === 'function') {
-                        validateTempFile(response.filename, `check_status_${formUniqueId}`);
-                    }
-                });
-
-                this.on('error', function (file, response) {
-                    let p = document.createElement('p');
-                    p.textContent = "Error: " + (response.message || file.name);
-                    alerts.appendChild(p);
-                    alerts.style.display = 'block';
-                });
-            }
-        };
-
-        document.getElementById('agreeCheckbox').addEventListener('change', function() {
-            document.getElementById('upload_button').disabled = !this.checked;
+                    </div>
+                </div>
+            `;
         });
+    }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.remove-author-btn').forEach(btn => {
-                btn.addEventListener('click', function(event) {
-                    event.preventDefault();
-                    this.closest('.author').remove();
-                });
+    metaForm.innerHTML = `
+        <input type="hidden" name="food_models-${formUniqueId}-filename" value="${response.filename}">
+        <div class="mb-2">
+            <label class="form-label small">Title</label>
+            <input type="text" class="form-control form-control-sm" name="food_models-${formUniqueId}-title" value="${response.title || ''}">
+        </div>
+        <div class="mb-2">
+            <label class="form-label small">Description</label>
+            <textarea class="form-control form-control-sm" rows="2" name="food_models-${formUniqueId}-description">${response.description || ''}</textarea>
+        </div>
+        <div class="mb-2">
+            <label class="form-label small">Tags</label>
+            <input type="text" class="form-control form-control-sm" name="food_models-${formUniqueId}-tags" value="${response.tags || ''}">
+        </div>
+        <div class="mb-2">
+            <label class="form-label small">Authors</label>
+            <div id="food_models-${formUniqueId}-authors_container">
+                ${authorsHTML}
+            </div>
+            <button type="button" class="btn btn-sm btn-secondary add_author_to_file"
+                    data-container="food_models-${formUniqueId}-authors_container"
+                    data-model-id="${formUniqueId}">
+                Add Author
+            </button>
+        </div>
+    `;
+
+    toggleBtn.addEventListener('click', () => {
+        metaForm.style.display = metaForm.style.display === "none" ? "block" : "none";
+    });
+
+    deleteBtn.addEventListener('click', () => {
+        fetch("{{ url_for('fooddataset.delete_file_temp') }}", {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({file: response.filename})
+        });
+        listItem.remove();
+    });
+
+    listItem.appendChild(header);
+    listItem.appendChild(metaForm);
+    fileList.appendChild(listItem);
+
+    metaForm.querySelectorAll('.remove-author-file-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            this.closest('.author-row').remove();
+        });
+    });
+
+    metaForm.querySelector('.add_author_to_file').addEventListener('click', function() {
+        addAuthorToFile(this.dataset.modelId, this.dataset.container);
+    });
+}
+
+function addAuthorToFile(modelId, containerId) {
+    const container = document.getElementById(containerId);
+    const currentAuthors = container.querySelectorAll('.author-row');
+    const newIndex = currentAuthors.length;
+
+    const authorDiv = document.createElement('div');
+    authorDiv.className = "author-row mb-2 p-2 border rounded";
+    authorDiv.setAttribute('data-author-index', newIndex);
+    authorDiv.innerHTML = `
+        <div class="row">
+            <div class="col-12 mb-1">
+                <input type="text" class="form-control form-control-sm" 
+                       name="food_models-${modelId}-authors-${newIndex}-name" 
+                       value="" 
+                       placeholder="Name">
+            </div>
+            <div class="col-12 mb-1">
+                <input type="text" class="form-control form-control-sm" 
+                       name="food_models-${modelId}-authors-${newIndex}-affiliation" 
+                       value="" 
+                       placeholder="Affiliation">
+            </div>
+            <div class="col-12 mb-1">
+                <input type="text" class="form-control form-control-sm" 
+                       name="food_models-${modelId}-authors-${newIndex}-orcid" 
+                       value="" 
+                       placeholder="ORCID">
+            </div>
+            <div class="col-12">
+                <button type="button" class="btn btn-sm btn-danger remove-author-file-btn">
+                    Remove Author
+                </button>
+            </div>
+        </div>
+    `;
+
+    container.appendChild(authorDiv);
+
+    authorDiv.querySelector('.remove-author-file-btn').addEventListener('click', function() {
+        authorDiv.remove();
+    });
+}
+
+Dropzone.options.myDropzone = {
+    url: "{{ url_for('fooddataset.upload_file_temp') }}",
+    paramName: 'file',
+    maxFilesize: 10,
+    acceptedFiles: '.food',
+    init: function () {
+        let dz = this;
+        this.on('success', function(file, response) {
+            renderFoodModel({ filename: response.filename, authors: [] });
+        });
+        this.on('error', function(file, response) {
+            let alerts = document.getElementById('alerts');
+            let p = document.createElement('p');
+            p.textContent = "Error: " + (response.message || file.name);
+            alerts.appendChild(p);
+            alerts.style.display = 'block';
+        });
+    }
+};
+
+document.getElementById('agreeCheckbox').addEventListener('change', function() {
+    document.getElementById('upload_button').disabled = !this.checked;
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.remove-author-btn').forEach(btn => {
+        btn.addEventListener('click', function(event) {
+            event.preventDefault();
+            this.closest('.author').remove();
+        });
+    });
+
+    {% for food_model in dataset.files %}
+    renderFoodModel({
+        filename: "{{ food_model.food_meta_data.food_filename }}",
+        title: "{{ food_model.food_meta_data.title | e }}",
+        description: "{{ food_model.food_meta_data.description | e }}",
+        tags: "{{ food_model.food_meta_data.tags | e }}",
+        authors: [
+            {% for author in food_model.food_meta_data.authors %}
+            {
+                name: "{{ author.name | e }}",
+                affiliation: "{{ author.affiliation | e }}",
+                orcid: "{{ author.orcid | e }}"
+            }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ]
+    });
+    {% endfor %}
+});
+
+function collectFoodModelsData() {
+    let data = [];
+    document.querySelectorAll('#file-list li').forEach(li => {
+        const modelId = li.getAttribute('data-model-id');
+        const filename = li.querySelector(`input[name="food_models-${modelId}-filename"]`).value;
+        const title = li.querySelector(`input[name="food_models-${modelId}-title"]`)?.value || '';
+        const description = li.querySelector(`textarea[name="food_models-${modelId}-description"]`)?.value || '';
+        const tags = li.querySelector(`input[name="food_models-${modelId}-tags"]`)?.value || '';
+        
+        let authors = [];
+        li.querySelectorAll(`#food_models-${modelId}-authors_container .author-row`).forEach(authorRow => {
+            const authorIndex = authorRow.getAttribute('data-author-index');
+            authors.push({
+                name: authorRow.querySelector(`input[name="food_models-${modelId}-authors-${authorIndex}-name"]`)?.value || '',
+                affiliation: authorRow.querySelector(`input[name="food_models-${modelId}-authors-${authorIndex}-affiliation"]`)?.value || '',
+                orcid: authorRow.querySelector(`input[name="food_models-${modelId}-authors-${authorIndex}-orcid"]`)?.value || ''
             });
         });
-    </script>
+        
+        data.push({
+            filename: filename,
+            title: title,
+            description: description,
+            tags: tags,
+            authors: authors
+        });
+    });
+    return data;
+}
+
+document.querySelector('form.needs-validation').addEventListener('submit', function() {
+    document.getElementById('food_models_data').value = JSON.stringify(collectFoodModelsData());
+});
+
+</script>
 
 {% endblock %}
 
 {% block scripts %}
-    <script src="{{ url_for('fooddataset.scripts') }}"></script>
+<script src="{{ url_for('fooddataset.scripts') }}"></script>
 {% endblock %}
