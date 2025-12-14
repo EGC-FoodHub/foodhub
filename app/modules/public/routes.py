@@ -17,9 +17,9 @@ def index():
     datasets_counter = dataset_service.count_synchronized_datasets()
     total_dataset_downloads = dataset_service.total_dataset_downloads()
     total_dataset_views = dataset_service.total_dataset_views()
-    feature_models_counter = dataset_service.count_feature_models()
-    total_feature_model_downloads = dataset_service.total_feature_model_downloads()
-    total_feature_model_views = dataset_service.total_feature_model_views()
+    food_models_counter = dataset_service.count_food_models()
+    total_food_model_downloads = dataset_service.total_food_model_downloads()
+    total_food_model_views = dataset_service.total_food_model_views()
 
     trending_weekly = dataset_service.get_trending_weekly(limit=3)
 
@@ -29,8 +29,8 @@ def index():
         datasets_counter=datasets_counter,
         total_dataset_downloads=total_dataset_downloads,
         total_dataset_views=total_dataset_views,
-        feature_models_counter=feature_models_counter,
-        total_feature_model_downloads=total_feature_model_downloads,
-        total_feature_model_views=total_feature_model_views,
+        food_models_counter=food_models_counter,
+        total_food_model_downloads=total_food_model_downloads,
+        total_food_model_views=total_food_model_views,
         trending_weekly=trending_weekly,
     )

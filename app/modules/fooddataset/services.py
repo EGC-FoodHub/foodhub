@@ -190,31 +190,47 @@ class FoodDatasetService(BaseDatasetService):
             logger.error(f"Error getting total views: {e}")
             return 0
 
-    def count_feature_models(self) -> int:
-        """Cuenta el total de food models"""
+    def total_food_model_downloads(self) -> int:
+        try:
+            from app.modules.foodmodel.models import FoodModel
+
+            total = self.repository.session.query(func.sum(FoodModel.download_count)).scalar()
+            return total or 0
+        except Exception as e:
+            logger.error(f"Error getting total food model downloads: {e}")
+            return 0
+
+    def total_food_model_views(self) -> int:
+        try:
+            from app.modules.foodmodel.models import FoodModel
+
+            total = self.repository.session.query(func.sum(FoodModel.view_count)).scalar()
+            return total or 0
+        except Exception as e:
+            logger.error(f"Error getting total food model views: {e}")
+            return 0
+
+    def count_food_models(self) -> int:
         try:
             from app.modules.foodmodel.models import FoodModel
 
             total = self.repository.session.query(FoodModel).count()
             return total or 0
         except Exception as e:
-            logger.error(f"Error counting feature models: {e}")
+            logger.error(f"Error counting food models: {e}")
             return 0
 
-    def total_feature_model_downloads(self) -> int:
-        """
-        FoodModel no tiene tracking individual de descargas.
-        El tracking se hace a nivel de dataset completo.
-        Retorna 0 porque no aplica a este módulo.
-        """
-        logger.info("total_feature_model_downloads called - returning 0 (not tracked for FoodModel)")
-        return 0
-
-    def total_feature_model_views(self) -> int:
-        """
-        FoodModel no tiene tracking individual de vistas.
-        El tracking se hace a nivel de dataset completo.
-        Retorna 0 porque no aplica a este módulo.
-        """
-        logger.info("total_feature_model_views called - returning 0 (not tracked for FoodModel)")
-        return 0
+    def get_all_statistics(self) -> Dict[str, Any]:
+        return {
+            "datasets_counter": self.count_synchronized_datasets(),
+            "food_models_counter": self.count_food_models(),
+            "total_dataset_downloads": self.total_dataset_downloads(),
+            "total_dataset_views": self.total_dataset_views(),
+            "total_food_model_downloads": self.total_food_model_downloads(),
+            "total_food_model_views": self.total_food_model_views(),
+            "trending_weekly": self.get_trending_weekly(limit=3),
+            "trending_monthly": self.get_trending_monthly(limit=3),
+            "most_viewed": self.get_most_viewed_datasets(limit=5),
+            "most_downloaded": self.get_most_downloaded_datasets(limit=5),
+            "timestamp": os.getenv("SERVER_TIMESTAMP", "N/A"),
+        }
