@@ -26,7 +26,22 @@ class UserProfileService(BaseService):
 
             from app.modules.basedataset.models import BaseDataset
 
-            uploaded_datasets_count = BaseDataset.query.filter_by(user_id=user_id).count()
+            # Count only datasets that have been actually uploaded (have files),
+            # excluding drafts which are saved without associated files.
+            from app import db
+            # Import food-specific models locally to avoid circular imports
+            from app.modules.foodmodel.models import FoodModel
+            from app.modules.hubfile.models import Hubfile
+            from app.modules.fooddataset.models import FoodDataset
+
+            uploaded_datasets_count = (
+                db.session.query(FoodModel.data_set_id)
+                .join(Hubfile, Hubfile.food_model_id == FoodModel.id)
+                .join(FoodDataset, FoodModel.data_set_id == FoodDataset.id)
+                .filter(FoodDataset.user_id == user_id)
+                .distinct()
+                .count()
+            )
 
             # Contar datasets sincronizados (con DOI) por el usuario
             # Algunos subtipos de dataset (por ejemplo FoodDataset) almacenan metadata en tablas
