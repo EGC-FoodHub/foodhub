@@ -1,32 +1,18 @@
-# ----------------------------------------------------------------------------
-# Publish image in Docker Hub Workflow
-# This workflow builds and pushes a Docker image to Docker Hub whenever
-# a push is made to main-2
-# ----------------------------------------------------------------------------
-
 name: Publish main-2 image in Docker Hub
 
 on:
   push:
     branches:
       - main-2
-      - feature-g2/61-cd-docker-deployment-main-2
 
 jobs:
   push_to_registry:
     runs-on: ubuntu-24.04
 
-    env:
-      MASTER_KEY: ${{ secrets.MASTER_KEY }}
-      BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
-      ELASTICSEARCH_URL: ${{ secrets.ELASTICSEARCH_URL }}
-      ELASTICSEARCH_USER: ${{ secrets.ELASTICSEARCH_USER }}
-      ELASTICSEARCH_PASSWORD: ${{ secrets.ELASTICSEARCH_PASSWORD }}
-
     steps:
       
-      # Step 1: Check out the repository code
-      - uses: actions/checkout@v5
+      # Step 1: Check out the repository code (Corregido a v4)
+      - uses: actions/checkout@v4
 
       # Step 2: Log in to Docker Hub using secrets
       - name: Log in to Docker Hub
@@ -35,7 +21,33 @@ jobs:
           username: ${{ secrets.DOCKER_USER_2 }}
           password: ${{ secrets.DOCKER_PASSWORD_2 }}
 
-      # Step 3: Build and push the Docker image
+      # Step 3: Create .env file dynamically
+      - name: Create .env file
+        run: |
+          touch .env
+          echo "FLASK_APP_NAME=\"UVLHUB.IO(dev)\"" >> .env
+          echo "FLASK_ENV=development" >> .env
+          echo "DOMAIN=localhost" >> .env
+          echo "MARIADB_HOSTNAME=db" >> .env
+          echo "MARIADB_PORT=3306" >> .env
+          echo "MARIADB_DATABASE=uvlhubdb" >> .env
+          echo "MARIADB_TEST_DATABASE=uvlhubdb_test" >> .env
+          echo "MARIADB_USER=uvlhubdb_user" >> .env
+          echo "MARIADB_PASSWORD=uvlhubdb_password" >> .env
+          echo "MARIADB_ROOT_PASSWORD=uvlhubdb_root_password" >> .env
+          echo "WORKING_DIR=/app/" >> .env
+          echo "MASTER_KEY=${{ secrets.MASTER_KEY }}" >> .env
+          echo "RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}" >> .env
+          echo "BREVO_API_KEY=${{ secrets.BREVO_API_KEY }}" >> .env
+          echo "SENDER_EMAIL=\"emivazcru@alum.us.es\"" >> .env
+          echo "SENDER_NAME=\"FoodHub\"" >> .env
+          echo "EMAIL_VERIFICATION_KEY=123456789" >> .env
+          echo "ELASTICSEARCH_URL=${{ secrets.ELASTICSEARCH_URL }}" >> .env
+          echo "ELASTICSEARCH_USER=${{ secrets.ELASTICSEARCH_USER }}" >> .env
+          echo "ELASTICSEARCH_PASSWORD=${{ secrets.ELASTICSEARCH_PASSWORD }}" >> .env
+          echo "ELASTICSEARCH_ENABLED=True" >> .env
+
+      # Step 4: Build and push the Docker image
       - name: Build and push Docker image
         run: |
           TAG=${{ github.event.release.tag_name || github.sha }}
