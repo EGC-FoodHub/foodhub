@@ -371,6 +371,7 @@ def test_route_doi_view_success(test_client):
             assert response.status_code == 200
             assert b"Rendered" in response.data
 
+
 def test_author_to_dict(test_client):
     author = BaseAuthor(name="A", affiliation="B", orcid="C")
     d = author.to_dict()
@@ -514,6 +515,7 @@ def test_download_datasets_creates_download_records(test_client):
         mock_record_service.create.assert_called_once()
 
         mock_zip_instance.write.assert_called()
+
 
 def test_download_datasets_zip_structure(test_client):
     """Test that files are added to the zip with correct structure."""
