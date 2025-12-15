@@ -1,38 +1,24 @@
-El documento del proyecto debe ser un documento que sintetice los aspectos del proyecto elegido para su desarrollo con respecto a los temas vistos en clases. 
-
-Debe tener claramente identificados los nombres y apellidos de cada componente, grupo al que pertenecen (1, 2, o 3 mañana o tarde), curso académico, nombre del proyecto (seguir la política de nombres). Use este [[modelo de portada]] para el documento del proyecto y alójelo en su repositorio o en otro sitio accesible y que tenga posibilidad de verse el último momento de edicación. Puede usar el repositorio del proyecto usando para ello el lenguaje de [markdown](https://guides.github.com/features/mastering-markdown/) que ofrece github. En todo caso, debe ser un documento elaborado en formato [wiki]. 
-
-Será un documento presentado de manera profesional guardando la forma en los estilos y contenidos y con el máximo nivel de rigor académico y profesional.
-
-Tenga en cuenta los siguientes aspectos: 
-
-* Siempre diferencie claramente las secciones y subsecciones y para ello use etiquetas de encabezado como las que se disponen en los lenguajes tipo _markdown_
-
-# Apartados del documento 
-
-El documento del proyecto tendrá (al menos) que sintetizar los siguientes apartados:
-
 ## Indicadores del proyecto
 
 (_debe dejar enlaces a evidencias que permitan de una forma sencilla analizar estos indicadores, con gráficas y/o con enlaces_)
 
 Miembro del equipo  | Horas | Commits | LoC | Test | Issues | Work Item| Dificultad
 ------------- | ------------- | ------------- | ------------- | ------------- | ------------- |  ------------- |  ------------- | 
-[García Vizcaino, Miguel](https://github.com/Miguelgarviz) | HH | 12 | 617 | ZZ | 2 | Solicitar cambio de contraseña por medio de un codigo enviado al correo del usuario | L |
-[Prieto Fernández, Juan](https://github.com/juanprietofernandez) | HH | 32 | 2998 | ZZ | 1 | Descripción breve | H/M/L |
-[Jiménez Guerrero, Pedro](https://github.com/PedroJimenezGuerrero) | HH | 54 | 5522 | ZZ | 16 | Descripción breve | H/M/L |
-[Ojeda Garrido, Germán](https://github.com/German220203) | HH | 62 | 12440 | ZZ | 8 | Descripción breve | H/M/L |
-[Manuel Vázquez Cruz, Emilio](https://github.com/Emilio-115) | HH | 30 | 1258 | ZZ | 6 | Descripción breve | H/M/L |
-[Coronil, Pepe](https://github.com/PepeCoral) | HH | 15 | 1029 | ZZ | 4 | Descripción breve | H/M/L |
-**TOTAL** | tHH  | 190 | 23864 | tZZ | 37 | Descripción breve | H (X)/M(Y)/L(1) |
+[García Vizcaino, Miguel](https://github.com/Miguelgarviz) | 60 | 15 | 1623 | 5 | 2 | Solicitar cambio de contraseña por medio de un codigo enviado al correo del usuario | L |
+[Prieto Fernández, Juan](https://github.com/juanprietofernandez) | 63 | 32 | 2998 | 30 | 1 | Crear una sección de trending datasets en la página de inicio en la que se mostrará los tres datasets más populares de la semana, la popularidad se decide por el de número de descargas y número de visualizaciones. | M |
+[Jiménez Guerrero, Pedro](https://github.com/PedroJimenezGuerrero) | 67 | 54 | 5522 | 67 | 16 | La búsqueda actual es limitada. Queremos usar Elasticsearch para indexar datasets, modelos y usuarios y Como usuario, quiero buscar datasets usando filtros avanzados (autor, etiquetas, fechas) para encontrar fácilmente lo que busco | H y M |
+[Ojeda Garrido, Germán](https://github.com/German220203) | 62 | 62 | 12440 | 5 | 8 | Adaptar la aquitectura de UVLHub para crear un sistema modular en el que se guarden, verifiquen y analicen Food models a aprtir de archivos .food, sustituyendo el antiguo módulo dataset por basedataset y fooddataset, el antiguo módulo featuremodel por foodmodel, y el antiguo flamapy por el módulo food_checker | H |
+[Manuel Vázquez Cruz, Emilio](https://github.com/Emilio-115) | 68 | 30 | 1258 | 7 | 6 | Verificación en 2 pasos, se ha añadido  un sistema de OTP para generar códigos de un uso junto con un QR para añadirlo a apps de 2FA, permite habilitarse desde editar perfil desde la pantalla de inicio | H |
+[Coronil, Pepe](https://github.com/PepeCoral) | 62 | 15 | 1029 | 30 | 4 | Al registrar una cuenta, es necesario verificar el email para poder iniciar sesion, se envia un email de verificación. | L |
+**TOTAL** | 382  | 191 | 24870 | 149 | 37 | Descripción breve | H(3)/M(2)/L(2) |
 
-![Texto alternativo](/docs/foodhub.wiki/images/Commits%20over%20time.png)
+![Texto alternativo](/docs/images/Commits%20over%20time.png)
 
 La tabla contiene la información de cada miembro del proyecto y el total de la siguiente forma: 
   * Horas: número de horas empleadas en el proyecto
   * Commits: solo contar los commits hechos por miembros del equipo, no lo commits previos
   * LoC (líneas de código): solo contar las líneas producidas por el equipo y no las que ya existían o las que se producen al incluir código de terceros
-  * Test: solo contar los test realizados por el equipo nuevos
+  * Test: solo contar los test realizados por el equipo nuevos. Tambien se han contado arreglos de tests y la realización de test de forma conjunta
   * Issues: solo contar las issues gestionadas dentro del proyecto y que hayan sido gestionadas por el equipo
   * Work Item: principal WI del que se ha hecho cargo el miembro del proyecto
   * Dificultad: señalar el grado de dificultad en cada caso. Además, en los totales, poner cuántos se han hecho de cada grado de dificultad entre paréntesis. 
@@ -440,6 +426,9 @@ A continuación se describen los pasos necesarios para instalar y ejecutar el si
    git clone https://github.com/EGC-FoodHub/foodhub.git
    cd foodhub
    ```
+
+### Uso de Inteligencia Artificial
+Se ha usado Inteligencia Artificial durante el desarrollo y despligue de este proyecto, siendo de ayuda en el desarrollo de los Work Items, los tests y de comprensión de errores.
 
 ### Ejercicio de propuesta de cambio
 Se presentará un ejercicio con una propuesta concreta de cambio en la que a partir de un cambio que se requiera, se expliquen paso por paso (incluyendo comandos y uso de herramientas) lo que hay que hacer para realizar dicho cambio. Debe ser un ejercicio ilustrativo de todo el proceso de evolución y gestión de la configuración del proyecto. 
