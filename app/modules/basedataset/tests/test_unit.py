@@ -345,46 +345,31 @@ def test_route_doi_view_success(test_client):
     # Test valid DOI lookup logic
     # We need to ensure filter_by_doi finds a metadata which has a dataset
     with (
+        patch("app.modules.basedataset.services.BaseDSMetaDataService.filter_by_doi") as mock_filter,
+        patch("app.modules.basedataset.routes.ds_view_record_service") as mock_view_service,
+        patch("app.modules.basedataset.routes.db.session.expunge"),
         patch(
-            "app.modules.basedataset.services.BaseDSMetaDataService.filter_by_doi"
-        ) as mock_filter,
-        patch(
-            "app.modules.basedataset.routes.ds_view_record_service"
-        ) as mock_view_service,
-        patch(
-            "app.modules.basedataset.routes.db.session.expunge"
-        ),
-        patch(
-            "app.modules.fooddataset.models.FoodDSMetaData.query.get"
-        ) as mock_food_get,
-        patch(
-            "app.modules.basedataset.routes.render_template",
-            return_value="Rendered"
-        ),
+            "app.modules.fooddataset.models.FoodDSMetaData"
+        ),  # Also mock this to prevent DB access and potential errors with Mock IDs
     ):
-        # ---- Base metadata returned by DOI lookup ----
-        mock_meta = MagicMock()
-        mock_meta.id = 1
-        mock_filter.return_value = mock_meta
 
-        # ---- Dataset object for the FoodDSMetaData ----
+        # Mock the metadata object and its dataset relationship
+        mock_meta = MagicMock()
         mock_dataset = MagicMock()
         mock_dataset.id = 123
+        mock_meta.dataset = mock_dataset
+        mock_filter.return_value = mock_meta
 
-        mock_food_meta = MagicMock()
-        mock_food_meta.dataset = mock_dataset
-        mock_food_get.return_value = mock_food_meta
+        # Mock create_cookie to avoid DB usage
+        mock_view_service.create_cookie.return_value = "cookie"
 
-        # ---- View cookie ----
-        mock_view_service.create_cookie.return_value = "cookie123"
+        # Mock render_template to avoid template errors with mocks
+        with patch("app.modules.basedataset.routes.render_template") as mock_render:
+            mock_render.return_value = "Rendered"
 
-        # ---- Call the route ----
-        response = test_client.get("/doi/10.1234/valid-doi/")
-
-        # ---- Assertions ----
-        assert response.status_code == 200
-        assert b"Rendered" in response.data
-
+            response = test_client.get("/doi/10.1234/valid-doi/")
+            assert response.status_code == 200
+            assert b"Rendered" in response.data
 
 def test_author_to_dict(test_client):
     author = BaseAuthor(name="A", affiliation="B", orcid="C")
@@ -511,18 +496,24 @@ def test_download_datasets_creates_download_records(test_client):
         patch("app.modules.basedataset.routes.os.walk") as mock_walk,
         patch("app.modules.basedataset.routes.send_from_directory") as mock_send,
         patch("app.modules.basedataset.routes.ds_download_record_service") as mock_record_service,
+        patch("app.modules.basedataset.routes.ZipFile") as mock_zipfile
     ):
         mock_mkdtemp.return_value = "/tmp/test"
         mock_exists.return_value = True
         mock_walk.return_value = [("/path", [], ["file1.txt"])]
         mock_send.return_value = "File Content"
 
+        mock_zip_instance = mock_zipfile.return_value.__enter__.return_value
+        mock_zip_instance.write = MagicMock()
+
         mock_record_service.repository.model.query.filter_by.return_value.first.return_value = None
 
         response = test_client.get(f"/dataset/download?ids={ds_id}")
         assert response.status_code == 200
+
         mock_record_service.create.assert_called_once()
 
+        mock_zip_instance.write.assert_called()
 
 def test_download_datasets_zip_structure(test_client):
     """Test that files are added to the zip with correct structure."""
