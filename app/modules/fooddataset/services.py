@@ -193,8 +193,14 @@ class FoodDatasetService(BaseDatasetService):
     def total_food_model_downloads(self) -> int:
         try:
             from app.modules.foodmodel.models import FoodModel
+            from app.modules.hubfile.models import Hubfile, HubfileDownloadRecord
 
-            total = self.repository.session.query(func.sum(FoodModel.download_count)).scalar()
+            total = (
+                self.repository.session.query(func.count(HubfileDownloadRecord.id))
+                .join(Hubfile, HubfileDownloadRecord.file_id == Hubfile.id)
+                .join(FoodModel, Hubfile.food_model_id == FoodModel.id)
+                .scalar()
+            )
             return total or 0
         except Exception as e:
             logger.error(f"Error getting total food model downloads: {e}")
@@ -203,8 +209,14 @@ class FoodDatasetService(BaseDatasetService):
     def total_food_model_views(self) -> int:
         try:
             from app.modules.foodmodel.models import FoodModel
+            from app.modules.hubfile.models import Hubfile, HubfileViewRecord
 
-            total = self.repository.session.query(func.sum(FoodModel.view_count)).scalar()
+            total = (
+                self.repository.session.query(func.count(HubfileViewRecord.id))
+                .join(Hubfile, HubfileViewRecord.file_id == Hubfile.id)
+                .join(FoodModel, Hubfile.food_model_id == FoodModel.id)
+                .scalar()
+            )
             return total or 0
         except Exception as e:
             logger.error(f"Error getting total food model views: {e}")
