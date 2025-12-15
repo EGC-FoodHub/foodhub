@@ -431,7 +431,7 @@ A continuación se describen los pasos necesarios para instalar y ejecutar el si
 Se ha usado Inteligencia Artificial durante el desarrollo y despligue de este proyecto, siendo de ayuda en el desarrollo de los Work Items, los tests y de comprensión de errores.
 
 ### Ejercicio de propuesta de cambio
-Se presentará un ejercicio con una propuesta concreta de cambio en la que a partir de un cambio que se requiera, se expliquen paso por paso (incluyendo comandos y uso de herramientas) lo que hay que hacer para realizar dicho cambio. Debe ser un ejercicio ilustrativo de todo el proceso de evolución y gestión de la configuración del proyecto. 
+El cambio propuesto se basa en actualizar el perfil para que el usuario pueda cambiar su contraseña sin necesidad de cerrar sesión y de pedir un código al correo.El cambio modificara las rutas, servicios y templates de auth, generar la issue, revisar la pull request y mergear en main.
 
 ### Conclusiones y trabajo futuro
-Se enunciarán algunas conclusiones y se presentará un apartado sobre las mejoras que se proponen para el futuro (curso siguiente) y que no han sido desarrolladas en el sistema que se entrega
+En conclusión, el proyecto FoodHub ha logrado desarrollar una aplicación web funcional y bien estructurada para la gestión de archivos .food, cumpliendo con los objetivos principales de almacenamiento, visualización y accesibilidad web mediante el uso de Python y Flask.
