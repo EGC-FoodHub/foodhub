@@ -21,6 +21,8 @@ jobs:
       FLASK_APP_NAME: FoodHub
       DOMAIN: localhost
       SECRET_KEY: test-secret-key-for-ci
+      ELASTICSEARCH_URL: ${{ secrets.ELASTICSEARCH_URL }}
+      ELASTICSEARCH_PASSWORD: ${{ secrets.ELASTICSEARCH_PASSWORD }}
 
     services:
       mariadb:
