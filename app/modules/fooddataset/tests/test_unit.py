@@ -1,7 +1,7 @@
-from unittest.mock import MagicMock, patch, ANY
+from unittest.mock import MagicMock, patch
 
 import pytest
-from sqlalchemy import func
+
 from app import db
 from app.modules.auth.models import User
 from app.modules.basedataset.models import BaseAuthor, BasePublicationType
@@ -791,7 +791,6 @@ def test_register_dataset_download(test_client):
 def test_total_dataset_downloads(test_client):
     """Test total_dataset_downloads"""
     from app.modules.fooddataset.services import FoodDatasetService
-    from app.modules.fooddataset.models import FoodDataset
 
     with patch("app.modules.fooddataset.services.FoodDatasetRepository") as MockRepo:
         mock_repo_instance = MockRepo.return_value
@@ -848,7 +847,6 @@ def test_total_dataset_downloads_none_result(test_client):
 def test_total_dataset_views(test_client):
     """Test total_dataset_views"""
     from app.modules.fooddataset.services import FoodDatasetService
-    from app.modules.fooddataset.models import FoodDataset
 
     with patch("app.modules.fooddataset.services.FoodDatasetRepository") as MockRepo:
         mock_repo_instance = MockRepo.return_value
@@ -930,7 +928,6 @@ def test_total_food_model_views(test_client):
 def test_count_food_models(test_client):
     """Test count_food_models"""
     from app.modules.fooddataset.services import FoodDatasetService
-    from app.modules.foodmodel.models import FoodModel
 
     with patch("app.modules.fooddataset.services.FoodDatasetRepository") as MockRepo:
         mock_repo_instance = MockRepo.return_value
@@ -1059,7 +1056,6 @@ def test_get_all_statistics_with_real_data(test_client):
         from app import db
         from app.modules.auth.models import User
         from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData
-        from app.modules.foodmodel.models import FoodModel
 
         # Crear usuario
         user = User(email="stats_test@example.com", is_email_verified=True)
