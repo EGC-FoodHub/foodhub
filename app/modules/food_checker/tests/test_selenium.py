@@ -54,7 +54,7 @@ def test_dataset_upload_check():
 
             print(f"Badge text detected: '{badge_text}'")
             assert "Valid: TestFood" in badge_text
-        
+
         finally:
             if os.path.exists(temp_file_path):
                 os.remove(temp_file_path)

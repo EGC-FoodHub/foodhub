@@ -8,6 +8,7 @@ import os
 
 pytestmark = pytest.mark.unit
 
+
 @pytest.fixture(autouse=True, scope="session")
 def set_test_env_vars():
     os.environ["EMAIL_VERIFICATION_KEY"] = "test-secret-key"

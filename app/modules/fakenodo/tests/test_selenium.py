@@ -53,7 +53,7 @@ class TestDatasetRecommendations:
 
         self.driver.find_element(By.ID, "tags").click()
         self.driver.find_element(By.ID, "tags").send_keys("fakenodo")
-        
+
         upload_file = os.path.abspath(
             os.path.join(os.path.dirname(__file__), "../..", "fooddataset/food_examples/espinacas.food")
         )
