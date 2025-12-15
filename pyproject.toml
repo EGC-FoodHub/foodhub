@@ -24,8 +24,12 @@ dev = [
 [project.scripts]
 rosemary = "rosemary.cli:cli"
 
-[tool.setuptools]
-packages = ["rosemary"]
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["rosemary*"]
+
+[tool.setuptools.package-data]
+rosemary = ["templates/*"]
 
 # --------------------
 # Formatting & linting
@@ -33,7 +37,7 @@ packages = ["rosemary"]
 
 [tool.black]
 line-length = 120
-target-version = ["py313"]
+target-version = ["py312"]
 
 [tool.isort]
 line_length = 120

@@ -98,6 +98,12 @@ class DataSetRepository(BaseRepository):
             .limit(5)
             .all()
         )
+    
+    def get_all(self) -> DataSet:
+        return self.model.query.join(DSMetaData).all()
+    
+    def get_all_except(self, dataset_id: int) -> DataSet:
+        return self.model.query.join(DSMetaData).filter(DataSet.id != dataset_id).all()
 
 
 class DOIMappingRepository(BaseRepository):

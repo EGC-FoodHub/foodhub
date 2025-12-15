@@ -108,6 +108,13 @@
                         </a>
                     </li>
 
+                    <li class="sidebar-item {{ 'active' if request.endpoint == 'profile.dashboard' else '' }}">
+                        <a class="sidebar-link" href="{{ url_for('profile.dashboard_metrics') }}">
+                            <i class="align-middle" data-feather="bar-chart-2"></i> <span 
+                                class="align-middle">My metrics</span>
+                        </a>
+                    </li>
+
                     <li class="sidebar-header">
                         Options
                     </li>
@@ -157,6 +164,8 @@
                 </div>
             </form>
 
+           
+
             <div class="navbar-collapse collapse">
                 <ul class="navbar-nav navbar-align">
                     <li class="nav-item dropdown">
@@ -167,20 +176,31 @@
                                 up</a>
 
                         {% else %}
+                        <div style="display: flex;">
+                            <div style="margin-right: 10px; margin-bottom: 5px; align-self: center;">
+                                <a href="{{ url_for('shopping_cart.get_shopping_cart_from_current_user') }}">
+                                    <i data-feather="shopping-cart"></i>            
+                                </a>
+                            </div>
 
-                        <a class="nav-icon dropdown-toggle d-inline-block d-sm-none" href="#" data-bs-toggle="dropdown">
-                            <i class="align-middle" data-feather="user"></i> 
-                        </a>
+                            <div>
+                                <a class="nav-icon dropdown-toggle d-inline-block d-sm-none" href="#" data-bs-toggle="dropdown">
+                                    <i class="align-middle" data-feather="user"></i> 
+                                </a>
 
-                        <a class="nav-link dropdown-toggle d-none d-sm-inline-block" href="#" data-bs-toggle="dropdown">
-                            <span class="text-dark">{{ current_user.profile.surname }}, {{ current_user.profile.name }}</span>
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-end">
-                            <a class="dropdown-item" href="{{ url_for('profile.my_profile') }}">
-                                <i class="align-middle me-1" data-feather="user"></i> My profile</a>
-                            <a class="dropdown-item" href="{{ url_for('auth.logout') }}">
-                                <i class="align-middle me-1" data-feather="log-out"></i> Log out</a>
+                                <a class="nav-link dropdown-toggle d-none d-sm-inline-block" href="#" data-bs-toggle="dropdown">
+                                    <span class="text-dark">{{ current_user.profile.surname }}, {{ current_user.profile.name }}</span>
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-end">
+                                    <a class="dropdown-item" href="{{ url_for('profile.my_profile') }}">
+                                        <i class="align-middle me-1" data-feather="user"></i> My profile</a>
+                                    <a class="dropdown-item" href="{{ url_for('auth.logout') }}">
+                                        <i class="align-middle me-1" data-feather="log-out"></i> Log out</a>
+                                </div>
+                            </div>
                         </div>
+                        
+                      
                         
                         
 
@@ -235,7 +255,7 @@
     url = {https://www.sciencedirect.com/science/article/pii/S016412122400195X},
     author = {David Romero-Organvidez and José A. Galindo and Chico Sundermann and Jose-Miguel Horcas and David Benavides},
     keywords = {Feature models, Software product line, Variability, Dataset, Uvl},
-    abstract = {Feature models are the de facto standard for modelling variabilities and commonalities in features and relationships in software product lines. They are the base artefacts in many engineering activities, such as product configuration, derivation, or testing. Concrete models in different domains exist; however, many are in private or sparse repositories or belong to discontinued projects. The dispersion of knowledge of feature models hinders the study and reuse of these artefacts in different studies. The Universal Variability Language (UVL) is a community effort textual feature model language that promotes a common way of serialising feature models independently of concrete tools. Open science principles promote transparency, accessibility, and collaboration in scientific research. Although some attempts exist to promote feature model sharing, the existing solutions lack open science principles by design. In addition, existing and public feature models are described using formats not always supported by current tools. This paper presents , a repository of feature models in UVL format. provides a front end that facilitates the search, upload, storage, and management of feature model datasets, improving the capabilities of discontinued proposals. Furthermore, the tool communicates with Zenodo –one of the most well-known open science repositories– providing a permanent save of datasets and following open science principles. includes existing datasets and is readily available to include new data and functionalities in the future. It is maintained by three active universities in variability modelling.}
+    abstract = {Feature models are the de facto standard for modelling variabilities and commonalities in features and relationships in software product lines. They are the base artefacts in many engineering activities, such as product configuration, derivation, or testing. Concrete models in different domains exist; however, many are in private or sparse repositories or belong to discontinued projects. The dispersion of knowledge of feature models hinders the study and reuse of these artefacts in different studies. The Universal Variability Language (UVL) is a community effort textual feature model language that promotes a common way of serialising feature models independently of concrete tools. Open science principles promote transparency, accessibility, and collaboration in scientific research. Although some attempts exist to promote feature model sharing, the existing solutions lack open science principles by design. In addition, existing and public feature models are described using formats not always supported by current tools. This paper presents , a repository of feature models in UVL format. provides a front end that facilitates the search, upload, storage, and management of feature model datasets, improving the capabilities of discontinued proposals. Furthermore, the tool communicates with Fakenodo –one of the most well-known open science repositories– providing a permanent save of datasets and following open science principles. includes existing datasets and is readily available to include new data and functionalities in the future. It is maintained by three active universities in variability modelling.}
 }
 </pre>
                         
@@ -259,7 +279,7 @@ KW  - Software product line
 KW  - Variability
 KW  - Dataset
 KW  - Uvl
-AB  - Feature models are the de facto standard for modelling variabilities and commonalities in features and relationships in software product lines. They are the base artefacts in many engineering activities, such as product configuration, derivation, or testing. Concrete models in different domains exist; however, many are in private or sparse repositories or belong to discontinued projects. The dispersion of knowledge of feature models hinders the study and reuse of these artefacts in different studies. The Universal Variability Language (UVL) is a community effort textual feature model language that promotes a common way of serialising feature models independently of concrete tools. Open science principles promote transparency, accessibility, and collaboration in scientific research. Although some attempts exist to promote feature model sharing, the existing solutions lack open science principles by design. In addition, existing and public feature models are described using formats not always supported by current tools. This paper presents , a repository of feature models in UVL format. provides a front end that facilitates the search, upload, storage, and management of feature model datasets, improving the capabilities of discontinued proposals. Furthermore, the tool communicates with Zenodo –one of the most well-known open science repositories– providing a permanent save of datasets and following open science principles. includes existing datasets and is readily available to include new data and functionalities in the future. It is maintained by three active universities in variability modelling.
+AB  - Feature models are the de facto standard for modelling variabilities and commonalities in features and relationships in software product lines. They are the base artefacts in many engineering activities, such as product configuration, derivation, or testing. Concrete models in different domains exist; however, many are in private or sparse repositories or belong to discontinued projects. The dispersion of knowledge of feature models hinders the study and reuse of these artefacts in different studies. The Universal Variability Language (UVL) is a community effort textual feature model language that promotes a common way of serialising feature models independently of concrete tools. Open science principles promote transparency, accessibility, and collaboration in scientific research. Although some attempts exist to promote feature model sharing, the existing solutions lack open science principles by design. In addition, existing and public feature models are described using formats not always supported by current tools. This paper presents , a repository of feature models in UVL format. provides a front end that facilitates the search, upload, storage, and management of feature model datasets, improving the capabilities of discontinued proposals. Furthermore, the tool communicates with Fakenodo –one of the most well-known open science repositories– providing a permanent save of datasets and following open science principles. includes existing datasets and is readily available to include new data and functionalities in the future. It is maintained by three active universities in variability modelling.
 ER  - 
 </pre>
 
@@ -272,7 +292,7 @@ Journal of Systems and Software,
 ISSN 0164-1212,
 https://doi.org/10.1016/j.jss.2024.112150.
 (https://www.sciencedirect.com/science/article/pii/S016412122400195X)
-Abstract: Feature models are the de facto standard for modelling variabilities and commonalities in features and relationships in software product lines. They are the base artefacts in many engineering activities, such as product configuration, derivation, or testing. Concrete models in different domains exist; however, many are in private or sparse repositories or belong to discontinued projects. The dispersion of knowledge of feature models hinders the study and reuse of these artefacts in different studies. The Universal Variability Language (UVL) is a community effort textual feature model language that promotes a common way of serialising feature models independently of concrete tools. Open science principles promote transparency, accessibility, and collaboration in scientific research. Although some attempts exist to promote feature model sharing, the existing solutions lack open science principles by design. In addition, existing and public feature models are described using formats not always supported by current tools. This paper presents , a repository of feature models in UVL format. provides a front end that facilitates the search, upload, storage, and management of feature model datasets, improving the capabilities of discontinued proposals. Furthermore, the tool communicates with Zenodo –one of the most well-known open science repositories– providing a permanent save of datasets and following open science principles. includes existing datasets and is readily available to include new data and functionalities in the future. It is maintained by three active universities in variability modelling.
+Abstract: Feature models are the de facto standard for modelling variabilities and commonalities in features and relationships in software product lines. They are the base artefacts in many engineering activities, such as product configuration, derivation, or testing. Concrete models in different domains exist; however, many are in private or sparse repositories or belong to discontinued projects. The dispersion of knowledge of feature models hinders the study and reuse of these artefacts in different studies. The Universal Variability Language (UVL) is a community effort textual feature model language that promotes a common way of serialising feature models independently of concrete tools. Open science principles promote transparency, accessibility, and collaboration in scientific research. Although some attempts exist to promote feature model sharing, the existing solutions lack open science principles by design. In addition, existing and public feature models are described using formats not always supported by current tools. This paper presents , a repository of feature models in UVL format. provides a front end that facilitates the search, upload, storage, and management of feature model datasets, improving the capabilities of discontinued proposals. Furthermore, the tool communicates with Fakenodo –one of the most well-known open science repositories– providing a permanent save of datasets and following open science principles. includes existing datasets and is readily available to include new data and functionalities in the future. It is maintained by three active universities in variability modelling.
 Keywords: Feature models; Software product line; Variability; Dataset; Uvl
 </pre>
 

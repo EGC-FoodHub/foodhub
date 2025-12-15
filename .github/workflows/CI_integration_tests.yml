@@ -1,0 +1,93 @@
+name: Integration Tests
+
+on:
+  push:
+
+jobs:
+  integration-tests:
+    name: Integration
+    runs-on: ubuntu-24.04
+
+    env:
+      MARIADB_DATABASE: foodhub_test
+      MARIADB_USER: test
+      MARIADB_PASSWORD: testpassword
+      MARIADB_ROOT_PASSWORD: rootpassword
+      MARIADB_HOSTNAME: 127.0.0.1
+      # Host-mapped port for MariaDB service
+      MARIADB_PORT: 3307
+      MARIADB_TEST_DATABASE: foodhub_test
+      FLASK_ENV: testing
+
+    services:
+      mariadb:
+        image: mariadb:11.3
+        env:
+          MARIADB_ROOT_PASSWORD: ${{ env.MARIADB_ROOT_PASSWORD }}
+          MARIADB_DATABASE: ${{ env.MARIADB_DATABASE }}
+          MARIADB_USER: ${{ env.MARIADB_USER }}
+          MARIADB_PASSWORD: ${{ env.MARIADB_PASSWORD }}
+        ports:
+          - 3307:3306
+
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Remove rosemary editable entry
+        run: sed -i '/rosemary @ file:\/\/\/app/d' requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e .
+
+      - name: Wait for MariaDB
+        run: |
+          for i in {1..60}; do
+            if mysqladmin ping -h127.0.0.1 -P3307 -u root -p"$MARIADB_ROOT_PASSWORD" --silent; then
+              echo "MariaDB is ready"
+              exit 0
+            fi
+            echo "Waiting for MariaDB ($i/60)..."
+            sleep 2
+          done
+          echo "MariaDB did not become ready in time, printing docker info..."
+          /usr/bin/docker ps -a || true
+          CID=$(/usr/bin/docker ps -aq -f ancestor=mariadb:11.3 | head -n1) || true
+          if [ -n "$CID" ]; then
+            /usr/bin/docker logs --details $CID || true
+          fi
+          exit 1
+
+      - name: Setup database
+        run: |
+          flask --app app db upgrade
+          rosemary db:seed
+
+      - name: Run integration tests
+        run: pytest -m integration -v --cov=app --cov-report=term-missing --cov-report=xml --cov-report=html
+
+      - name: Upload HTML coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-tests-coverage-${{ github.sha }}
+          path: htmlcov/
+          retention-days: 30
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          echo "## 📊 Coverage Report - Integration Tests" >> $GITHUB_STEP_SUMMARY
+          echo "```" >> $GITHUB_STEP_SUMMARY
+          coverage report >> $GITHUB_STEP_SUMMARY
+          echo "```" >> $GITHUB_STEP_SUMMARY

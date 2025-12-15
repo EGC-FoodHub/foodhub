@@ -1,3 +1,6 @@
+from sqlalchemy.exc import SQLAlchemyError
+
+from app.modules.profile.models import UserProfile
 from app.modules.profile.repositories import UserProfileRepository
 from core.services.BaseService import BaseService
 
@@ -12,3 +15,57 @@ class UserProfileService(BaseService):
             return updated_instance, None
 
         return None, form.errors
+
+    def get_user_metrics(self, user_id: int):
+        try:
+            profile = UserProfile.query.filter_by(user_id=user_id).first()
+
+            if not profile:
+                return None, "User profile not found."
+
+            # Count only datasets that have been actually uploaded (have files),
+            # excluding drafts which are saved without associated files.
+            from app import db
+            from app.modules.basedataset.models import BaseDataset
+            from app.modules.fooddataset.models import FoodDataset
+
+            # Import food-specific models locally to avoid circular imports
+            from app.modules.foodmodel.models import FoodModel
+            from app.modules.hubfile.models import Hubfile
+
+            uploaded_datasets_count = (
+                db.session.query(FoodModel.data_set_id)
+                .join(Hubfile, Hubfile.food_model_id == FoodModel.id)
+                .join(FoodDataset, FoodModel.data_set_id == FoodDataset.id)
+                .filter(FoodDataset.user_id == user_id)
+                .distinct()
+                .count()
+            )
+
+            # Contar datasets sincronizados (con DOI) por el usuario
+            # Algunos subtipos de dataset (por ejemplo FoodDataset) almacenan metadata en tablas
+            # específicas; para evitar imports frágiles, obtenemos los datasets del usuario
+            # y contamos aquellos cuya metadata (`ds_meta_data.dataset_doi`) no sea None.
+            user_datasets = BaseDataset.query.filter_by(user_id=user_id).all()
+            synchronized_datasets_count = 0
+            for ds in user_datasets:
+                ds_meta = getattr(ds, "ds_meta_data", None)
+                if ds_meta and getattr(ds_meta, "dataset_doi", None):
+                    synchronized_datasets_count += 1
+
+            # Contar descargas hechas por el usuario autenticado
+            from app.modules.basedataset.models import BaseDSDownloadRecord
+
+            downloads_count = BaseDSDownloadRecord.query.filter_by(user_id=user_id).count()
+
+            metrics = {
+                "uploaded_datasets": uploaded_datasets_count,
+                "downloads": downloads_count,
+                "synchronizations": synchronized_datasets_count,
+            }
+
+            return metrics, None
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return None, str(e)

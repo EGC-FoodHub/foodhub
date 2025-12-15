@@ -1,0 +1,84 @@
+name: Unit Tests
+
+on:
+  push:
+
+jobs:
+  unit-tests:
+    name: Unit
+    runs-on: ubuntu-24.04
+
+    env:
+      MARIADB_DATABASE: foodhub_test
+      MARIADB_USER: test
+      MARIADB_PASSWORD: testpassword
+      MARIADB_ROOT_PASSWORD: rootpassword
+      MARIADB_HOSTNAME: 127.0.0.1
+      # The MariaDB container maps container:3306 to host:3307 (see services.ports).
+      # CI processes should connect to the host port (3307) on 127.0.0.1.
+      MARIADB_PORT: 3307
+      # Testing DB name used by the app's TestingConfig (core.managers.config_manager)
+      MARIADB_TEST_DATABASE: foodhub_test
+      FLASK_ENV: testing
+
+    services:
+      mariadb:
+        image: mariadb:11.3
+        env:
+          MARIADB_ROOT_PASSWORD: ${{ env.MARIADB_ROOT_PASSWORD }}
+          MARIADB_DATABASE: ${{ env.MARIADB_DATABASE }}
+          MARIADB_USER: ${{ env.MARIADB_USER }}
+          MARIADB_PASSWORD: ${{ env.MARIADB_PASSWORD }}
+        # map container 3306 to a non-standard host port to avoid conflicts on the runner
+        ports:
+          - 3307:3306
+
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Remove rosemary editable entry
+        run: sed -i '/rosemary @ file:\/\/\/app/d' requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Wait for MariaDB to be ready
+        run: |
+          for i in {1..60}; do
+            # try connecting via the mapped host port 3307 using the root credentials
+            if mysqladmin ping -h127.0.0.1 -P3307 -u root -p"$MARIADB_ROOT_PASSWORD" --silent; then
+              echo "MariaDB is ready"
+              break
+            fi
+            echo "Waiting for MariaDB ($i/60)..."
+            sleep 2
+          done
+
+      - name: Run unit tests
+        run: pytest -m unit -v --cov=app --cov-report=term-missing --cov-report=xml --cov-report=html --cov-fail-under=25
+
+      - name: Upload HTML coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-tests-coverage-${{ github.sha }}
+          path: htmlcov/
+          retention-days: 30
+
+      - name: Coverage summary
+        if: always()
+        run: |
+          echo "## 📊 Coverage Report - Unit Tests" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          coverage report >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

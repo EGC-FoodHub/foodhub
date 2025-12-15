@@ -24,12 +24,20 @@ class TestAuthRegistration:
                     with patch("app.modules.auth.services.send_email_verification") as mock_send_email:
                         with patch.object(auth_service.repository.session, "commit"):
                             result = auth_service.create_with_profile(**user_data)
+                            print(mock_profile_create.call_args_list)
 
                             assert result == mock_user
                             mock_create.assert_called_once_with(
                                 commit=False, email="new@example.com", password="password123"
                             )
-                            mock_profile_create.assert_called_once_with(user_id=1, name="John", surname="Doe")
+                            mock_profile_create.assert_called_once_with(
+                                user_id=1,
+                                name="John",
+                                surname="Doe",
+                                uploaded_datasets_count=0,
+                                downloaded_datasets_count=0,
+                                synchronized_datasets_count=0,
+                            )
                             mock_send_email.assert_called_once_with(mock_user)
 
     def test_create_with_profile_missing_email(self, auth_service, test_client):

@@ -58,7 +58,7 @@
                 </div>
                 <div class="card-body">
                     <p class="card-text">
-                        You have not created any dataset synchronized with Zenodo, are you up for it?
+                        You have not created any dataset synchronized with Fakenodo, are you up for it?
                     </p>
                     <a href="{{ url_for('dataset.create_dataset') }}" class="btn btn-primary">
                         Upload dataset</a>
@@ -100,6 +100,9 @@
                                         <td>
                                             <a href="{{ url_for('dataset.get_unsynchronized_dataset', dataset_id=local_dataset.id) }}">
                                                 <i data-feather="eye"></i>
+                                            </a>
+                                            <a href="{{ url_for('dataset.edit_doi_dataset', dataset_id=local_dataset.id) }}">
+                                                <i data-feather="edit"></i>
                                             </a>
                                             <a href="{{ url_for('dataset.download_dataset', dataset_id=local_dataset.id) }}">
                                                 <i data-feather="download"></i>
