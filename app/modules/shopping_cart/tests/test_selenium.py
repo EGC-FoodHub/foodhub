@@ -1,8 +1,10 @@
-import pytest
 import time
+
+import pytest
 from selenium.webdriver.common.by import By
-from core.selenium.common import initialize_driver, close_driver
+
 from core.environment.host import get_host_for_selenium_testing
+from core.selenium.common import close_driver, initialize_driver
 
 pytestmark = pytest.mark.selenium
 
@@ -22,7 +24,7 @@ class TestAddDataset:
         self.driver.find_element(By.ID, "email").send_keys("user1@example.com")
         self.driver.find_element(By.ID, "password").send_keys("1234")
         self.driver.find_element(By.ID, "submit").click()
-        time.sleep(2)  
+        time.sleep(2)
 
     def test_adddataset(self):
         self.login()

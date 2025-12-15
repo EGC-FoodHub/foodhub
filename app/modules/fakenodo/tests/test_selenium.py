@@ -3,14 +3,14 @@ import time
 
 import pytest
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 from app import app, db
 from app.modules.basedataset.models import BaseAuthor, BaseDSViewRecord
 from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData
 from core.environment.host import get_host_for_selenium_testing
 from core.selenium.common import initialize_driver
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 
 pytestmark = pytest.mark.selenium
 
@@ -53,7 +53,7 @@ class TestDatasetRecommendations:
 
         self.driver.find_element(By.ID, "tags").click()
         self.driver.find_element(By.ID, "tags").send_keys("fakenodo")
-        
+
         upload_file = os.path.abspath(
             os.path.join(os.path.dirname(__file__), "../..", "fooddataset/food_examples/espinacas.food")
         )
@@ -62,13 +62,13 @@ class TestDatasetRecommendations:
 
         self.driver.execute_script(
             "arguments[0].style.display = 'block'; arguments[0].style.opacity = '1'; arguments[0].style.visibility = \
-                'visible';", file_input)
+                'visible';",
+            file_input,
+        )
 
         file_input.send_keys(upload_file)
 
-        WebDriverWait(self.driver, 10).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, ".dz-success"))
-        )
+        WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, ".dz-success")))
 
         self.driver.find_element(By.ID, "agreeCheckbox").click()
         self.driver.find_element(By.ID, "upload_button").click()

@@ -2,10 +2,10 @@ import io
 import urllib.error
 import zipfile
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch, call
-from werkzeug.exceptions import NotFound
+from unittest.mock import MagicMock, patch
 
 import pytest
+from werkzeug.exceptions import NotFound
 
 from app.modules.fooddataset.services import FoodDatasetService
 
@@ -24,29 +24,28 @@ def mock_user():
     user.is_authenticated = True
     return user
 
+
 @pytest.fixture
 def mock_dataset():
     """Create a mock dataset with complete structure"""
     dataset = MagicMock()
     dataset.id = 123
-    
     dataset.ds_meta_data = MagicMock()
     dataset.ds_meta_data.title = "Original Title"
     dataset.ds_meta_data.description = "Original Description"
     dataset.ds_meta_data.publication_type.value = "MANUAL"
     dataset.ds_meta_data.publication_doi = "10.1234/test"
     dataset.ds_meta_data.tags = "tag1,tag2"
-    
     author1 = MagicMock()
     author1.name = "John Doe"
     author1.affiliation = "University A"
     author1.orcid = "0000-0001-1111-1111"
-    
+
     dataset.ds_meta_data.authors = [author1]
-    
+
     file1 = MagicMock()
     file1.name = "model1.food"
-    
+
     food_model1 = MagicMock()
     food_model1.files = [file1]
     food_model1.food_meta_data = MagicMock()
@@ -56,16 +55,17 @@ def mock_dataset():
     food_model1.food_meta_data.publication_type = "MANUAL"
     food_model1.food_meta_data.publication_doi = "10.5678/model1"
     food_model1.food_meta_data.tags = "modeltag1"
-    
+
     model_author = MagicMock()
     model_author.name = "Model Author"
     model_author.affiliation = "Model Univ"
     model_author.orcid = "0000-0003-3333-3333"
-    
+
     food_model1.food_meta_data.authors = [model_author]
-    
+
     dataset.files = [food_model1]
     return dataset
+
 
 @pytest.fixture
 def mock_form():
@@ -302,10 +302,10 @@ def test_create_dataset_as_draft_post_success_with_food_models(test_client, mock
         mock_dataset = MagicMock()
         mock_dataset.id = 1
         mock_service.create_from_form.return_value = mock_dataset
-        
+
         mock_form = MockForm.return_value
         mock_form.food_models.entries = [MagicMock(filename=MagicMock(data="test.food"))]
-        
+
         mock_user.temp_folder.return_value = "/tmp/testuser"
         mock_exists.return_value = True
         mock_isdir.return_value = True
@@ -314,7 +314,7 @@ def test_create_dataset_as_draft_post_success_with_food_models(test_client, mock
 
         assert response.status_code == 200
         assert response.get_json()["message"] == "Everything works!"
-        
+
         mock_service.create_from_form.assert_called_once()
         mock_rmtree.assert_called_once_with("/tmp/testuser")
         mock_user.temp_folder.assert_called()
@@ -331,7 +331,7 @@ def test_create_dataset_as_draft_post_service_exception(test_client, mock_user, 
     ):
         mock_form = MockForm.return_value
         mock_form.food_models.entries = [MagicMock(filename=MagicMock(data="test.food"))]
-        
+
         error_msg = "Invalid dataset metadata"
         mock_service.create_from_form.side_effect = Exception(error_msg)
 
@@ -352,9 +352,7 @@ def test_publish_dataset_not_found(test_client, mock_user, monkeypatch):
         assert resp.status_code == 404
 
 
-def test_publish_dataset_success_safe(
-    test_client, mock_user, mock_dataset, monkeypatch
-):
+def test_publish_dataset_success_safe(test_client, mock_user, mock_dataset, monkeypatch):
     monkeypatch.setattr(
         "app.modules.fooddataset.routes.current_user",
         mock_user,
@@ -397,9 +395,7 @@ def test_publish_dataset_success_safe(
         assert resp.get_json()["message"] == "Dataset published successfully"
 
 
-def test_publish_dataset_missing_file_raises_safe(
-    test_client, mock_user, mock_dataset, monkeypatch
-):
+def test_publish_dataset_missing_file_raises_safe(test_client, mock_user, mock_dataset, monkeypatch):
     monkeypatch.setattr("app.modules.fooddataset.routes.current_user", mock_user, raising=False)
     monkeypatch.setattr("flask_login.utils._get_user", lambda: mock_user, raising=False)
 
@@ -418,9 +414,8 @@ def test_publish_dataset_missing_file_raises_safe(
         with pytest.raises(FileNotFoundError):
             test_client.post(f"/dataset/publish/{mock_dataset.id}")
 
-def test_publish_dataset_fakenodo_upload_error_safe(
-    test_client, mock_user, mock_dataset, monkeypatch
-):
+
+def test_publish_dataset_fakenodo_upload_error_safe(test_client, mock_user, mock_dataset, monkeypatch):
     monkeypatch.setattr("app.modules.fooddataset.routes.current_user", mock_user, raising=False)
     monkeypatch.setattr("flask_login.utils._get_user", lambda: mock_user, raising=False)
 
@@ -449,7 +444,6 @@ def test_publish_dataset_fakenodo_upload_error_safe(
         assert "Error uploading to Fakenodo" in resp.get_json()["message"]
 
 
-
 def test_edit_doi_dataset_get_not_found(test_client, mock_user, monkeypatch):
     """Test GET: dataset not found returns 404"""
     monkeypatch.setattr("app.modules.fooddataset.routes.current_user", mock_user, raising=False)
@@ -466,7 +460,7 @@ def test_edit_doi_dataset_get_loads_form_data(test_client, mock_user, mock_datas
     """Test GET: form is populated with dataset metadata and files"""
     monkeypatch.setattr("app.modules.fooddataset.routes.current_user", mock_user, raising=False)
     monkeypatch.setattr("flask_login.utils._get_user", lambda: mock_user, raising=False)
-    
+
     with (
         patch("app.modules.fooddataset.routes.food_service") as mock_service,
         patch("app.modules.fooddataset.routes.FoodDatasetForm") as MockForm,
@@ -482,15 +476,15 @@ def test_edit_doi_dataset_get_loads_form_data(test_client, mock_user, mock_datas
         mock_form = MockForm.return_value
         mock_form.authors.entries = []
         mock_form.food_models.entries = []
-        
+
         test_client.get(f"/dataset/edit/{mock_dataset.id}")
-        
+
         assert mock_form.title.data == "Original Title"
         assert mock_form.desc.data == "Original Description"
         assert mock_form.publication_type.data == "MANUAL"
         assert mock_form.publication_doi.data == "10.1234/test"
         assert mock_form.tags.data == "tag1,tag2"
-        
+
         mock_form.authors.append_entry.assert_called()
         mock_form.food_models.append_entry.assert_called()
 
@@ -499,12 +493,12 @@ def test_edit_doi_dataset_get_handles_duplicate_filenames(test_client, mock_user
     """Test GET: duplicate filenames are renamed with (n) suffix"""
     monkeypatch.setattr("app.modules.fooddataset.routes.current_user", mock_user, raising=False)
     monkeypatch.setattr("flask_login.utils._get_user", lambda: mock_user, raising=False)
-    
+
     def mock_exists(path):
         if "model1.food" in path and "(1)" not in path:
             return True
         return False
-    
+
     with (
         patch("app.modules.fooddataset.routes.food_service") as mock_service,
         patch("app.modules.fooddataset.routes.FoodDatasetForm"),
@@ -517,9 +511,9 @@ def test_edit_doi_dataset_get_handles_duplicate_filenames(test_client, mock_user
         patch("os.getenv", return_value="/work"),
     ):
         mock_service.get_or_404.return_value = mock_dataset
-        
+
         test_client.get(f"/dataset/edit/{mock_dataset.id}")
-        
+
         mock_copy.assert_called()
         call_args = mock_copy.call_args_list[0]
         assert "(1)" in call_args[0][1]
@@ -529,7 +523,7 @@ def test_edit_doi_dataset_post_success(test_client, mock_user, mock_dataset, mon
     """Test POST: successful dataset update calls service correctly"""
     monkeypatch.setattr("app.modules.fooddataset.routes.current_user", mock_user, raising=False)
     monkeypatch.setattr("flask_login.utils._get_user", lambda: mock_user, raising=False)
-    
+
     with (
         patch("app.modules.fooddataset.routes.food_service") as mock_service,
         patch("app.modules.fooddataset.routes.FoodDatasetForm") as MockForm,
@@ -538,16 +532,13 @@ def test_edit_doi_dataset_post_success(test_client, mock_user, mock_dataset, mon
     ):
         mock_form = MockForm.return_value
         mock_form.food_models.entries = [MagicMock(filename=MagicMock(data="test.food"))]
-        
+
         mock_service.get_or_404.return_value = mock_dataset
         mock_service.edit_doi_dataset.return_value = (mock_dataset, [])
         mock_service.handle_service_response.return_value = MagicMock(status_code=200)
-        
-        test_client.post(
-            f"/dataset/edit/{mock_dataset.id}",
-            data={"title": "Updated Title"}
-        )
-        
+
+        test_client.post(f"/dataset/edit/{mock_dataset.id}", data={"title": "Updated Title"})
+
         mock_service.edit_doi_dataset.assert_called_once_with(mock_dataset, mock_form)
 
 
@@ -555,7 +546,7 @@ def test_edit_doi_dataset_post_empty_food_models(test_client, mock_user, mock_da
     """Test POST: empty food models are cleared before service call"""
     monkeypatch.setattr("app.modules.fooddataset.routes.current_user", mock_user, raising=False)
     monkeypatch.setattr("flask_login.utils._get_user", lambda: mock_user, raising=False)
-    
+
     with (
         patch("app.modules.fooddataset.routes.food_service") as mock_service,
         patch("app.modules.fooddataset.routes.FoodDatasetForm") as MockForm,
@@ -564,16 +555,13 @@ def test_edit_doi_dataset_post_empty_food_models(test_client, mock_user, mock_da
     ):
         mock_form = MockForm.return_value
         mock_form.food_models.entries = [MagicMock(filename=MagicMock(data=None))]
-        
+
         mock_service.get_or_404.return_value = mock_dataset
         mock_service.edit_doi_dataset.return_value = (mock_dataset, [])
         mock_service.handle_service_response.return_value = MagicMock(status_code=200)
-        
-        test_client.post(
-            f"/dataset/edit/{mock_dataset.id}",
-            data={"title": "Updated Title"}
-        )
-        
+
+        test_client.post(f"/dataset/edit/{mock_dataset.id}", data={"title": "Updated Title"})
+
         assert mock_form.food_models == []
         mock_service.edit_doi_dataset.assert_called_once()
 
@@ -582,7 +570,7 @@ def test_edit_doi_dataset_post_with_errors(test_client, mock_user, mock_dataset,
     """Test POST: service errors are handled correctly"""
     monkeypatch.setattr("app.modules.fooddataset.routes.current_user", mock_user, raising=False)
     monkeypatch.setattr("flask_login.utils._get_user", lambda: mock_user, raising=False)
-    
+
     with (
         patch("app.modules.fooddataset.routes.food_service") as mock_service,
         patch("app.modules.fooddataset.routes.FoodDatasetForm") as MockForm,
@@ -591,16 +579,13 @@ def test_edit_doi_dataset_post_with_errors(test_client, mock_user, mock_dataset,
     ):
         mock_form = MockForm.return_value
         mock_form.food_models.entries = [MagicMock(filename=MagicMock(data="test.food"))]
-        
+
         mock_service.get_or_404.return_value = mock_dataset
         errors = ["Invalid title", "Missing description"]
         mock_service.edit_doi_dataset.return_value = (None, errors)
         mock_service.handle_service_response.return_value = MagicMock(status_code=400)
-        
-        test_client.post(
-            f"/dataset/edit/{mock_dataset.id}",
-            data={"title": ""}
-        )
-        
+
+        test_client.post(f"/dataset/edit/{mock_dataset.id}", data={"title": ""})
+
         call_args = mock_service.handle_service_response.call_args
         assert call_args[0][1] == errors

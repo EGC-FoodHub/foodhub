@@ -1,7 +1,7 @@
 import os
 import time
-import pytest
 
+import pytest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
@@ -45,16 +45,14 @@ def test_dataset_upload_check():
             dropzone_input = driver.find_element(By.CSS_SELECTOR, ".dz-hidden-input")
             dropzone_input.send_keys(temp_file_path)
 
-            WebDriverWait(driver, 15).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "span.badge.bg-success"))
-            )
+            WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.CSS_SELECTOR, "span.badge.bg-success")))
 
             success_badge = driver.find_element(By.CSS_SELECTOR, "span.badge.bg-success")
             badge_text = success_badge.text.strip()
 
             print(f"Badge text detected: '{badge_text}'")
             assert "Valid: TestFood" in badge_text
-        
+
         finally:
             if os.path.exists(temp_file_path):
                 os.remove(temp_file_path)

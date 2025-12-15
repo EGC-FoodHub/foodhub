@@ -182,7 +182,7 @@ class FoodDatasetBehavior(TaskSet):
 
         with open(zip_path, "rb") as f:
             files = {"food_models-0-filename": ("food.zip", f, "application/zip")}
-            
+
             response = self.client.post("/dataset/save_as_draft", data=data, files=files)
 
         if response.status_code == 200:
@@ -191,7 +191,7 @@ class FoodDatasetBehavior(TaskSet):
                 response_data = response.json()
                 if "dataset_id" in response_data:
                     self.dataset_ids.append(response_data["dataset_id"])
-            except:
+            except Exception:
                 pass
         else:
             print(f"⚠ Draft dataset creation failed: {response.status_code}")
@@ -220,11 +220,7 @@ class FoodDatasetBehavior(TaskSet):
             "csrf_token": csrf,
         }
 
-        response = self.client.post(
-            f"/dataset/publish/{dataset_id}",
-            data=data,
-            catch_response=True
-        )
+        response = self.client.post(f"/dataset/publish/{dataset_id}", data=data, catch_response=True)
 
         if response.status_code == 200:
             print(f"✔ Dataset {dataset_id} publicado correctamente")
@@ -234,7 +230,7 @@ class FoodDatasetBehavior(TaskSet):
                     response.success()
                 else:
                     response.failure(f"Unexpected response: {response_data}")
-            except:
+            except Exception:
                 response.failure("Invalid JSON response")
         else:
             print(f"⚠ Dataset publish failed: {response.status_code}")
@@ -265,22 +261,13 @@ class FoodDatasetBehavior(TaskSet):
         }
 
         file_path = os.path.abspath("app/modules/dataset/food_examples/test.food")
-        
+
         if os.path.exists(file_path):
             with open(file_path, "rb") as f:
                 files = {"food_models-0-filename": ("test.food", f, "application/octet-stream")}
-                response = self.client.post(
-                    f"/dataset/edit/{dataset_id}",
-                    data=data,
-                    files=files,
-                    catch_response=True
-                )
+                response = self.client.post(f"/dataset/edit/{dataset_id}", data=data, files=files, catch_response=True)
         else:
-            response = self.client.post(
-                f"/dataset/edit/{dataset_id}",
-                data=data,
-                catch_response=True
-            )
+            response = self.client.post(f"/dataset/edit/{dataset_id}", data=data, catch_response=True)
 
         if response.status_code in [200, 302]:
             print(f"✔ Dataset {dataset_id} editado correctamente")
