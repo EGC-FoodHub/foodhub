@@ -1,20 +1,22 @@
+import logging
 from datetime import datetime, timedelta
 
-from sqlalchemy import and_, func
+from sqlalchemy import and_, event, func
 
 from app import db
 from app.modules.basedataset.models import BaseDataset, BaseDSMetaData
+from core.services.SearchService import SearchService
+
+logger = logging.getLogger(__name__)
 
 
 class FoodDataset(BaseDataset):
     __tablename__ = "food_dataset"
 
     id = db.Column(db.Integer, db.ForeignKey("base_dataset.id"), primary_key=True)
-
     ds_meta_data_id = db.Column(
         db.Integer, db.ForeignKey("food_ds_meta_data.id", use_alter=True, name="fk_food_dataset_ds_metadata")
     )
-
     view_count = db.Column(db.Integer, default=0, nullable=False)
     download_count = db.Column(db.Integer, default=0, nullable=False)
     last_viewed_at = db.Column(db.DateTime, nullable=True)
@@ -24,68 +26,102 @@ class FoodDataset(BaseDataset):
     ds_meta_data = db.relationship(
         "FoodDSMetaData", back_populates="dataset", uselist=False, foreign_keys=[ds_meta_data_id]
     )
-
     files = db.relationship("FoodModel", back_populates="dataset", cascade="all, delete-orphan")
-
     activity_logs = db.relationship("FoodDatasetActivity", back_populates="dataset", cascade="all, delete-orphan")
 
     __mapper_args__ = {
         "polymorphic_identity": "food_dataset",
     }
 
+    def get_file_total_size(self) -> int:
+        """Calcula el tamaño total de todos los archivos del dataset."""
+        total_size = 0
+        for food_model in self.files:
+            for hubfile in food_model.files:
+                total_size += hubfile.size
+        return total_size
+
     def __repr__(self):
         return f"<FoodDataset {self.id}>"
 
     def increment_view(self):
-        self.view_count += 1
-        self.last_viewed_at = datetime.now()
+        """Incrementa el contador de vistas y guarda en la base de datos."""
+        try:
+            self.view_count += 1
+            self.last_viewed_at = datetime.now()
 
-        activity = FoodDatasetActivity(dataset_id=self.id, activity_type="view", timestamp=datetime.now())
-        db.session.add(activity)
+            activity = FoodDatasetActivity(dataset_id=self.id, activity_type="view", timestamp=datetime.now())
+            db.session.add(activity)
+            db.session.commit()
+            return True
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Error incrementing view for dataset {self.id}: {e}")
+            return False
 
     def increment_download(self):
-        self.download_count += 1
-        self.last_downloaded_at = datetime.now()
+        """Incrementa el contador de descargas y guarda en la base de datos."""
+        try:
+            self.download_count += 1
+            self.last_downloaded_at = datetime.now()
 
-        activity = FoodDatasetActivity(dataset_id=self.id, activity_type="download", timestamp=datetime.now())
-        db.session.add(activity)
+            activity = FoodDatasetActivity(dataset_id=self.id, activity_type="download", timestamp=datetime.now())
+            db.session.add(activity)
+            db.session.commit()
+            return True
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Error incrementing download for dataset {self.id}: {e}")
+            return False
 
     def get_recent_views(self, days=7):
-        cutoff_date = datetime.now() - timedelta(days=days)
-        return (
-            db.session.query(func.count(FoodDatasetActivity.id))
-            .filter(
-                and_(
-                    FoodDatasetActivity.dataset_id == self.id,
-                    FoodDatasetActivity.activity_type == "view",
-                    FoodDatasetActivity.timestamp >= cutoff_date,
+        """Obtiene las vistas recientes de los últimos N días."""
+        try:
+            cutoff_date = datetime.now() - timedelta(days=days)
+            return (
+                db.session.query(func.count(FoodDatasetActivity.id))
+                .filter(
+                    and_(
+                        FoodDatasetActivity.dataset_id == self.id,
+                        FoodDatasetActivity.activity_type == "view",
+                        FoodDatasetActivity.timestamp >= cutoff_date,
+                    )
                 )
+                .scalar()
+                or 0
             )
-            .scalar()
-            or 0
-        )
+        except Exception as e:
+            logger.error(f"Error getting recent views for dataset {self.id}: {e}")
+            return 0
 
     def get_recent_downloads(self, days=7):
-        cutoff_date = datetime.now() - timedelta(days=days)
-        return (
-            db.session.query(func.count(FoodDatasetActivity.id))
-            .filter(
-                and_(
-                    FoodDatasetActivity.dataset_id == self.id,
-                    FoodDatasetActivity.activity_type == "download",
-                    FoodDatasetActivity.timestamp >= cutoff_date,
+        """Obtiene las descargas recientes de los últimos N días."""
+        try:
+            cutoff_date = datetime.now() - timedelta(days=days)
+            return (
+                db.session.query(func.count(FoodDatasetActivity.id))
+                .filter(
+                    and_(
+                        FoodDatasetActivity.dataset_id == self.id,
+                        FoodDatasetActivity.activity_type == "download",
+                        FoodDatasetActivity.timestamp >= cutoff_date,
+                    )
                 )
+                .scalar()
+                or 0
             )
-            .scalar()
-            or 0
-        )
+        except Exception as e:
+            logger.error(f"Error getting recent downloads for dataset {self.id}: {e}")
+            return 0
 
     def calculate_trending_score(self, days=7, download_weight=2.0, view_weight=1.0):
+        """Calcula el puntaje de trending."""
         recent_downloads = self.get_recent_downloads(days)
         recent_views = self.get_recent_views(days)
         return (recent_downloads * download_weight) + (recent_views * view_weight)
 
     def get_main_author(self):
+        """Obtiene el autor principal del dataset."""
         if self.ds_meta_data and self.ds_meta_data.authors:
             main_author = self.ds_meta_data.authors[0]
             return {
@@ -96,59 +132,84 @@ class FoodDataset(BaseDataset):
         return None
 
     def to_trending_dict(self):
-        return {
-            "id": self.id,
-            "title": self.ds_meta_data.title if self.ds_meta_data else "Sin título",
-            "main_author": self.get_main_author(),
-            "community": self.ds_meta_data.community if self.ds_meta_data else None,
-            "download_count": self.download_count,
-            "view_count": self.view_count,
-            "recent_downloads_week": self.get_recent_downloads(7),
-            "recent_views_week": self.get_recent_views(7),
-            "recent_downloads_month": self.get_recent_downloads(30),
-            "recent_views_month": self.get_recent_views(30),
-            "trending_score": self.calculate_trending_score(),
-            "last_downloaded_at": self.last_downloaded_at.isoformat() if self.last_downloaded_at else None,
-            "last_viewed_at": self.last_viewed_at.isoformat() if self.last_viewed_at else None,
-            "doi": self.ds_meta_data.dataset_doi if self.ds_meta_data else None,
-        }
+        """Convierte el dataset a un diccionario para trending."""
+        try:
+            # Asegurarse de que ds_meta_data esté cargado
+            if not self.ds_meta_data:
+                return None
+
+            return {
+                "id": self.id,
+                "title": self.ds_meta_data.title if self.ds_meta_data else "Sin título",
+                "main_author": self.get_main_author(),
+                "community": self.ds_meta_data.community if self.ds_meta_data else None,
+                "download_count": self.download_count,
+                "view_count": self.view_count,
+                "recent_downloads_week": self.get_recent_downloads(7),
+                "recent_views_week": self.get_recent_views(7),
+                "recent_downloads_month": self.get_recent_downloads(30),
+                "recent_views_month": self.get_recent_views(30),
+                "trending_score": self.calculate_trending_score(),
+                "last_downloaded_at": self.last_downloaded_at.isoformat() if self.last_downloaded_at else None,
+                "last_viewed_at": self.last_viewed_at.isoformat() if self.last_viewed_at else None,
+                "doi": self.ds_meta_data.dataset_doi if self.ds_meta_data else None,
+            }
+        except Exception as e:
+            logger.error(f"Error converting dataset {self.id} to trending dict: {e}")
+            return None
 
     @staticmethod
     def get_trending(period_days=7, limit=10):
+        """Obtiene los datasets trending de los últimos N días."""
+        try:
+            cutoff_date = datetime.now() - timedelta(days=period_days)
 
-        cutoff_date = datetime.now() - timedelta(days=period_days)
-
-        downloads_subquery = (
-            db.session.query(
-                FoodDatasetActivity.dataset_id, func.count(FoodDatasetActivity.id).label("recent_downloads")
+            downloads_subquery = (
+                db.session.query(
+                    FoodDatasetActivity.dataset_id, func.count(FoodDatasetActivity.id).label("recent_downloads")
+                )
+                .filter(
+                    and_(FoodDatasetActivity.activity_type == "download", FoodDatasetActivity.timestamp >= cutoff_date)
+                )
+                .group_by(FoodDatasetActivity.dataset_id)
+                .subquery()
             )
-            .filter(and_(FoodDatasetActivity.activity_type == "download", FoodDatasetActivity.timestamp >= cutoff_date))
-            .group_by(FoodDatasetActivity.dataset_id)
-            .subquery()
-        )
 
-        views_subquery = (
-            db.session.query(FoodDatasetActivity.dataset_id, func.count(FoodDatasetActivity.id).label("recent_views"))
-            .filter(and_(FoodDatasetActivity.activity_type == "view", FoodDatasetActivity.timestamp >= cutoff_date))
-            .group_by(FoodDatasetActivity.dataset_id)
-            .subquery()
-        )
-
-        trending_datasets = (
-            db.session.query(FoodDataset)
-            .outerjoin(downloads_subquery, FoodDataset.id == downloads_subquery.c.dataset_id)
-            .outerjoin(views_subquery, FoodDataset.id == views_subquery.c.dataset_id)
-            .order_by(
-                (
-                    func.coalesce(downloads_subquery.c.recent_downloads, 0) * 2
-                    + func.coalesce(views_subquery.c.recent_views, 0)
-                ).desc()
+            views_subquery = (
+                db.session.query(
+                    FoodDatasetActivity.dataset_id, func.count(FoodDatasetActivity.id).label("recent_views")
+                )
+                .filter(and_(FoodDatasetActivity.activity_type == "view", FoodDatasetActivity.timestamp >= cutoff_date))
+                .group_by(FoodDatasetActivity.dataset_id)
+                .subquery()
             )
-            .limit(limit)
-            .all()
-        )
 
-        return [dataset.to_trending_dict() for dataset in trending_datasets]
+            trending_datasets = (
+                db.session.query(FoodDataset)
+                .outerjoin(downloads_subquery, FoodDataset.id == downloads_subquery.c.dataset_id)
+                .outerjoin(views_subquery, FoodDataset.id == views_subquery.c.dataset_id)
+                .order_by(
+                    (
+                        func.coalesce(downloads_subquery.c.recent_downloads, 0) * 2
+                        + func.coalesce(views_subquery.c.recent_views, 0)
+                    ).desc()
+                )
+                .limit(limit)
+                .all()
+            )
+
+            # Convertir a diccionarios, filtrando los None
+            result = []
+            for dataset in trending_datasets:
+                dict_data = dataset.to_trending_dict()
+                if dict_data:  # Solo agregar si no es None
+                    result.append(dict_data)
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Error getting trending datasets: {e}")
+            return []
 
 
 class FoodDSMetaData(BaseDSMetaData):
@@ -215,3 +276,13 @@ class FoodDatasetActivity(db.Model):
 
     def __repr__(self):
         return f"<FoodDatasetActivity {self.activity_type} on dataset {self.dataset_id}>"
+
+
+@event.listens_for(FoodDataset, "after_delete")
+def delete_dataset_from_elastic(mapper, connection, target):
+    try:
+        service = SearchService()
+        if service.enabled:
+            service.delete_dataset(target.id)
+    except Exception as e:
+        print(f"Error automaically deleting from Elastic: {e}")
