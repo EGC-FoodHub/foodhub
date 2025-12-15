@@ -241,7 +241,7 @@ https://foodhub-main-1.onrender.com
 
 foodhub-2:
 
-https://foodhub-main-2.onrender.com
+https://foodhub-pn1k.onrender.com
 
 ## Execution of tests
 
