@@ -4,8 +4,13 @@ from flask import url_for
 from app.modules.auth.repositories import UserRepository
 from app.modules.auth.services import AuthenticationService
 from app.modules.profile.repositories import UserProfileRepository
+import os
 
 pytestmark = pytest.mark.unit
+
+@pytest.fixture(autouse=True, scope="session")
+def set_test_env_vars():
+    os.environ["EMAIL_VERIFICATION_KEY"] = "test-secret-key"
 
 
 @pytest.fixture(scope="module")
