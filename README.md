@@ -166,14 +166,6 @@ Copy the example environment file:
 cp .env.vagrant.example .env
 ```
 
-#### Set correct env variables
-
-Change this env variable like this:
-
-```bash
-WORKING_DIR=/vagrant/
-```
-
 #### Change to vagrant directory
 
 ```bash
@@ -184,19 +176,32 @@ cd vagrant
 ```bash
 vagrant up
 ```
+
 #### Access to deployed project
 
 Now, you can type http://localhost:5000 in your web browser to see it.
 
+#### See virtual machine status
+
+```bash
+vagrant status
+```
+
+#### Stop virtual machine status
+
+```bash
+vagrant suspend
+```
+
 
 ## Deploy on Docker
 
-#### Set correct env variables
+#### Environment variables
 
-Add this env variable like this:
+Copy the example environment file:
 
 ```bash
-DATABASE_HOST=db
+cp .env.docker.example .env
 ```
 
 #### Stop MariaDB if running
@@ -224,6 +229,15 @@ docker compose -f docker/docker-compose.dev.yml up -d
 #### Access to deployed project
 
 Now, you can type http://localhost in your web browser to see it.
+
+#### Stop de container
+
+Execute this to stop the running container:
+
+```bash
+docker compose -f docker/docker-compose.dev.yml down -v
+```
+
 
 ## Deploy on Render
 
