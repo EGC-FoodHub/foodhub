@@ -2,7 +2,7 @@ services:
 
   web:
     container_name: web_app_container
-    image: <your_dockerhub_name>/uvlhub:latest
+    image: foodhub2/foodhub2:latest
     env_file:
       - ../.env
     ports:
