@@ -4,7 +4,7 @@
 # a new release is published on GitHub.
 # ----------------------------------------------------------------------------
 
-name: Publish image in Docker Hub
+name: Publish main-2 image in Docker Hub
 
 on:
   push:
