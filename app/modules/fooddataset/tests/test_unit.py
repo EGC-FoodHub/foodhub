@@ -907,10 +907,6 @@ def test_service_edit_doi_dataset_success():
         service.repository.session.commit.assert_called()
 
 
-def test_service_edit_doi_dataset_exception_rollbacks():
-# test trending
-
-
 def test_increment_view_count_valid(test_client):
     """Test increment_view_count con ID válido"""
     from app.modules.fooddataset.services import FoodDatasetService
