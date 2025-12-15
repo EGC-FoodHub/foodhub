@@ -87,6 +87,8 @@ Copy the example environment file:
 cp .env.local.example .env
 ```
 
+#### It's mandatory to change the default values of the keys in .env file, provided by us.
+
 #### Ignore webhook module
 
 If you are not using Docker or deployed environment, ignore the webhook module:
@@ -166,6 +168,10 @@ Copy the example environment file:
 cp .env.vagrant.example .env
 ```
 
+#### It's mandatory to change the default values of the keys in .env file, provided by us.
+
+
+
 #### Change to vagrant directory
 
 ```bash
@@ -203,6 +209,8 @@ Copy the example environment file:
 ```bash
 cp .env.docker.example .env
 ```
+
+#### It's mandatory to change the default values of the keys in .env file, provided by us.
 
 #### Stop MariaDB if running
 
