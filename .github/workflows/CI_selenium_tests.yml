@@ -2,6 +2,9 @@ name: Selenium Tests
 
 on:
   push:
+    branches:
+      - trunk-2
+      - main-2
 
 jobs:
   tests-e2e:
