@@ -10,10 +10,18 @@ on:
   push:
     branches:
       - main-2
+      - feature-g2/61-cd-docker-deployment-main-2
 
 jobs:
   push_to_registry:
     runs-on: ubuntu-24.04
+
+    env:
+      MASTER_KEY: ${{ secrets.MASTER_KEY }}
+      BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+      ELASTICSEARCH_URL: ${{ secrets.ELASTICSEARCH_URL }}
+      ELASTICSEARCH_USER: ${{ secrets.ELASTICSEARCH_USER }}
+      ELASTICSEARCH_PASSWORD: ${{ secrets.ELASTICSEARCH_PASSWORD }}
 
     steps:
       
