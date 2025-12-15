@@ -2,6 +2,9 @@ import hashlib
 import logging
 import os
 import shutil
+from typing import Any, Dict, List, Optional
+
+from sqlalchemy import func
 
 from app.modules.basedataset.services import BaseDatasetService
 from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData
@@ -115,3 +118,131 @@ class FoodDatasetService(BaseDatasetService):
                 src_file = os.path.join(source_dir, file.name)
                 if os.path.exists(src_file):
                     shutil.move(src_file, dest_dir)
+
+    def increment_view_count(self, dataset_id: int) -> bool:
+        if not isinstance(dataset_id, int) or dataset_id <= 0:
+            logger.error(f"ID invalid: {dataset_id}")
+            return False
+        logger.info(f"Incrementing view count for dataset {dataset_id}")
+        return self.repository.increment_view_count(dataset_id)
+
+    def increment_download_count(self, dataset_id: int) -> bool:
+        if not isinstance(dataset_id, int) or dataset_id <= 0:
+            logger.error(f"ID invalid: {dataset_id}")
+            return False
+        logger.info(f"Incrementing download count for dataset {dataset_id}")
+        return self.repository.increment_download_count(dataset_id)
+
+    def get_trending_datasets(self, period_days: int = 7, limit: int = 10) -> List[Dict[str, Any]]:
+        if period_days not in [7, 30]:
+            logger.warning(f"Invalid period: {period_days}, using 7 as default")
+            period_days = 7
+        limit = min(max(1, limit), 50)
+        logger.info(f"Getting trending datasets for period {period_days} days, limit {limit}")
+        return self.repository.get_trending_datasets(period_days=period_days, limit=limit)
+
+    def get_trending_weekly(self, limit: int = 10) -> List[Dict[str, Any]]:
+        logger.info(f"Getting weekly trending datasets, limit {limit}")
+        trending_data = self.repository.get_trending_weekly(limit=limit)
+        for dataset in trending_data:
+            if "recent_downloads_week" not in dataset:
+                dataset["recent_downloads_week"] = dataset.get("recent_downloads", 0)
+            if "recent_views_week" not in dataset:
+                dataset["recent_views_week"] = dataset.get("recent_views", 0)
+
+        return trending_data
+
+    def get_trending_monthly(self, limit: int = 10) -> List[Dict[str, Any]]:
+        logger.info(f"Getting monthly trending datasets, limit {limit}")
+        return self.repository.get_trending_monthly(limit=limit)
+
+    def get_most_viewed_datasets(self, limit: int = 10) -> List[Dict[str, Any]]:
+        logger.info(f"Getting most viewed datasets, limit {limit}")
+        return self.repository.get_most_viewed_datasets(limit=limit)
+
+    def get_most_downloaded_datasets(self, limit: int = 10) -> List[Dict[str, Any]]:
+        logger.info(f"Getting most downloaded datasets, limit {limit}")
+        return self.repository.get_most_downloaded_datasets(limit=limit)
+
+    def get_dataset_stats(self, dataset_id: int) -> Optional[Dict[str, Any]]:
+        logger.info(f"Getting stats for dataset {dataset_id}")
+        return self.repository.get_dataset_stats(dataset_id)
+
+    def register_dataset_view(self, dataset_id: int) -> bool:
+        return self.increment_view_count(dataset_id)
+
+    def register_dataset_download(self, dataset_id: int) -> bool:
+        return self.increment_download_count(dataset_id)
+
+    def total_dataset_downloads(self) -> int:
+        try:
+            total = self.repository.session.query(func.sum(FoodDataset.download_count)).scalar()
+            return total or 0
+        except Exception as e:
+            logger.error(f"Error getting total downloads: {e}")
+            return 0
+
+    def total_dataset_views(self) -> int:
+        try:
+            total = self.repository.session.query(func.sum(FoodDataset.view_count)).scalar()
+            return total or 0
+        except Exception as e:
+            logger.error(f"Error getting total views: {e}")
+            return 0
+
+    def total_food_model_downloads(self) -> int:
+        try:
+            from app.modules.foodmodel.models import FoodModel
+            from app.modules.hubfile.models import Hubfile, HubfileDownloadRecord
+
+            total = (
+                self.repository.session.query(func.count(HubfileDownloadRecord.id))
+                .join(Hubfile, HubfileDownloadRecord.file_id == Hubfile.id)
+                .join(FoodModel, Hubfile.food_model_id == FoodModel.id)
+                .scalar()
+            )
+            return total or 0
+        except Exception as e:
+            logger.error(f"Error getting total food model downloads: {e}")
+            return 0
+
+    def total_food_model_views(self) -> int:
+        try:
+            from app.modules.foodmodel.models import FoodModel
+            from app.modules.hubfile.models import Hubfile, HubfileViewRecord
+
+            total = (
+                self.repository.session.query(func.count(HubfileViewRecord.id))
+                .join(Hubfile, HubfileViewRecord.file_id == Hubfile.id)
+                .join(FoodModel, Hubfile.food_model_id == FoodModel.id)
+                .scalar()
+            )
+            return total or 0
+        except Exception as e:
+            logger.error(f"Error getting total food model views: {e}")
+            return 0
+
+    def count_food_models(self) -> int:
+        try:
+            from app.modules.foodmodel.models import FoodModel
+
+            total = self.repository.session.query(FoodModel).count()
+            return total or 0
+        except Exception as e:
+            logger.error(f"Error counting food models: {e}")
+            return 0
+
+    def get_all_statistics(self) -> Dict[str, Any]:
+        return {
+            "datasets_counter": self.count_synchronized_datasets(),
+            "food_models_counter": self.count_food_models(),
+            "total_dataset_downloads": self.total_dataset_downloads(),
+            "total_dataset_views": self.total_dataset_views(),
+            "total_food_model_downloads": self.total_food_model_downloads(),
+            "total_food_model_views": self.total_food_model_views(),
+            "trending_weekly": self.get_trending_weekly(limit=3),
+            "trending_monthly": self.get_trending_monthly(limit=3),
+            "most_viewed": self.get_most_viewed_datasets(limit=5),
+            "most_downloaded": self.get_most_downloaded_datasets(limit=5),
+            "timestamp": os.getenv("SERVER_TIMESTAMP", "N/A"),
+        }

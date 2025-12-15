@@ -1,4 +1,5 @@
 import logging
+import os
 import uuid
 from typing import Optional
 
@@ -56,6 +57,11 @@ class BaseDatasetService(BaseService):
 
     def get_by_id(self, id) -> Optional[BaseDataset]:
         return self.repository.get_by_id(id)
+
+    @staticmethod
+    def get_doi(dataset: BaseDataset) -> str:
+        domain = os.getenv("DOMAIN", "localhost")
+        return f"http://{domain}/doi/{dataset.ds_meta_data.dataset_doi}"
 
 
 class BaseAuthorService(BaseService):
