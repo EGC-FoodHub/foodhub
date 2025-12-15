@@ -497,7 +497,7 @@ def test_download_datasets_creates_download_records(test_client):
         patch("app.modules.basedataset.routes.os.walk") as mock_walk,
         patch("app.modules.basedataset.routes.send_from_directory") as mock_send,
         patch("app.modules.basedataset.routes.ds_download_record_service") as mock_record_service,
-        patch("app.modules.basedataset.routes.ZipFile") as mock_zipfile
+        patch("app.modules.basedataset.routes.ZipFile") as mock_zipfile,
     ):
         mock_mkdtemp.return_value = "/tmp/test"
         mock_exists.return_value = True

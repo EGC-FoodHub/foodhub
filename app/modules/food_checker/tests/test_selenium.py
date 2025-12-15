@@ -45,9 +45,7 @@ def test_dataset_upload_check():
             dropzone_input = driver.find_element(By.CSS_SELECTOR, ".dz-hidden-input")
             dropzone_input.send_keys(temp_file_path)
 
-            WebDriverWait(driver, 15).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "span.badge.bg-success"))
-            )
+            WebDriverWait(driver, 15).until(EC.presence_of_element_located((By.CSS_SELECTOR, "span.badge.bg-success")))
 
             success_badge = driver.find_element(By.CSS_SELECTOR, "span.badge.bg-success")
             badge_text = success_badge.text.strip()

@@ -62,13 +62,13 @@ class TestDatasetRecommendations:
 
         self.driver.execute_script(
             "arguments[0].style.display = 'block'; arguments[0].style.opacity = '1'; arguments[0].style.visibility = \
-                'visible';", file_input)
+                'visible';",
+            file_input,
+        )
 
         file_input.send_keys(upload_file)
 
-        WebDriverWait(self.driver, 10).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, ".dz-success"))
-        )
+        WebDriverWait(self.driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, ".dz-success")))
 
         self.driver.find_element(By.ID, "agreeCheckbox").click()
         self.driver.find_element(By.ID, "upload_button").click()

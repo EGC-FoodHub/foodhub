@@ -220,11 +220,7 @@ class FoodDatasetBehavior(TaskSet):
             "csrf_token": csrf,
         }
 
-        response = self.client.post(
-            f"/dataset/publish/{dataset_id}",
-            data=data,
-            catch_response=True
-        )
+        response = self.client.post(f"/dataset/publish/{dataset_id}", data=data, catch_response=True)
 
         if response.status_code == 200:
             print(f"✔ Dataset {dataset_id} publicado correctamente")
@@ -269,18 +265,9 @@ class FoodDatasetBehavior(TaskSet):
         if os.path.exists(file_path):
             with open(file_path, "rb") as f:
                 files = {"food_models-0-filename": ("test.food", f, "application/octet-stream")}
-                response = self.client.post(
-                    f"/dataset/edit/{dataset_id}",
-                    data=data,
-                    files=files,
-                    catch_response=True
-                )
+                response = self.client.post(f"/dataset/edit/{dataset_id}", data=data, files=files, catch_response=True)
         else:
-            response = self.client.post(
-                f"/dataset/edit/{dataset_id}",
-                data=data,
-                catch_response=True
-            )
+            response = self.client.post(f"/dataset/edit/{dataset_id}", data=data, catch_response=True)
 
         if response.status_code in [200, 302]:
             print(f"✔ Dataset {dataset_id} editado correctamente")
