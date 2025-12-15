@@ -24,12 +24,8 @@ dev = [
 [project.scripts]
 rosemary = "rosemary.cli:cli"
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["rosemary*"]
-
-[tool.setuptools.package-data]
-rosemary = ["templates/*"]
+[tool.setuptools]
+packages = ["rosemary"]
 
 # --------------------
 # Formatting & linting

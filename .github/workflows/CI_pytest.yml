@@ -27,11 +27,6 @@ jobs:
       MARIADB_HOSTNAME: 127.0.0.1
       MARIADB_PORT: 3306
       FLASK_ENV: testing
-      WORKING_DIR: ""
-      MASTER_KEY: ${{ secrets.MASTER_KEY }}
-      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-      BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
-      EMAIL_VERIFICATION_KEY: ${{ secrets.EMAIL_VERIFICATION_KEY }}
 
     services:
       # MariaDB service container for integration tests

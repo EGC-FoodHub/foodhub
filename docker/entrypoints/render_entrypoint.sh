@@ -52,8 +52,8 @@ fi
 # fi
 
 echo "DEBUG: MARIADB_HOSTNAME is '$MARIADB_HOSTNAME'"
-echo "Nuking database..."
-rosemary db:nuke -y
+echo "Resetting database..."
+rosemary db:reset -y
 
 echo "Upgrading database..."
 flask db upgrade

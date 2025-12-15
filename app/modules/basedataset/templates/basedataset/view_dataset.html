@@ -157,15 +157,29 @@
 
             {% if dataset.ds_meta_data.dataset_doi %}
             <div class="card-body pt-0">
-                <div id="dataset_doi_foodhub" style="display: none">
+                <div id="dataset_doi_uvlhub" style="display: none">
                     {{ request.host_url }}doi/{{ dataset.ds_meta_data.dataset_doi }}
                 </div>
-                <button type="button" class="btn btn-sm btn-outline-primary" onclick="copyText('dataset_doi_foodhub')">
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="copyText('dataset_doi_uvlhub')">
                     <i data-feather="clipboard" class="me-1"></i>
                     <b>Copy DOI:</b> {{ dataset.ds_meta_data.dataset_doi }}
                 </button>
             </div>
             {% endif %}
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <h3>Related publication</h3>
+                David Romero-Organvidez, et al., <i>UVLHub...</i>
+                <a href="https://doi.org/10.1016/j.jss.2024.112150" target="_blank">10.1016/j.jss.2024.112150</a>
+            </div>
+            <div class="card-body mt-0 pt-0">
+                <button onclick="copyText('bibtex_cite')" class="btn btn-light btn-sm me-2"><i data-feather="clipboard"></i> BibTex</button>
+                <button onclick="copyText('ris_cite')" class="btn btn-light btn-sm me-2"><i data-feather="clipboard"></i> RIS</button>
+                <button onclick="copyText('apa_cite')" class="btn btn-light btn-sm me-2"><i data-feather="clipboard"></i> APA</button>
+                <button onclick="copyText('text_cite')" class="btn btn-light btn-sm"><i data-feather="clipboard"></i> Text</button>
+            </div>
         </div>
 
     </div>
@@ -198,10 +212,7 @@
                                     <i data-feather="eye"></i> View
                                 </button>
 
-                                <a href="{{ url_for('hubfile.download_file', file_id=file.id) }}" 
-                                   class="btn btn-primary btn-sm dataset-download-link"
-                                   data-dataset-id="{{ dataset.id }}"
-                                   style="border-radius: 5px;">
+                                <a href="{{ url_for('hubfile.download_file', file_id=file.id) }}" class="btn btn-primary btn-sm" style="border-radius: 5px;">
                                     <i data-feather="download"></i> Download
                                 </a>
 
@@ -220,10 +231,7 @@
             {% endfor %}
         </div>
 
-        <a href="{{ url_for('basedataset.download_dataset', dataset_id=dataset.id) }}" 
-           class="btn btn-primary w-100 dataset-download-link"
-           data-dataset-id="{{ dataset.id }}"
-           style="border-radius: 5px;">
+        <a href="{{ url_for('basedataset.download_dataset', dataset_id=dataset.id) }}" class="btn btn-primary w-100" style="border-radius: 5px;">
             <i data-feather="download" class="me-1"></i> Download All (.zip)
         </a>
 
@@ -357,8 +365,4 @@
     }
 </script>
 
-{% endblock %}
-
-{% block scripts %}
-<script src="{{ url_for('public.scripts') }}"></script>
 {% endblock %}
