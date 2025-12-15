@@ -9,7 +9,6 @@ name: Publish main-2 image in Docker Hub
 on:
   push:
     branches:
-      - feature-g2/61-cd-docker-deployment-main-2
       - main-2
 
 jobs:
