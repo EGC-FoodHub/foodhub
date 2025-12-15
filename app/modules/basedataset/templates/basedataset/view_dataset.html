@@ -79,9 +79,15 @@
                         <span class="text-secondary">Publication DOI</span>
                     </div>
                     <div class="col-md-8 col-12">
-                        <a href="{{ dataset.ds_meta_data.publication_doi }}" target="_blank">
-                            {{ dataset.ds_meta_data.publication_doi }}
-                        </a>
+                        {% if dataset.ds_meta_data.publication_doi.startswith('https://') %}
+                            <a href="{{ dataset.ds_meta_data.publication_doi }}" target="_blank">
+                                {{ dataset.ds_meta_data.publication_doi }}
+                            </a>
+                        {% else %}
+                            <a href="{{ domain }}/doi/{{ dataset.ds_meta_data.publication_doi }}" target="_blank">
+                                {{ dataset.ds_meta_data.publication_doi }}
+                            </a>
+                        {% endif %}
                     </div>
                 </div>
                 {% endif %}

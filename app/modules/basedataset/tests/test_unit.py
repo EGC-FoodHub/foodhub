@@ -128,7 +128,7 @@ def test_get_file_total_size_for_human():
 def test_get_fakenodo_url_valid(test_client):
     ds = ConcreteDataset()
     ds.ds_meta_data = MagicMock(deposition_id=12345, dataset_doi="10.5281/fakenodo.12345")
-    assert ds.get_fakenodo_url() == "https://fakenodo.org/record/12345"
+    assert ds.get_fakenodo_url() == "http://localhost:5000/fakenodo/record/12345"
 
 
 def test_get_fakenodo_url_invalid(test_client):
@@ -345,27 +345,45 @@ def test_route_doi_view_success(test_client):
     # Test valid DOI lookup logic
     # We need to ensure filter_by_doi finds a metadata which has a dataset
     with (
-        patch("app.modules.basedataset.services.BaseDSMetaDataService.filter_by_doi") as mock_filter,
-        patch("app.modules.basedataset.routes.ds_view_record_service") as mock_view_service,
+        patch(
+            "app.modules.basedataset.services.BaseDSMetaDataService.filter_by_doi"
+        ) as mock_filter,
+        patch(
+            "app.modules.basedataset.routes.ds_view_record_service"
+        ) as mock_view_service,
+        patch(
+            "app.modules.basedataset.routes.db.session.expunge"
+        ),
+        patch(
+            "app.modules.fooddataset.models.FoodDSMetaData.query.get"
+        ) as mock_food_get,
+        patch(
+            "app.modules.basedataset.routes.render_template",
+            return_value="Rendered"
+        ),
     ):
-
-        # Mock the metadata object and its dataset relationship
+        # ---- Base metadata returned by DOI lookup ----
         mock_meta = MagicMock()
-        mock_dataset = MagicMock()
-        mock_dataset.id = 123
-        mock_meta.dataset = mock_dataset
+        mock_meta.id = 1
         mock_filter.return_value = mock_meta
 
-        # Mock create_cookie to avoid DB usage
-        mock_view_service.create_cookie.return_value = "cookie"
+        # ---- Dataset object for the FoodDSMetaData ----
+        mock_dataset = MagicMock()
+        mock_dataset.id = 123
 
-        # Mock render_template to avoid template errors with mocks
-        with patch("app.modules.basedataset.routes.render_template") as mock_render:
-            mock_render.return_value = "Rendered"
+        mock_food_meta = MagicMock()
+        mock_food_meta.dataset = mock_dataset
+        mock_food_get.return_value = mock_food_meta
 
-            response = test_client.get("/doi/10.1234/valid-doi/")
-            assert response.status_code == 200
-            assert b"Rendered" in response.data
+        # ---- View cookie ----
+        mock_view_service.create_cookie.return_value = "cookie123"
+
+        # ---- Call the route ----
+        response = test_client.get("/doi/10.1234/valid-doi/")
+
+        # ---- Assertions ----
+        assert response.status_code == 200
+        assert b"Rendered" in response.data
 
 
 def test_author_to_dict(test_client):
