@@ -1,7 +1,7 @@
 # ----------------------------------------------------------------------------
 # Publish image in Docker Hub Workflow
 # This workflow builds and pushes a Docker image to Docker Hub whenever
-# a new release is published on GitHub.
+# a push is made to main-2
 # ----------------------------------------------------------------------------
 
 name: Publish main-2 image in Docker Hub
