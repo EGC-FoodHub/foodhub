@@ -24,6 +24,7 @@ class TestAuthRegistration:
                     with patch("app.modules.auth.services.send_email_verification") as mock_send_email:
                         with patch.object(auth_service.repository.session, "commit"):
                             result = auth_service.create_with_profile(**user_data)
+                            print(mock_profile_create.call_args_list)
 
                             assert result == mock_user
                             mock_create.assert_called_once_with(
