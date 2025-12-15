@@ -1,9 +1,9 @@
 import random
 import re
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 
-from locust import HttpUser, TaskSet, between, events, task
+from locust import HttpUser, TaskSet, events, task
 
 from core.environment.host import get_host_for_locust_testing
 
@@ -186,8 +186,8 @@ class TrendingLoadTestBehavior(TaskSet):
                         response.success()
                     else:
                         response.failure("Respuesta vacía o no es dict")
-                except:
-                    response.failure("No es JSON válido")
+                except Exception as e:
+                    response.failure(f"Error JSON: {str(e)}")
             else:
                 response.failure(f"Status {response.status_code}")
 
