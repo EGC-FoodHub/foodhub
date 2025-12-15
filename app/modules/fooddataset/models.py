@@ -21,6 +21,7 @@ class FoodDataset(BaseDataset):
     download_count = db.Column(db.Integer, default=0, nullable=False)
     last_viewed_at = db.Column(db.DateTime, nullable=True)
     last_downloaded_at = db.Column(db.DateTime, nullable=True)
+    shoppingcart_id = db.Column(db.Integer, db.ForeignKey("shopping_cart.id"), nullable=True)
 
     ds_meta_data = db.relationship(
         "FoodDSMetaData", back_populates="dataset", uselist=False, foreign_keys=[ds_meta_data_id]

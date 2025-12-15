@@ -87,17 +87,19 @@ document.getElementById('add_author').addEventListener('click', function () {
     authors.appendChild(newAuthor);
 });
 
-document.addEventListener('click', function (event) {
-    if (event.target && event.target.classList.contains('add_author_to_file')) {
-        let button = event.target;
-        let containerId = button.getAttribute('data-container');
-        let prefix = button.getAttribute('data-prefix'); // ej: food_models-0-
-        
-        let authorsContainer = document.getElementById(containerId);
-        let newAuthor = createAuthorBlock(amount_authors++, prefix);
-        authorsContainer.appendChild(newAuthor);
-    }
-});
+if (window.location.pathname === "/dataset/upload") {
+    document.addEventListener('click', function (event) {
+        if (event.target && event.target.classList.contains('add_author_to_file')) {
+            let button = event.target;
+            let containerId = button.getAttribute('data-container');
+            let prefix = button.getAttribute('data-prefix'); // ej: food_models-0-
+
+            let authorsContainer = document.getElementById(containerId);
+            let newAuthor = createAuthorBlock(amount_authors++, prefix);
+            authorsContainer.appendChild(newAuthor);
+        }
+    });
+}
 
 function show_loading() {
     document.getElementById("upload_button").style.display = "none";
@@ -126,8 +128,8 @@ function write_upload_error(error_message) {
 }
 
 window.onload = function () {
-    if (typeof test_zenodo_connection === 'function') {
-        test_zenodo_connection();
+    if (typeof test_fakenodo_connection === 'function') {
+        test_fakenodo_connection();
     }
 
     document.getElementById('upload_button').addEventListener('click', function () {
@@ -140,45 +142,86 @@ window.onload = function () {
             const csrfToken = document.querySelector('input[name="csrf_token"]').value;
             formUploadData.append('csrf_token', csrfToken);
 
-            const basicInputs = document.querySelectorAll('#basic_info_form input, #basic_info_form select, #basic_info_form textarea');
+            // Collect basic info inputs (left column) and inputs from GitHub/ZIP tabs
+            const basicInputs = document.querySelectorAll(
+                '#basic_info_form input, #basic_info_form select, #basic_info_form textarea, ' +
+                '#github_tab input, #github_tab select, #github_tab textarea, ' +
+                '#zip_tab input, #zip_tab select, #zip_tab textarea'
+            );
             basicInputs.forEach(input => {
-                if (input.name && input.type !== 'submit') {
+                if (input.name && input.type !== 'submit' && !input.disabled) {
                     formUploadData.append(input.name, input.value);
                 }
             });
 
-            const modelInputs = document.querySelectorAll('#uploaded_models_form input, #uploaded_models_form select, #uploaded_models_form textarea');
+            // Collect any dynamically added food model fields anywhere in the page
+            const modelInputs = document.querySelectorAll(
+                'input[name^="food_models-"], select[name^="food_models-"], textarea[name^="food_models-"]'
+            );
             modelInputs.forEach(input => {
-                if (input.name) {
+                if (input.name && !input.disabled) {
                     formUploadData.append(input.name, input.value);
                 }
             });
 
             console.log('Sending FormData...');
-            
-            fetch('/dataset/upload', {
-                method: 'POST',
-                body: formUploadData
-            })
-            .then(response => {
-                if (response.ok) {
-                    response.json().then(data => {
-                        console.log(data.message);
-                        window.location.href = data.redirect || "/dataset/list";
-                    });
-                } else {
-                    response.json().then(data => {
-                        console.error('Error: ' + data.message);
-                        hide_loading();
-                        write_upload_error(data.message || "Unknown error occurred");
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error in POST request:', error);
-                hide_loading();
-                write_upload_error("Network error");
+                            
+const datasetId = window.location.pathname.split("/").pop(); 
+
+if (window.location.pathname === "/dataset/upload") {
+    
+    fetch('/dataset/upload', {
+        method: 'POST',
+        body: formUploadData
+    })
+    .then(response => {
+        if (response.ok) {
+            response.json().then(data => {
+                console.log(data.message);
+                window.location.href = data.redirect || "/dataset/list";
             });
+        } else {
+            response.json().then(data => {
+                console.error('Error: ' + data.message);
+                hide_loading();
+                write_upload_error(data.message || "Unknown error occurred");
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error in POST request:', error);
+        hide_loading();
+        write_upload_error("Network error");
+    });
+    
+} else if (window.location.pathname.startsWith("/dataset/edit/")) {
+    
+    const idToPublish = window.location.pathname.split("/").pop();
+
+    fetch(`/dataset/publish/${idToPublish}`, {
+        method: 'POST',
+        body: formUploadData
+    })
+    .then(response => {
+        if (response.ok) {
+            response.json().then(data => {
+                console.log(data.message);
+                window.location.href = data.redirect || "/dataset/list";
+            });
+        } else {
+            response.json().then(data => {
+                console.error('Error: ' + data.message);
+                hide_loading();
+                write_upload_error(data.message || "Unknown error occurred");
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error in POST request:', error);
+        hide_loading();
+        write_upload_error("Network error");
+    });
+}
 
         } else {
             hide_loading();

@@ -15,6 +15,15 @@
       MARIADB_PASSWORD: "{{ mariadb_password }}"
       MARIADB_ROOT_PASSWORD: "{{ mariadb_root_password }}"
       WORKING_DIR: "{{ working_dir }}"
+      MASTER_KEY: "{{ master_key }}"
+      BREVO_API_KEY: "{{ brevo_api_key }}"
+      SENDER_EMAIL: "{{ sender_email }}"
+      SENDER_NAME: "{{ sender_name }}"
+      EMAIL_VERIFICATION_KEY: "{{ email_verification_key }}"
+      ELASTICSEARCH_URL: "{{ elasticsearch_url }}"
+      ELASTICSEARCH_USER: "{{ elasticsearch_user }}"
+      ELASTICSEARCH_PASSWORD: "{{ elasticsearch_password }}"
+      ELASTICSEARCH_ENABLED: "{{ elasticsearch_enabled }}"
 
   tasks:
     - name: Set permissions for wait-for-db.sh

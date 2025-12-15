@@ -1,7 +1,11 @@
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from app.modules.food_checker.forms import FoodCheckerForm
 from app.modules.food_checker.services import FoodCheckerService
+
+pytestmark = pytest.mark.unit
 
 
 # Service Tests

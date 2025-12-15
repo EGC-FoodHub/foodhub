@@ -19,7 +19,7 @@
         <div class="col-12 mb-4">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">Synchronized Datasets (Zenodo)</h5>
+                    <h5 class="card-title mb-0">Synchronized Datasets (Fakenodo)</h5>
                 </div>
                 <div class="card-body">
                     <table class="table table-hover">
@@ -77,7 +77,7 @@
                 </div>
                 <div class="card-body">
                     <p class="card-text">
-                        You have not created any dataset synchronized with Zenodo yet.
+                        You have not created any dataset synchronized with Fakenodo yet.
                     </p>
                     <a href="{{ url_for('fooddataset.create_dataset') }}" class="btn btn-primary">
                         Upload dataset
@@ -123,6 +123,9 @@
                                         <div class="btn-group">
                                             <a href="{{ url_for('basedataset.view_dataset', dataset_id=local_dataset.id) }}" class="btn btn-sm btn-outline-secondary" title="View Local">
                                                 <i data-feather="eye"></i>
+                                            </a>
+                                            <a href="{{ url_for('fooddataset.edit_doi_dataset', dataset_id=local_dataset.id) }}"class="btn btn-sm btn-outline-info" title="Edit">
+                                                <i data-feather="edit"></i>
                                             </a>
                                             <a href="{{ url_for('basedataset.download_dataset', dataset_id=local_dataset.id) }}" class="btn btn-sm btn-outline-primary" title="Download">
                                                 <i data-feather="download"></i>

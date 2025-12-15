@@ -54,7 +54,7 @@
                         <span class="text-secondary">Uploaded by</span>
                     </div>
                     <div class="col-md-8 col-12">
-                        <a href="#">{{ dataset.user.profile.surname }}, {{ dataset.user.profile.name }}</a>
+                        <a href="{{ url_for('profile.user_profile', user_id=dataset.user.id) }}">{{ dataset.user.profile.surname }}, {{ dataset.user.profile.name }}</a>
                     </div>
                 </div>
 
@@ -95,9 +95,9 @@
                 {% if dataset.ds_meta_data.dataset_doi %}
                 <div class="row mb-2">
                     <div class="col-md-4 col-12">
-                        <span class="text-secondary">Zenodo record</span>
+                        <span class="text-secondary">Fakenodo record</span>
                     </div>
-                    <div class="col-md-8 col-12">
+<!--                    <div class="col-md-8 col-12">
                         {% if FLASK_ENV == 'production' %}
                             <a href="https://zenodo.org/doi/{{ dataset.ds_meta_data.dataset_doi }}" target="_blank">
                                 https://zenodo.org/doi/{{ dataset.ds_meta_data.dataset_doi }}
@@ -106,7 +106,7 @@
                             <a href="https://sandbox.zenodo.org/doi/{{ dataset.ds_meta_data.dataset_doi }}" target="_blank">
                                 https://sandbox.zenodo.org/doi/{{ dataset.ds_meta_data.dataset_doi }}
                             </a>
-                        {% endif %}
+                        {% endif %}-->
                     </div>
                 </div>
                 {% endif %}
@@ -125,6 +125,33 @@
                         {% endif %}
                     </div>
                 </div>
+
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h3>Related Datasets</h3>
+                            {% if related_datasets %}
+                                <div class="row">
+                                    {% for ds in related_datasets %}
+                                        <div class="col-md-12 mb-2">
+                                            <a href="{{ url_for('basedataset.subdomain_index', doi=ds.ds_meta_data.dataset_doi) }}">
+                                                {{ ds.ds_meta_data.title }}
+                                            </a>
+                                            <br>
+                                            <small class="text-muted">
+                                                Uploaded on {{ ds.created_at.strftime('%B %d, %Y') }} |
+
+                                                {{ ds.get_cleaned_publication_type() }}
+                                            </small>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="text-secondary">No related datasets found.</p>
+                            {% endif %}
+                        </div>
+
+                    </div>
 
             </div>
 

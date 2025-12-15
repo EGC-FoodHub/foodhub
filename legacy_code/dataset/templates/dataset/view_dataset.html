@@ -64,7 +64,7 @@
                         </span>
                     </div>
                     <div class="col-md-8 col-12">
-                        <a href="#">{{ dataset.user.profile.surname }}, {{ dataset.user.profile.name }}</a>
+                        <a href="{{ url_for('profile.user_profile', user_id=dataset.user.id) }}">{{ dataset.user.profile.surname }}, {{ dataset.user.profile.name }}</a>
                     </div>
 
                 </div>
@@ -113,26 +113,26 @@
                     
                         <div class="col-md-4 col-12">
                             <span class=" text-secondary">
-                                Zenodo record
+                                Fakenodo record
                             </span>
                         </div>
 
                         {% if FLASK_ENV == 'production' %}
                             <div class="col-md-8 col-12">
-                                <a href="https://zenodo.org/records/{{ dataset.ds_meta_data.deposition_id }}" target="_blank">
-                                    https://zenodo.org/records/{{ dataset.ds_meta_data.deposition_id }}
+                                <a href="http://127.0.0.1:5000/fakenodo/records/{{ dataset.ds_meta_data.deposition_id }}" target="_blank">
+                                    http://127.0.0.1:5000/fakenodo/records/{{ dataset.ds_meta_data.deposition_id }}
                                 </a>
                             </div>
                         {% elif FLASK_ENV == 'development' %}
                             <div class="col-md-8 col-12">
-                                <a href="https://sandbox.zenodo.org/records/{{ dataset.ds_meta_data.deposition_id }}" target="_blank">
-                                    https://sandbox.zenodo.org/records/{{ dataset.ds_meta_data.deposition_id }}
+                                <a href="http://127.0.0.1:5000/fakenodo/records/{{ dataset.ds_meta_data.deposition_id }}" target="_blank">
+                                    hhttp://127.0.0.1:5000/fakenodo/records/{{ dataset.ds_meta_data.deposition_id }}
                                 </a>
                             </div>
                         {% else %}
                             <div class="col-md-8 col-12">
-                                <a href="https://zenodo.org/records/{{ dataset.ds_meta_data.deposition_id }}" target="_blank">
-                                    https://sandbox.zenodo.org/records/{{ dataset.ds_meta_data.deposition_id }}
+                                <a href="http://127.0.0.1:5000/fakenodo/records/{{ dataset.ds_meta_data.deposition_id }}" target="_blank">
+                                    http://127.0.0.1:5000/fakenodo/records/{{ dataset.ds_meta_data.deposition_id }}
                                 </a>
                             </div>
                         {% endif %}
@@ -153,8 +153,32 @@
                     </div>
 
                 </div>
-
-                
+                <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h3>Related Datasets</h3>
+                            {% if related_datasets %}
+                                <div class="row">
+                                    {% for ds in related_datasets %}
+                                        <div class="col-md-12 mb-2">
+                                            <a href="{{ url_for('dataset.subdomain_index', doi=ds.ds_meta_data.dataset_doi) }}">
+                                                {{ ds.ds_meta_data.title }}
+                                            </a>
+                                            <br>
+                                            <small class="text-muted">
+                                                Uploaded on {{ ds.created_at.strftime('%B %d, %Y') }} |
+                                                {{ ds.get_cleaned_publication_type() }}
+                                            </small>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="text-secondary">No related datasets found.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
 
             </div>
 

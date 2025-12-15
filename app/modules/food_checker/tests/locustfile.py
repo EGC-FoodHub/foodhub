@@ -1,4 +1,7 @@
+import pytest
 from locust import HttpUser, between, task
+
+pytestmark = pytest.mark.load
 
 
 class FoodCheckerUser(HttpUser):

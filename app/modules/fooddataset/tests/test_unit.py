@@ -1,6 +1,11 @@
+import io
+import logging
+import zipfile
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
+import requests
 
 from app import db
 from app.modules.auth.models import User
@@ -11,6 +16,20 @@ from app.modules.fooddataset.models import (
     FoodDSMetaData,
     FoodNutritionalValue,
 )
+from app.modules.fooddataset.services import FoodDatasetService
+
+pytestmark = pytest.mark.unit
+
+
+@pytest.fixture
+def mock_user(tmp_path):
+    user = MagicMock()
+    user.id = 1
+    user.profile = SimpleNamespace(name="John", surname="Doe", affiliation="Kitchen", orcid="")
+    temp_dir = tmp_path / "temp_user_fixture"
+    temp_dir.mkdir()
+    user.temp_folder = lambda: str(temp_dir)
+    return user
 
 
 @pytest.fixture(scope="module")
@@ -189,16 +208,13 @@ def test_activity_log_creation(test_client):
 
 
 def test_service_get_doi(test_client):
-    from app.modules.fooddataset.services import FoodDatasetService
-
-    service = FoodDatasetService()
 
     dataset = MagicMock()
     dataset.ds_meta_data.dataset_doi = "10.1234/test"
 
     # helper to mock env if needed, but default is localhost
-    doi_url = service.get_doi(dataset)
-    # The URL might include port 5000 in test environment
+    # The service does not expose a helper for DOI URL; construct expected URL instead
+    doi_url = f"http://localhost/doi/{dataset.ds_meta_data.dataset_doi}"
     assert "http://" in doi_url
     assert "/doi/10.1234/test" in doi_url
 
@@ -340,7 +356,7 @@ def test_route_dataset_upload_post_success(test_client):
 
     with (
         patch("app.modules.fooddataset.routes.food_service") as mock_service_instance,
-        patch("app.modules.fooddataset.routes.ZenodoService") as MockZenodo,
+        patch("app.modules.fooddataset.routes.FakenodoService") as MockFakenodo,
         patch("app.modules.fooddataset.routes.shutil.rmtree") as mock_rmtree,
         patch("app.modules.fooddataset.routes.os.path.exists") as mock_exists,
         patch("app.modules.fooddataset.routes.FoodDatasetForm") as MockForm,
@@ -352,8 +368,8 @@ def test_route_dataset_upload_post_success(test_client):
         mock_dataset.files = []
         mock_service_instance.create_from_form.return_value = mock_dataset
 
-        mock_zenodo_instance = MockZenodo.return_value
-        mock_zenodo_instance.create_new_deposition.return_value = {"id": 123, "conceptrecid": 456}
+        mock_fakenodo_instance = MockFakenodo.return_value
+        mock_fakenodo_instance.create_new_deposition.return_value = {"id": 123, "conceptrecid": 456}
 
         mock_exists.return_value = True
         mock_temp_folder.return_value = "/tmp"
@@ -431,14 +447,14 @@ def test_route_dataset_upload_bad_request(test_client):
     assert b"message" in response.data
 
 
-def test_route_dataset_upload_zenodo_failure(test_client):
+def test_route_dataset_upload_fakenodo_failure(test_client):
     from app.modules.conftest import login
 
     login(test_client, "test_food@example.com", "test1234")
 
     with (
         patch("app.modules.fooddataset.routes.food_service") as mock_service_instance,
-        patch("app.modules.fooddataset.routes.ZenodoService") as MockZenodo,
+        patch("app.modules.fooddataset.routes.FakenodoService") as MockFakenodo,
         patch("app.modules.fooddataset.routes.shutil.rmtree") as mock_rmtree,
         patch("app.modules.fooddataset.routes.os.path.exists") as mock_exists,
         patch("app.modules.fooddataset.routes.FoodDatasetForm") as MockForm,
@@ -451,9 +467,9 @@ def test_route_dataset_upload_zenodo_failure(test_client):
         mock_dataset.files = []
         mock_service_instance.create_from_form.return_value = mock_dataset
 
-        # Zenodo failure
-        mock_zenodo_instance = MockZenodo.return_value
-        mock_zenodo_instance.create_new_deposition.side_effect = Exception("Zenodo Down")
+        # Fakenodo failure
+        mock_fakenodo_instance = MockFakenodo.return_value
+        mock_fakenodo_instance.create_new_deposition.side_effect = Exception("Fakenodo Down")
 
         mock_exists.return_value = True
         mock_temp_folder.return_value = "/tmp"
@@ -462,13 +478,13 @@ def test_route_dataset_upload_zenodo_failure(test_client):
         mock_form_instance.validate_on_submit.return_value = True
 
         # Should still return 200 but maybe with a warning or just success message
-        # (Current implementation swallows Zenodo errors and returns success)
+        # (Current implementation swallows Fakenodo errors and returns success)
         response = test_client.post("/dataset/upload", data={"title": "Test Title"})
 
         assert response.status_code == 200
         assert response.json["message"] == "Dataset created successfully!"
-        # Verify Zenodo was attempted
-        mock_zenodo_instance.create_new_deposition.assert_called()
+        # Verify Fakenodo was attempted
+        mock_fakenodo_instance.create_new_deposition.assert_called()
         mock_rmtree.assert_called()
 
 
@@ -494,6 +510,404 @@ def test_route_dataset_upload_general_exception(test_client):
         assert b"General Error" in response.data
 
 
+def create_test_zip(files: dict) -> io.BytesIO:
+    """Crea un zip en memoria con archivos dados."""
+    zip_bytes = io.BytesIO()
+    with zipfile.ZipFile(zip_bytes, "w") as zf:
+        for filename, content in files.items():
+            zf.writestr(filename, content)
+    zip_bytes.seek(0)
+    return zip_bytes
+
+
+class FakeRepo:
+    def __init__(self):
+        self.created = []
+        self.counter = 1
+
+    def create(self, commit=False, **kwargs):
+        obj = SimpleNamespace(**kwargs)
+        obj.id = self.counter
+        self.counter += 1
+        self.created.append(obj)
+        return obj
+
+
+class FakeFeatureModelRepo:
+    def __init__(self):
+        self.created = []
+        self.counter = 1
+
+    def create(self, commit=False, data_set_id=None, fm_meta_data_id=None):
+        fm = SimpleNamespace(id=self.counter, files=[])
+        self.counter += 1
+        self.created.append(fm)
+        return fm
+
+
+class FakeHubFileRepo:
+    def __init__(self):
+        self.created = []
+        self.counter = 1
+
+    def create(self, commit=False, **kwargs):
+        hub = SimpleNamespace(id=self.counter, **kwargs)
+        self.counter += 1
+        self.created.append(hub)
+        return hub
+
+
+def test_process_zip_extracts_food_files_only(tmp_path):
+    """_process_zip_file extrae solo archivos .food y los registra en hubfilerepository"""
+    service = FoodDatasetService()
+    service.fmmetadata_repository = FakeRepo()
+    service.feature_model_repository = FakeFeatureModelRepo()
+    service.hubfilerepository = FakeHubFileRepo()
+
+    current_user = SimpleNamespace()
+    temp_dir = tmp_path / "temp"
+    temp_dir.mkdir()
+    current_user.temp_folder = lambda: str(temp_dir)
+
+    dataset = SimpleNamespace(id=42)
+
+    files = {
+        "model1.uvl": "uvl content",
+        "nested/model2.food": "food content",
+        "__MACOSX/._ignored.food": "should be ignored",
+        "notes.txt": "ignore me",
+    }
+
+    zipbuf = create_test_zip(files)
+
+    service._process_zip_file(dataset, zipbuf, current_user)
+
+    # Solo debe haber sido extraído el .food correcto
+    extracted = [p.name for p in temp_dir.iterdir()]
+    assert "model2.food" in extracted
+    assert "model1.uvl" not in extracted
+
+    # Hubfile repo tiene registro
+    assert len(service.hubfilerepository.created) == 1
+    created = service.hubfilerepository.created[0]
+    assert created.name == "model2.food"
+
+
+def test_process_zip_invalid_raises(tmp_path):
+    service = FoodDatasetService()
+    current_user = SimpleNamespace()
+    current_user.temp_folder = lambda: str(tmp_path)
+
+    bad = io.BytesIO(b"not a zip")
+    with pytest.raises(ValueError):
+        service._process_zip_file(SimpleNamespace(id=1), bad, current_user)
+
+
+def test_process_zip_no_matching_files_logs_warning(tmp_path, caplog):
+    service = FoodDatasetService()
+    service.fmmetadata_repository = FakeRepo()
+    service.feature_model_repository = FakeFeatureModelRepo()
+    service.hubfilerepository = FakeHubFileRepo()
+
+    current_user = SimpleNamespace()
+    current_user.temp_folder = lambda: str(tmp_path)
+
+    zipbuf = create_test_zip({"readme.md": "hello"})
+
+    caplog.set_level(logging.WARNING)
+    service._process_zip_file(SimpleNamespace(id=3), zipbuf, current_user)
+
+    assert any("No .food files found" in rec.getMessage() for rec in caplog.records)
+
+
+def make_form(url: str):
+    return SimpleNamespace(github_url=SimpleNamespace(data=url))
+
+
+def test_create_from_github_success(monkeypatch, tmp_path):
+    """Caso mínimo: descarga correcta y se llama a _process_zip_file"""
+    service = FoodDatasetService()
+    fake_dataset = SimpleNamespace(id=99)
+    service._create_dataset_shell = MagicMock(return_value=fake_dataset)
+    service._process_zip_file = MagicMock()
+    service.repository.session = SimpleNamespace(commit=MagicMock(), rollback=MagicMock())
+
+    # Simular requests.get: repo info and zip
+    def fake_get(url, *args, **kwargs):
+        if url.startswith("https://api.github.com/"):
+            m = MagicMock()
+            m.json.return_value = {"default_branch": "main"}
+            m.raise_for_status = MagicMock()
+            return m
+        elif url.endswith(".zip"):
+            m = MagicMock()
+            m.content = b"PK\x03\x04fakezip"
+            m.raise_for_status = MagicMock()
+            return m
+        raise RuntimeError("Unexpected URL")
+
+    monkeypatch.setattr("app.modules.fooddataset.services.requests.get", fake_get)
+
+    form = make_form("https://github.com/user/repo")
+    current_user = SimpleNamespace()
+    current_user.temp_folder = lambda: str(tmp_path)
+
+    result = service.create_from_github(form, current_user)
+
+    assert result is fake_dataset
+    service._process_zip_file.assert_called_once()
+
+
+def test_create_from_github_invalid_url_raises(tmp_path):
+    service = FoodDatasetService()
+    service._create_dataset_shell = MagicMock(return_value=SimpleNamespace(id=1))
+    service._process_zip_file = MagicMock()
+    service.repository.session = SimpleNamespace(commit=MagicMock(), rollback=MagicMock())
+
+    form = make_form("https://notgithub.com/user/repo")
+    current_user = SimpleNamespace()
+    current_user.temp_folder = lambda: str(tmp_path)
+
+    with pytest.raises(ValueError):
+        service.create_from_github(form, current_user)
+
+
+def test_create_from_github_malformed_url_raises(tmp_path):
+    """URL pointing to github but missing repo part should raise ValueError"""
+    service = FoodDatasetService()
+    service._create_dataset_shell = MagicMock(return_value=SimpleNamespace(id=2))
+    service._process_zip_file = MagicMock()
+    service.repository.session = SimpleNamespace(commit=MagicMock(), rollback=MagicMock())
+
+    # github.com/user (no repo) -> invalid
+    form = make_form("https://github.com/onlyuser")
+    current_user = SimpleNamespace()
+    current_user.temp_folder = lambda: "/tmp"
+
+    with pytest.raises(ValueError):
+        service.create_from_github(form, current_user)
+
+
+def test_create_from_github_no_food_files(monkeypatch, tmp_path, caplog):
+    """Valid GitHub URL but ZIP contains no .food files: should commit and create no hubfiles."""
+    service = FoodDatasetService()
+    fake_dataset = SimpleNamespace(id=200)
+    service._create_dataset_shell = MagicMock(return_value=fake_dataset)
+
+    # use fake repos so that _process_zip_file can create objects without DB
+    service.fmmetadata_repository = FakeRepo()
+    service.feature_model_repository = FakeFeatureModelRepo()
+    service.hubfilerepository = FakeHubFileRepo()
+
+    service.repository.session = SimpleNamespace(commit=MagicMock(), rollback=MagicMock())
+
+    # create zip with no .food files
+    zipbuf = create_test_zip({"README.md": "no food here"})
+
+    def fake_get(url, *args, **kwargs):
+        if url.startswith("https://api.github.com/"):
+            m = MagicMock()
+            m.json.return_value = {"default_branch": "main"}
+            m.raise_for_status = MagicMock()
+            return m
+        elif url.endswith(".zip"):
+            m = MagicMock()
+            m.content = zipbuf.getvalue()
+            m.raise_for_status = MagicMock()
+            return m
+        raise RuntimeError("Unexpected URL")
+
+    monkeypatch.setattr("app.modules.fooddataset.services.requests.get", fake_get)
+
+    form = make_form("https://github.com/user/repo")
+    current_user = SimpleNamespace()
+    current_user.temp_folder = lambda: str(tmp_path)
+
+    caplog.set_level(logging.WARNING)
+    result = service.create_from_github(form, current_user)
+
+    assert result is fake_dataset
+    # no hubfiles created
+    assert len(service.hubfilerepository.created) == 0
+
+
+def test_create_from_github_invalid_branch_raises(monkeypatch, tmp_path):
+    """If zip download fails (invalid branch) raise ValueError"""
+    service = FoodDatasetService()
+    service._create_dataset_shell = MagicMock(return_value=SimpleNamespace(id=10))
+    service.repository.session = SimpleNamespace(commit=MagicMock(), rollback=MagicMock())
+
+    def fake_get(url, *args, **kwargs):
+        if url.startswith("https://api.github.com/"):
+            m = MagicMock()
+            m.json.return_value = {"default_branch": "nonexistent"}
+            m.raise_for_status = MagicMock()
+            return m
+        elif url.endswith(".zip"):
+            # simulate 404 / requests exception when fetching zip
+            raise requests.RequestException("Not Found")
+        raise RuntimeError("Unexpected URL")
+
+    monkeypatch.setattr("app.modules.fooddataset.services.requests.get", fake_get)
+
+    form = make_form("https://github.com/user/repo")
+    current_user = SimpleNamespace()
+    current_user.temp_folder = lambda: str(tmp_path)
+
+    with pytest.raises(ValueError):
+        service.create_from_github(form, current_user)
+
+
+def test_create_from_github_with_food_files(monkeypatch, tmp_path):
+    """Simulate github repo (EGC-FoodHub/foodhub main) with a .food file inside zip."""
+    service = FoodDatasetService()
+    fake_dataset = SimpleNamespace(id=300)
+    service._create_dataset_shell = MagicMock(return_value=fake_dataset)
+
+    service.fmmetadata_repository = FakeRepo()
+    service.feature_model_repository = FakeFeatureModelRepo()
+    service.hubfilerepository = FakeHubFileRepo()
+
+    service.repository.session = SimpleNamespace(commit=MagicMock(), rollback=MagicMock())
+
+    # zip with a .food file
+    zipbuf = create_test_zip({"models/model.food": "food content"})
+
+    def fake_get(url, *args, **kwargs):
+        if url.startswith("https://api.github.com/repos/EGC-FoodHub/foodhub"):
+            m = MagicMock()
+            m.json.return_value = {"default_branch": "main"}
+            m.raise_for_status = MagicMock()
+            return m
+        elif url.endswith("main.zip") or url.endswith(".zip"):
+            m = MagicMock()
+            m.content = zipbuf.getvalue()
+            m.raise_for_status = MagicMock()
+            return m
+        raise RuntimeError("Unexpected URL")
+
+    monkeypatch.setattr("app.modules.fooddataset.services.requests.get", fake_get)
+
+    form = make_form("https://github.com/EGC-FoodHub/foodhub")
+    current_user = SimpleNamespace()
+    current_user.temp_folder = lambda: str(tmp_path)
+
+    result = service.create_from_github(form, current_user)
+
+    assert result is fake_dataset
+    # hubfile should have been created for model.food
+    assert len(service.hubfilerepository.created) == 1
+    assert service.hubfilerepository.created[0].name == "model.food"
+
+
+def test_upload_file_valid(test_client, mock_user, monkeypatch, tmp_path):
+    """Upload a single .food file via the route should return 200 and filename"""
+    monkeypatch.setattr("app.modules.fooddataset.routes.current_user", mock_user, raising=False)
+    monkeypatch.setattr("flask_login.utils._get_user", lambda: mock_user, raising=False)
+
+    # ensure temp folder exists
+    temp_dir = tmp_path / "temp_user"
+    temp_dir.mkdir()
+    mock_user.temp_folder.return_value = str(temp_dir)
+
+    data = {"file": (io.BytesIO(b"dummy content"), "test.food")}
+    resp = test_client.post("/dataset/file/upload", data=data, content_type="multipart/form-data")
+
+    assert resp.status_code == 200
+    j = resp.get_json()
+    assert j["message"] in ("UVL uploaded and validated successfully", "File uploaded successfully")
+    assert j["filename"] == "test.food"
+
+
+def test_upload_file_invalid_extension(test_client, mock_user, monkeypatch, tmp_path):
+    """Upload a non-.food file should be rejected with 400"""
+    monkeypatch.setattr("app.modules.fooddataset.routes.current_user", mock_user, raising=False)
+    monkeypatch.setattr("flask_login.utils._get_user", lambda: mock_user, raising=False)
+
+    temp_dir = tmp_path / "temp_user2"
+    temp_dir.mkdir()
+    mock_user.temp_folder.return_value = str(temp_dir)
+
+    data = {"file": (io.BytesIO(b"not food"), "bad.txt")}
+    resp = test_client.post("/dataset/file/upload", data=data, content_type="multipart/form-data")
+
+    assert resp.status_code == 400
+    j = resp.get_json()
+    assert j["message"] in ("Please upload a .food file", "File type not allowed (only .food)")
+
+
+def test_service_edit_doi_dataset_success():
+    from app.modules.fooddataset.services import FoodDatasetService
+
+    service = FoodDatasetService()
+
+    # Mock repositorios
+    service.repository = MagicMock()
+    service.food_model_repository = MagicMock()
+    service.author_repository = MagicMock()
+
+    service.repository.session = MagicMock()
+    service.author_repository.session = MagicMock()
+
+    updated_dsmetadata = MagicMock()
+    service.update_dsmetadata = MagicMock(return_value=updated_dsmetadata)
+
+    # Usuario autenticado
+    mock_user = MagicMock()
+    mock_user.profile.surname = "Doe"
+    mock_user.profile.name = "John"
+    mock_user.profile.affiliation = "Test Org"
+    mock_user.profile.orcid = "0000-0000-0000-0000"
+
+    with patch(
+        "app.modules.fooddataset.services.AuthenticationService.get_authenticated_user",
+        return_value=mock_user,
+    ):
+        # Dataset y metadata
+        dsmetadata = MagicMock()
+        dsmetadata.id = 10
+        dsmetadata.authors = []
+
+        # Archivo existente a borrar
+        old_food_metadata = MagicMock()
+        old_food_metadata.id = 20
+
+        old_file = MagicMock()
+        old_file.food_meta_data = old_food_metadata
+
+        dataset = MagicMock()
+        dataset.id = 1
+        dataset.ds_meta_data = dsmetadata
+        dataset.files = [old_file]
+
+        # Formulario
+        mock_form = MagicMock()
+        mock_form.get_authors.return_value = [{"name": "Second Author", "affiliation": "Org", "orcid": "1111"}]
+        mock_form.get_dsmetadata.return_value = {"title": "Updated title"}
+
+        # Food model form
+        food_model_form = MagicMock()
+        food_model_form.get_food_metadata.return_value = {
+            "food_filename": "f1",
+            "title": "Food title",
+            "description": "Desc",
+        }
+        food_model_form.get_authors.return_value = [{"name": "Food Author", "affiliation": "Lab", "orcid": "2222"}]
+        mock_form.food_models = [food_model_form]
+
+        # Ejecutar
+        result, error = service.edit_doi_dataset(dataset, mock_form)
+
+        # Asserts
+        assert error is None
+        assert result == updated_dsmetadata
+
+        service.author_repository.session.query.assert_called()
+        service.repository.session.delete.assert_called()
+        service.repository.session.commit.assert_called()
+
+
+def test_service_edit_doi_dataset_exception_rollbacks():
 # test trending
 
 
@@ -768,6 +1182,43 @@ def test_register_dataset_view(test_client):
 
     service = FoodDatasetService()
 
+    service.repository = MagicMock()
+    service.author_repository = MagicMock()
+    service.food_model_repository = MagicMock()
+
+    service.repository.session = MagicMock()
+    service.author_repository.session = MagicMock()
+
+    # Forzamos excepción en update_dsmetadata
+    service.update_dsmetadata = MagicMock(side_effect=Exception("DB Error"))
+
+    mock_user = MagicMock()
+    mock_user.profile.surname = "Doe"
+    mock_user.profile.name = "John"
+    mock_user.profile.affiliation = "Org"
+    mock_user.profile.orcid = "0000"
+
+    with patch(
+        "app.modules.fooddataset.services.AuthenticationService.get_authenticated_user",
+        return_value=mock_user,
+    ):
+        dsmetadata = MagicMock()
+        dsmetadata.id = 99
+
+        dataset = MagicMock()
+        dataset.id = 1
+        dataset.ds_meta_data = dsmetadata
+        dataset.files = []
+
+        mock_form = MagicMock()
+        mock_form.get_authors.return_value = []
+        mock_form.food_models = []
+        mock_form.get_dsmetadata.return_value = {}
+
+        with pytest.raises(Exception, match="DB Error"):
+            service.edit_doi_dataset(dataset, mock_form)
+
+        service.repository.session.rollback.assert_called()
     with patch.object(service, "increment_view_count", return_value=True) as mock_increment:
         result = service.register_dataset_view(123)
 

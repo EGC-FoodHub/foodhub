@@ -136,18 +136,24 @@
                         <i data-feather="eye" class="center-button-icon"></i>
                         View dataset
                         </a>
-                        <a href="/dataset/download/{{ dataset.id }}" 
-                           class="btn btn-outline-primary btn-sm dataset-download-link"
-                           data-dataset-id="{{ dataset.id }}"
-                           style="border-radius: 5px;">
-                            <i data-feather="download" class="center-button-icon"></i>
-                            Download ({{ dataset.get_file_total_size_for_human() }})
-                        </a>
+
+                                <a href="/dataset/download/{{ dataset.id }}" class="btn btn-outline-primary btn-sm"
+                                   style="border-radius: 5px;">
+                                    <i data-feather="download" class="center-button-icon"></i>
+                                    Download ({{ dataset.get_file_total_size_for_human() }})
+                                </a>
+                                <a href="/shopping_cart/add/{{ dataset.id }}" class="btn btn-outline-primary btn-sm"
+                                   style="border-radius: 5px;"> 
+                                    <i data-feather="shopping-bag" class="center-button-icon"></i>
+                                    Add to cart
+                                </a>
+                            </div>
+                        </div>
+
+
                     </div>
                 </div>
-            </div>
-        </div>
-        {% endfor %}
+            {% endfor %}
 
         <a href="/explore" class="btn btn-primary">
             <i data-feather="search" class="center-button-icon"></i>
@@ -223,20 +229,37 @@
             </div>
             {% endif %}
 
-            <div class="col-12">
-                <div class="card card-dark">
-                    <h2 class="card-title card-title-light">What is <b>FoodHub</b>?</h2>
-                    <div class="card-body card-body-slim">
-                        <strong>FoodHub</strong> is a repository of food models in .food format integrated with
-                        Fakenodo and a food_checker developed by foodhub-1 and foodhub-2 projects members
-                    </div>
-                    <h2 class="card-title card-title-light">Can I contribute?</h2>
-                    <div class="card-body card-body-slim">
-                        Sure! You can make a fork of our official repository on GitHub,
-                        create fantastic features and then make a pull request to us.
-                        <br><br>
-                        <a href="https://github.com/EGC-FoodHub/foodhub" target="_blank" class="btn btn-primary">
-                            Go to GitHub</a>
+                <div class="col-12">
+
+                    <div class="card card-dark">
+
+                        <h2 class="card-title card-title-light">
+                            What is <b>uvlhub.io</b>?
+                        </h2>
+
+                        <div class="card-body card-body-slim">
+
+                            <strong>uvlhub.io</strong> is a repository of feature models in UVL format integrated with
+                            Fakenodo and FlamaPy developed by DiversoLab
+
+                        </div>
+
+                        <h2 class="card-title card-title-light">
+                            Can I contribute?
+                        </h2>
+
+                        <div class="card-body card-body-slim">
+
+                            Sure! You can make a fork of our official repository on GitHub,
+                            create fantastic features and then make a pull request to us.
+
+                            <br><br>
+
+                            <a href="https://github.com/diverso-lab/uvlhub" target="_blank" class="btn btn-primary">
+                                Go to GitHub</a>
+
+                        </div>
+
                     </div>
                 </div>
             </div>
