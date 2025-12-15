@@ -3,14 +3,14 @@ import time
 
 import pytest
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 from app import app, db
 from app.modules.basedataset.models import BaseAuthor, BaseDSViewRecord
 from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData
 from core.environment.host import get_host_for_selenium_testing
 from core.selenium.common import initialize_driver
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 
 pytestmark = pytest.mark.selenium
 

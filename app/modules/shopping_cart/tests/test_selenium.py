@@ -1,8 +1,10 @@
-import pytest
 import time
+
+import pytest
 from selenium.webdriver.common.by import By
-from core.selenium.common import initialize_driver, close_driver
+
 from core.environment.host import get_host_for_selenium_testing
+from core.selenium.common import close_driver, initialize_driver
 
 pytestmark = pytest.mark.selenium
 

@@ -3,9 +3,9 @@ import urllib.error
 import zipfile
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
-from werkzeug.exceptions import NotFound
 
 import pytest
+from werkzeug.exceptions import NotFound
 
 from app.modules.fooddataset.services import FoodDatasetService
 
