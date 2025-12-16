@@ -2,7 +2,14 @@ from flask import redirect, render_template, request, session, url_for
 from flask_login import current_user, logout_user
 
 from app.modules.auth import auth_bp
-from app.modules.auth.forms import LoginForm, RecoverPasswordForm, SendEmailForm, SignupForm, TwoFactoAuthForm
+from app.modules.auth.forms import (
+    ChangePasswordForm,
+    LoginForm,
+    RecoverPasswordForm,
+    SendEmailForm,
+    SignupForm,
+    TwoFactoAuthForm,
+)
 from app.modules.auth.services import AuthenticationService
 from app.modules.profile.services import UserProfileService
 
@@ -123,6 +130,17 @@ def enable_2fa():
         return render_template("auth/tfa_verification.html", form=form, qrcode=qr)
 
     return redirect(url_for("auth.login"))
+
+
+@auth_bp.route("/change_password_profile", methods=["GET", "POST"])
+def change_password_profile():
+    form = ChangePasswordForm()
+    if request.method == "POST" and form.validate_on_submit():
+        authentication_service.validate_and_change_password(form.current_password.data, form.new_password.data)
+        logout_user()
+        return redirect(url_for("public.index"))
+
+    return render_template("auth/change_pass.html", form=form)
 
 
 @auth_bp.route("/verify_2fa", methods=["GET", "POST"])
