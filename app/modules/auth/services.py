@@ -136,6 +136,10 @@ class AuthenticationService(BaseService):
     def validate_recovery(self, token, new_password, confirm_password):
         return token == os.getenv("TOKEN_KEY") and new_password == confirm_password
 
+    def validate_and_change_password(self,current_password,new_password):
+        if current_user.check_password(current_password):
+            return self.update_password(current_user,new_password)
+
     def update_password(self, user, new_password):
         user.set_password(new_password)
         db.session.commit()
