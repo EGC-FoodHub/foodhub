@@ -33,3 +33,9 @@ class SendEmailForm(FlaskForm):
 class TwoFactoAuthForm(FlaskForm):
     code = StringField("2FA Code", validators=[DataRequired(), Length(max=6)])
     submit = SubmitField("Enviar")
+
+
+class ChangePasswordForm(FlaskForm):
+    current_password = PasswordField("Current Password", validators=[DataRequired()])
+    new_password = PasswordField("New Password", validators=[DataRequired()])
+    submit = SubmitField("Submit")
