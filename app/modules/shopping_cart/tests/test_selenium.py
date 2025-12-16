@@ -53,3 +53,13 @@ class TestAddDataset:
         time.sleep(2)
         self.driver.find_element(By.CSS_SELECTOR, ".feather-shopping-cart").click()
         time.sleep(1)
+
+    def test_history(self):
+        self.login()
+        self.driver.get(f"{self.host}/")
+        self.driver.set_window_size(1024, 1132)
+        time.sleep(2)
+        self.driver.find_element(By.CSS_SELECTOR, ".feather-shopping-cart").click()
+        time.sleep(1)
+        self.driver.find_element(By.XPATH, "//a[@href='/shopping_cart/history']").click()
+        time.sleep(1)

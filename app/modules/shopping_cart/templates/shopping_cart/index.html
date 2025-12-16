@@ -93,11 +93,17 @@
                     Total size:
                     {{ cart.get_total_amount_from_file_sizes_for_human() }}
                 </h4>
-
-                <a href="/dataset/download?ids={{ cart.food_data_sets|map(attribute='id')|join(',') }}"
+<!--APARTIR DE AQUI ES DE LA NUEVA IMPLEMENTACIÓN (basicamente te manda a la función puente para que la descarga se haga a la vez que se guarda)-->
+                <a href="{{ url_for('shopping_cart.checkout_cart') }}"
                     class="btn btn-success btn-lg mt-2" style="border-radius: 5px;">
                     <i data-feather="download" class="center-button-icon"></i>
                     Download all
+                </a>
+
+                <a href="{{ url_for('shopping_cart.get_shopping_cart_history') }}"
+                class="btn btn-outline-secondary btn-lg mt-2" style="border-radius: 5px;">
+                    <i data-feather="clock" class="center-button-icon"></i>
+                    View History
                 </a>
 
             </div>

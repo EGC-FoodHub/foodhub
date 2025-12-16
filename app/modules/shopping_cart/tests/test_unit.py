@@ -6,7 +6,7 @@ from app import db
 from app.modules.auth.models import User
 from app.modules.basedataset.models import BaseAuthor, BasePublicationType
 from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData
-
+from app.modules.shopping_cart.models import DownloadRecord
 pytestmark = pytest.mark.unit
 
 
@@ -120,3 +120,37 @@ def create_test_dataset(user_id=1):
     db.session.commit()
 
     return food_dataset
+
+
+def test_download_record_creates_ok(test_client):
+    with test_client.application.app_context():
+        record = DownloadRecord(user_id=test_client.user_id)
+
+        db.session.add(record)
+        db.session.commit()
+
+        assert record.id is not None
+        assert record.user_id == test_client.user_id
+        assert isinstance(record.created_at, datetime)
+
+
+def test_download_record_fails_without_user(test_client):
+    with test_client.application.app_context():
+        record = DownloadRecord()
+
+        db.session.add(record)
+        with pytest.raises(Exception):
+            db.session.commit()
+
+        db.session.rollback()
+
+
+def test_download_record_fails_with_invalid_user(test_client):
+    with test_client.application.app_context():
+        record = DownloadRecord(user_id=99999)
+
+        db.session.add(record)
+        with pytest.raises(Exception):
+            db.session.commit()
+
+        db.session.rollback()

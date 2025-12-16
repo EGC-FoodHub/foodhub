@@ -1,0 +1,69 @@
+{% extends "base_template.html" %}
+<!--APARTIR DE AQUI ES DE LA NUEVA IMPLEMENTACIÓN-->
+{% block title %}Detalle de Descarga #{{ record.id }}{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3">Detalle de la Descarga #{{ record.id }}</h1>
+            <p class="text-muted mb-0">
+                Realizada el {{ record.created_at.strftime('%d/%m/%Y a las %H:%M') }}
+            </p>
+        </div>
+        <a href="{{ url_for('shopping_cart.get_shopping_cart_history') }}" class="btn btn-outline-secondary">
+            <i data-feather="arrow-left" class="center-button-icon"></i> Volver al historial
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Datasets incluidos ({{ record.datasets|length }})</h5>
+        </div>
+        <div class="list-group list-group-flush">
+            {% for dataset in record.datasets %}
+            <div class="list-group-item p-3">
+                <div class="row align-items-center">
+                    
+                    <div class="col-auto">
+                        <div class="bg-light p-2 rounded">
+                            <i data-feather="database" class="text-primary" style="width: 24px; height: 24px;"></i>
+                        </div>
+                    </div>
+
+                    <div class="col">
+                        <h5 class="mb-1">
+                            <a href="{{ dataset.get_doi() }}" class="text-decoration-none text-dark">
+                                {{ dataset.ds_meta_data.title or dataset.name() }}
+                            </a>
+                        </h5>
+                        <p class="mb-1 text-muted small">
+                            {{ dataset.ds_meta_data.description[:150] }}...
+                        </p>
+                        <div>
+                            <span class="badge bg-secondary">{{ dataset.get_file_total_size_for_human() }}</span>
+                            <span class="badge bg-light text-dark border">Publicado: {{ dataset.created_at.strftime('%d/%m/%Y') }}</span>
+                        </div>
+                    </div>
+
+                    <div class="col-auto">
+                        <a href="{{ dataset.get_doi() }}" class="btn btn-sm btn-primary">
+                            Ver Dataset <i data-feather="chevron-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('public.scripts') }}"></script>
+    <script>
+        feather.replace();
+    </script>
+{% endblock %}

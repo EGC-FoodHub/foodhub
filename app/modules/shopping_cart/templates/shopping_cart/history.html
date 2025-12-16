@@ -1,0 +1,76 @@
+{% extends "base_template.html" %}
+<!--APARTIR DE AQUI ES DE LA NUEVA IMPLEMENTACIÓN-->
+{% block title %}Shopping cart history{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-3">
+        <div class="col-12">
+            <h1>Historial de Descargas</h1>
+            <p class="text-muted">Consulta los grupos de datasets que has descargado anteriormente.</p>
+        </div>
+    </div>
+
+    {% if not history %}
+        <div class="alert alert-info text-center">
+            <h4>No tienes descargas previas.</h4>
+            <p>Ve al catálogo y añade datasets a tu carrito.</p>
+            <a href="{{ url_for('foodmodel.index') }}" class="btn btn-primary">Ver Datasets</a>
+        </div>
+    {% else %}
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">ID Descarga</th>
+                            <th scope="col">Fecha</th>
+                            <th scope="col">Datasets Incluidos</th>
+                            <th scope="col">Total Datasets</th>
+                            <th scope="col">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in history %}
+                        <tr>
+                            <td>#{{ record.id }}</td>
+                            
+                            <td>
+                                {{ record.created_at.strftime('%d/%m/%Y %H:%M') }}
+                            </td>
+                            
+                            <td>
+                                <ul class="list-unstyled mb-0">
+                                    {% for dataset in record.datasets %}
+                                        <li>
+                                            <i class="fa fa-file-text-o text-secondary"></i> 
+                                            <a href="#" class="text-decoration-none text-dark">
+                                                {{ dataset.title or dataset.name() }}
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </td>
+
+                            <td>
+                                <span class="badge bg-secondary">{{ record.datasets|length }} Items</span>
+                            </td>
+
+                            <td>
+                                <a href="{{ url_for('shopping_cart.get_history_record_detail', record_id=record.id) }}" 
+                                class="btn btn-sm btn-outline-primary">
+                                    Ver detalle
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
