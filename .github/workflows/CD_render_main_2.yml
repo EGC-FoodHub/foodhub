@@ -1,0 +1,24 @@
+name: Deploy to Render main 2
+
+on:
+    push:
+      branches:
+        - main-2
+    pull_request:
+      branches:
+        - main-2
+
+jobs:
+
+  deploy:
+    name: Deploy to Render
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Deploy to Render
+        env:
+          deploy_url: ${{ secrets.RENDER_DEPLOY_HOOK_URL_MAIN_2 }}
+        run: |
+          curl "$deploy_url"

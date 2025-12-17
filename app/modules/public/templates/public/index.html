@@ -4,7 +4,7 @@
 
 {% block content %}
 
-{% if trending_weekly %}
+{% if trending_weekly and trending_weekly|length > 0 %}
 <h1 class="h2 mb-3">
     <b>Trending</b> this week
 </h1>
@@ -16,7 +16,7 @@
             <div class="card-body">
                 <div class="d-flex align-items-center justify-content-between mb-2">
                     <span class="badge bg-primary rounded-pill">#{{ loop.index }}</span>
-                    <span class="badge bg-secondary">{{ dataset.recent_downloads }} downloads</span>
+                    <span class="badge bg-secondary">{{ dataset.recent_downloads_week }} downloads</span>
                 </div>
 
                 <h5 class="card-title">
@@ -45,36 +45,22 @@
                     <div class="col-6">
                         <small class="text-muted">
                             <i data-feather="download" style="width: 14px; height: 14px;"></i>
-                            {{ dataset.recent_downloads }} downloads
+                            {{ dataset.recent_downloads_week }} this week
                         </small>
                     </div>
                     <div class="col-6">
                         <small class="text-muted">
                             <i data-feather="eye" style="width: 14px; height: 14px;"></i>
-                            {{ dataset.recent_views }} views
+                            {{ dataset.recent_views_week }} this week
                         </small>
                     </div>
-
                 </div>
 
-                <div class="mt-3">
-                    <a href="/food/dataset/{{ dataset.id }}" class="btn btn-outline-primary btn-sm trending-view-link"
-                        data-dataset-id="{{ dataset.id }}">
-                        <i data-feather="eye"></i>
-                        View dataset
-                    </a>
-                </div>
+                <!-- Se eliminó el botón "View dataset" según los requisitos -->
             </div>
         </div>
     </div>
     {% endfor %}
-
-    <div class="col-12 mt-3">
-        <a href="/food/dataset/trending" class="btn btn-primary">
-            <i data-feather="trending-up"></i>
-            View all trending datasets
-        </a>
-    </div>
 </div>
 {% endif %}
 
@@ -125,11 +111,11 @@
                 <div class="row mb-2">
                     <div class="col-12">
                         <a href="{{ dataset.get_doi() }}">{{ dataset.get_doi() }}</a>
-                        <div id="dataset_doi_uvlhub_{{ dataset.id }}" style="display: none">
+                        <div id="dataset_doi_foodhub_{{ dataset.id }}" style="display: none">
                             {{ dataset.get_doi() }}
                         </div>
                         <i data-feather="clipboard" class="center-button-icon" style="cursor: pointer"
-                            onclick="copyText('dataset_doi_uvlhub_{{ dataset.id }}')"></i>
+                            onclick="copyText('dataset_doi_foodhub_{{ dataset.id }}')"></i>
                     </div>
                 </div>
 
@@ -143,17 +129,20 @@
 
                 <div class="row mt-4">
                     <div class="col-12">
-                        <a href="{{ dataset.get_doi() }}" class="btn btn-outline-primary btn-sm"
-                            style="border-radius: 5px;">
-                            <i data-feather="eye" class="center-button-icon"></i>
-                            View dataset
+                         <a href="{{ dataset.get_doi() }}" 
+                        class="btn btn-outline-primary btn-sm dataset-view-link"
+                        data-dataset-id="{{ dataset.id }}"
+                        style="border-radius: 5px;">
+                        <i data-feather="eye" class="center-button-icon"></i>
+                        View dataset
                         </a>
-
-                                <a href="/dataset/download/{{ dataset.id }}" class="btn btn-outline-primary btn-sm"
-                                   style="border-radius: 5px;">
-                                    <i data-feather="download" class="center-button-icon"></i>
-                                    Download ({{ dataset.get_file_total_size_for_human() }})
-                                </a>
+                        <a href="/dataset/download/{{ dataset.id }}" 
+                           class="btn btn-outline-primary btn-sm dataset-download-link"
+                           data-dataset-id="{{ dataset.id }}"
+                           style="border-radius: 5px;">
+                            <i data-feather="download" class="center-button-icon"></i>
+                            Download ({{ dataset.get_file_total_size_for_human() }})
+                        </a>
                                 <a href="/shopping_cart/add/{{ dataset.id }}" class="btn btn-outline-primary btn-sm"
                                    style="border-radius: 5px;"> 
                                     <i data-feather="shopping-bag" class="center-button-icon"></i>
@@ -186,15 +175,15 @@
                             </h4>
                             <h4 class="h4 mb-3 stats-color">
                                 <i data-feather="file" class="align-middle mr-2 stats-color"></i>&nbsp;{{
-                                feature_models_counter }} feature models
+                                food_models_counter }} food models
                             </h4>
                             <h4 class="h4 mb-3 stats-color">
                                 <i data-feather="eye" class="align-middle mr-2 stats-color"></i>&nbsp;{{
-                                total_dataset_views }} datasets viewed
+                                view_count }} datasets viewed
                             </h4>
                             <h4 class="h4 mb-3 stats-color">
                                 <i data-feather="eye" class="align-middle mr-2 stats-color"></i>&nbsp;{{
-                                total_feature_model_views }} feature models viewed
+                                total_food_model_views }} food models viewed
                             </h4>
                             <h4 class="h4 mb-3 stats-color">
                                 <i data-feather="download" class="align-middle mr-2 stats-color"></i>&nbsp;{{
@@ -202,7 +191,7 @@
                             </h4>
                             <h4 class="h4 stats-color">
                                 <i data-feather="download" class="align-middle mr-2 stats-color"></i>&nbsp;{{
-                                total_feature_model_downloads }} feature models downloaded
+                                total_food_model_downloads }} food models downloaded
                             </h4>
                         </h1>
                     </div>
@@ -211,28 +200,7 @@
 
             <div class="col-12">
                 <div class="card">
-                    <div class="card-body">
-                        <h2><b>Related publication</b></h2>
-                        David Romero-Organvidez, José A. Galindo, Chico Sundermann, Jose-Miguel Horcas, David Benavides.
-                        <i>UVLHub: A feature model data repository using UVL and open science principles</i>,
-                        Journal of Systems and Software,
-                        2024,
-                        112150,
-                        ISSN 0164-1212,
-                        <a href="https://doi.org/10.1016/j.jss.2024.112150"
-                            target="_blank">https://doi.org/10.1016/j.jss.2024.112150</a>
-                    </div>
-                    <div class="card-body mt-0 pt-0">
-                        <button onclick="copyText('bibtex_cite')" class="btn btn-light"
-                            style="border-radius: 5px; margin-right: 10px">
-                            <i data-feather="clipboard" class="center-button-icon"></i>
-                            Copy in BibTex
-                        </button>
-                        <button onclick="copyText('ris_cite')" class="btn btn-light" style="border-radius: 5px;">
-                            <i data-feather="clipboard" class="center-button-icon"></i>
-                            Copy in RIS
-                        </button>
-                    </div>
+                    
                 </div>
             </div>
 
@@ -241,7 +209,7 @@
                 <div class="card card-welcome">
                     <h2 class="card-title card-title-light">Let's get started!</h2>
                     <div class="card-body card-body-slim">
-                        What are you waiting for to upload your fantastic feature models in UVL format?
+                        What are you waiting for to upload your fantastic food models in .food format?
                         <div class="row mt-2">
                             <div class="col-12">
                                 <a href="/signup" class="btn btn-dark"
@@ -300,4 +268,8 @@
     </div>
 </div>
 
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('public.scripts') }}"></script>
 {% endblock %}

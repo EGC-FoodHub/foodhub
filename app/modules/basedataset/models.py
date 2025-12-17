@@ -155,6 +155,20 @@ class BaseDataset(db.Model):
             else None
         )
 
+    def to_dict(self):
+        """Serializa el FoodDataset a un diccionario para JSON."""
+        return {
+            "id": self.id,
+            "url": f"/dataset/view/{self.id}",
+            "title": self.ds_meta_data.title if self.ds_meta_data else "Untitled",
+            "publication_type": self.get_cleaned_publication_type(),
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "description": self.ds_meta_data.description if self.ds_meta_data else "",
+            "authors": [author.to_dict() for author in self.ds_meta_data.authors] if self.ds_meta_data else [],
+            "tags": self.ds_meta_data.tags.split(", ") if self.ds_meta_data and self.ds_meta_data.tags else [],
+            "total_size_in_human_format": self.get_file_total_size_for_human(),
+        }
+
     def get_doi(self):
         from app.modules.basedataset.services import BaseDatasetService
 

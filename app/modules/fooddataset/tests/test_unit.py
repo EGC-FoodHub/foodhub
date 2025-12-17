@@ -207,7 +207,7 @@ def test_activity_log_creation(test_client):
         assert logs[0].dataset_id == dataset.id
 
 
-def test_service_get_uvlhub_doi(test_client):
+def test_service_get_doi(test_client):
 
     dataset = MagicMock()
     dataset.ds_meta_data.dataset_doi = "10.1234/test"
@@ -907,7 +907,273 @@ def test_service_edit_doi_dataset_success():
         service.repository.session.commit.assert_called()
 
 
-def test_service_edit_doi_dataset_exception_rollbacks():
+def test_increment_view_count_valid(test_client):
+    """Test increment_view_count con ID válido"""
+    from app.modules.fooddataset.services import FoodDatasetService
+
+    with patch("app.modules.fooddataset.services.FoodDatasetRepository") as MockRepo:
+        mock_repo_instance = MockRepo.return_value
+        service = FoodDatasetService()
+
+        # Configurar el mock para devolver True
+        mock_repo_instance.increment_view_count.return_value = True
+
+        # Caso válido
+        result = service.increment_view_count(123)
+
+        assert result is True
+        mock_repo_instance.increment_view_count.assert_called_once_with(123)
+
+
+def test_increment_view_count_invalid(test_client):
+    """Test increment_view_count con IDs inválidos"""
+    from app.modules.fooddataset.services import FoodDatasetService
+
+    with patch("app.modules.fooddataset.services.FoodDatasetRepository") as MockRepo:
+        mock_repo_instance = MockRepo.return_value
+        service = FoodDatasetService()
+
+        # ID no entero
+        result = service.increment_view_count("invalid")
+        assert result is False
+
+        # ID negativo
+        result = service.increment_view_count(-1)
+        assert result is False
+
+        # ID cero
+        result = service.increment_view_count(0)
+        assert result is False
+
+        # El repositorio no debería haber sido llamado
+        mock_repo_instance.increment_view_count.assert_not_called()
+
+
+def test_increment_download_count_valid(test_client):
+    """Test increment_download_count con ID válido"""
+    from app.modules.fooddataset.services import FoodDatasetService
+
+    with patch("app.modules.fooddataset.services.FoodDatasetRepository") as MockRepo:
+        mock_repo_instance = MockRepo.return_value
+        service = FoodDatasetService()
+
+        mock_repo_instance.increment_download_count.return_value = True
+
+        result = service.increment_download_count(456)
+
+        assert result is True
+        mock_repo_instance.increment_download_count.assert_called_once_with(456)
+
+
+def test_increment_download_count_invalid(test_client):
+    """Test increment_download_count con IDs inválidos"""
+    from app.modules.fooddataset.services import FoodDatasetService
+
+    with patch("app.modules.fooddataset.services.FoodDatasetRepository") as MockRepo:
+        mock_repo_instance = MockRepo.return_value
+        service = FoodDatasetService()
+
+        # Varios casos inválidos
+        test_cases = ["invalid", -5, 0]
+        for test_id in test_cases:
+            result = service.increment_download_count(test_id)
+            assert result is False
+
+        # El repositorio no debería haber sido llamado
+        mock_repo_instance.increment_download_count.assert_not_called()
+
+
+def test_get_trending_datasets_valid_period(test_client):
+    """Test get_trending_datasets con períodos válidos"""
+    from app.modules.fooddataset.services import FoodDatasetService
+
+    with patch("app.modules.fooddataset.services.FoodDatasetRepository") as MockRepo:
+        mock_repo_instance = MockRepo.return_value
+        service = FoodDatasetService()
+
+        mock_data = [
+            {"id": 1, "title": "Dataset 1", "trending_score": 15.5},
+            {"id": 2, "title": "Dataset 2", "trending_score": 12.0},
+        ]
+        mock_repo_instance.get_trending_datasets.return_value = mock_data
+
+        # Test con período 7 días
+        result = service.get_trending_datasets(period_days=7, limit=10)
+        assert result == mock_data
+        mock_repo_instance.get_trending_datasets.assert_called_with(period_days=7, limit=10)
+
+        # Reset mock
+        mock_repo_instance.reset_mock()
+        mock_repo_instance.get_trending_datasets.return_value = mock_data
+
+        # Test con período 30 días
+        result = service.get_trending_datasets(period_days=30, limit=5)
+        assert result == mock_data
+        mock_repo_instance.get_trending_datasets.assert_called_with(period_days=30, limit=5)
+
+
+def test_get_trending_datasets_invalid_period(test_client):
+    """Test get_trending_datasets con período inválido"""
+    from app.modules.fooddataset.services import FoodDatasetService
+
+    with patch("app.modules.fooddataset.services.FoodDatasetRepository") as MockRepo:
+        mock_repo_instance = MockRepo.return_value
+        service = FoodDatasetService()
+
+        mock_data = [{"id": 1, "title": "Test Dataset"}]
+        mock_repo_instance.get_trending_datasets.return_value = mock_data
+
+        # Período inválido debería usar 7 por defecto
+        result = service.get_trending_datasets(period_days=15, limit=10)
+        assert result == mock_data
+        mock_repo_instance.get_trending_datasets.assert_called_with(period_days=7, limit=10)
+
+
+def test_get_trending_datasets_limit_boundaries(test_client):
+    """Test get_trending_datasets con límites en los bordes"""
+    from app.modules.fooddataset.services import FoodDatasetService
+
+    with patch("app.modules.fooddataset.services.FoodDatasetRepository") as MockRepo:
+        mock_repo_instance = MockRepo.return_value
+        service = FoodDatasetService()
+
+        # Test límite mínimo (debería ser 1)
+        service.get_trending_datasets(period_days=7, limit=0)
+        mock_repo_instance.get_trending_datasets.assert_called_with(period_days=7, limit=1)
+
+        # Reset mock
+        mock_repo_instance.reset_mock()
+
+        # Test límite máximo (debería ser 50)
+        service.get_trending_datasets(period_days=7, limit=100)
+        mock_repo_instance.get_trending_datasets.assert_called_with(period_days=7, limit=50)
+
+        # Reset mock
+        mock_repo_instance.reset_mock()
+
+        # Test límite normal
+        service.get_trending_datasets(period_days=7, limit=25)
+        mock_repo_instance.get_trending_datasets.assert_called_with(period_days=7, limit=25)
+
+
+def test_get_trending_weekly(test_client):
+    """Test get_trending_weekly"""
+    from app.modules.fooddataset.services import FoodDatasetService
+
+    with patch("app.modules.fooddataset.services.FoodDatasetRepository") as MockRepo:
+        mock_repo_instance = MockRepo.return_value
+        service = FoodDatasetService()
+
+        # Datos del repositorio sin campos week
+        repo_data = [
+            {"id": 1, "title": "Dataset 1", "recent_downloads": 5, "recent_views": 10},
+            {"id": 2, "title": "Dataset 2", "recent_downloads": 3},
+        ]
+        mock_repo_instance.get_trending_weekly.return_value = repo_data
+
+        result = service.get_trending_weekly(limit=10)
+
+        # Verificar que se añaden los campos week
+        assert len(result) == 2
+        assert result[0]["recent_downloads_week"] == 5
+        assert result[0]["recent_views_week"] == 10
+        assert result[1]["recent_downloads_week"] == 3
+        assert result[1]["recent_views_week"] == 0  # Valor por defecto
+
+        mock_repo_instance.get_trending_weekly.assert_called_once_with(limit=10)
+
+
+def test_get_trending_monthly(test_client):
+    """Test get_trending_monthly"""
+    from app.modules.fooddataset.services import FoodDatasetService
+
+    with patch("app.modules.fooddataset.services.FoodDatasetRepository") as MockRepo:
+        mock_repo_instance = MockRepo.return_value
+        service = FoodDatasetService()
+
+        mock_data = [{"id": 1, "title": "Monthly Trending"}]
+        mock_repo_instance.get_trending_monthly.return_value = mock_data
+
+        result = service.get_trending_monthly(limit=5)
+
+        assert result == mock_data
+        mock_repo_instance.get_trending_monthly.assert_called_once_with(limit=5)
+
+
+def test_get_most_viewed_datasets(test_client):
+    """Test get_most_viewed_datasets"""
+    from app.modules.fooddataset.services import FoodDatasetService
+
+    with patch("app.modules.fooddataset.services.FoodDatasetRepository") as MockRepo:
+        mock_repo_instance = MockRepo.return_value
+        service = FoodDatasetService()
+
+        mock_data = [
+            {"id": 1, "title": "Most Viewed 1", "view_count": 100},
+            {"id": 2, "title": "Most Viewed 2", "view_count": 80},
+        ]
+        mock_repo_instance.get_most_viewed_datasets.return_value = mock_data
+
+        result = service.get_most_viewed_datasets(limit=3)
+
+        assert result == mock_data
+        mock_repo_instance.get_most_viewed_datasets.assert_called_once_with(limit=3)
+
+
+def test_get_most_downloaded_datasets(test_client):
+    """Test get_most_downloaded_datasets"""
+    from app.modules.fooddataset.services import FoodDatasetService
+
+    with patch("app.modules.fooddataset.services.FoodDatasetRepository") as MockRepo:
+        mock_repo_instance = MockRepo.return_value
+        service = FoodDatasetService()
+
+        mock_data = [
+            {"id": 1, "title": "Most Downloaded 1", "download_count": 50},
+            {"id": 2, "title": "Most Downloaded 2", "download_count": 30},
+        ]
+        mock_repo_instance.get_most_downloaded_datasets.return_value = mock_data
+
+        result = service.get_most_downloaded_datasets(limit=4)
+
+        assert result == mock_data
+        mock_repo_instance.get_most_downloaded_datasets.assert_called_once_with(limit=4)
+
+
+def test_get_dataset_stats(test_client):
+    """Test get_dataset_stats"""
+    from app.modules.fooddataset.services import FoodDatasetService
+
+    with patch("app.modules.fooddataset.services.FoodDatasetRepository") as MockRepo:
+        mock_repo_instance = MockRepo.return_value
+        service = FoodDatasetService()
+
+        # Caso con datos
+        mock_stats = {
+            "id": 123,
+            "title": "Test Dataset",
+            "view_count": 45,
+            "download_count": 12,
+            "created_at": "2023-01-01",
+        }
+        mock_repo_instance.get_dataset_stats.return_value = mock_stats
+
+        result = service.get_dataset_stats(123)
+        assert result == mock_stats
+        mock_repo_instance.get_dataset_stats.assert_called_once_with(123)
+
+        # Reset mock
+        mock_repo_instance.reset_mock()
+
+        # Caso sin datos
+        mock_repo_instance.get_dataset_stats.return_value = None
+        result = service.get_dataset_stats(999)
+        assert result is None
+        mock_repo_instance.get_dataset_stats.assert_called_once_with(999)
+
+
+def test_register_dataset_view(test_client):
+    """Test register_dataset_view (alias de increment_view_count)"""
     from app.modules.fooddataset.services import FoodDatasetService
 
     service = FoodDatasetService()
@@ -949,3 +1215,326 @@ def test_service_edit_doi_dataset_exception_rollbacks():
             service.edit_doi_dataset(dataset, mock_form)
 
         service.repository.session.rollback.assert_called()
+    with patch.object(service, "increment_view_count", return_value=True) as mock_increment:
+        result = service.register_dataset_view(123)
+
+        assert result is True
+        mock_increment.assert_called_once_with(123)
+
+
+def test_register_dataset_download(test_client):
+    """Test register_dataset_download (alias de increment_download_count)"""
+    from app.modules.fooddataset.services import FoodDatasetService
+
+    service = FoodDatasetService()
+
+    with patch.object(service, "increment_download_count", return_value=True) as mock_increment:
+        result = service.register_dataset_download(456)
+
+        assert result is True
+        mock_increment.assert_called_once_with(456)
+
+
+def test_total_dataset_downloads(test_client):
+    """Test total_dataset_downloads"""
+    from app.modules.fooddataset.services import FoodDatasetService
+
+    with patch("app.modules.fooddataset.services.FoodDatasetRepository") as MockRepo:
+        mock_repo_instance = MockRepo.return_value
+
+        mock_query = MagicMock()
+        mock_repo_instance.session.query.return_value = mock_query
+        mock_query.scalar.return_value = 150
+
+        service = FoodDatasetService()
+
+        result = service.total_dataset_downloads()
+
+        assert result == 150
+
+        called_arg = mock_repo_instance.session.query.call_args[0][0]
+        assert "sum" in str(called_arg).lower()
+
+
+def test_total_dataset_downloads_error(test_client):
+    """Test total_dataset_downloads con error"""
+    from app.modules.fooddataset.services import FoodDatasetService
+
+    with patch("app.modules.fooddataset.services.FoodDatasetRepository") as MockRepo:
+        mock_repo_instance = MockRepo.return_value
+
+        # Simular error en la query
+        mock_repo_instance.session.query.side_effect = Exception("Database error")
+
+        service = FoodDatasetService()
+
+        result = service.total_dataset_downloads()
+
+        assert result == 0
+
+
+def test_total_dataset_downloads_none_result(test_client):
+    """Test total_dataset_downloads cuando scalar devuelve None"""
+    from app.modules.fooddataset.services import FoodDatasetService
+
+    with patch("app.modules.fooddataset.services.FoodDatasetRepository") as MockRepo:
+        mock_repo_instance = MockRepo.return_value
+
+        mock_query = MagicMock()
+        mock_repo_instance.session.query.return_value = mock_query
+        mock_query.scalar.return_value = None
+
+        service = FoodDatasetService()
+
+        result = service.total_dataset_downloads()
+
+        assert result == 0
+
+
+def test_total_dataset_views(test_client):
+    """Test total_dataset_views"""
+    from app.modules.fooddataset.services import FoodDatasetService
+
+    with patch("app.modules.fooddataset.services.FoodDatasetRepository") as MockRepo:
+        mock_repo_instance = MockRepo.return_value
+
+        mock_query = MagicMock()
+        mock_repo_instance.session.query.return_value = mock_query
+        mock_query.scalar.return_value = 300
+
+        service = FoodDatasetService()
+
+        result = service.total_dataset_views()
+
+        assert result == 300
+
+        called_arg = mock_repo_instance.session.query.call_args[0][0]
+        assert "sum" in str(called_arg).lower()
+
+
+def test_total_food_model_downloads(test_client):
+    """Test total_food_model_downloads"""
+    from app.modules.fooddataset.services import FoodDatasetService
+
+    with patch("app.modules.fooddataset.services.FoodDatasetRepository") as MockRepo:
+        mock_repo_instance = MockRepo.return_value
+
+        mock_query = MagicMock()
+        mock_repo_instance.session.query.return_value = mock_query
+        # Mock the chain: query.join.join.scalar
+        mock_query.join.return_value.join.return_value.scalar.return_value = 75
+
+        service = FoodDatasetService()
+
+        result = service.total_food_model_downloads()
+
+        assert result == 75
+
+        called_arg = mock_repo_instance.session.query.call_args[0][0]
+        assert "count" in str(called_arg).lower()
+
+
+def test_total_food_model_downloads_import_error(test_client):
+    """Test total_food_model_downloads con error de importación o DB"""
+    from app.modules.fooddataset.services import FoodDatasetService
+
+    with patch("app.modules.fooddataset.services.FoodDatasetRepository") as MockRepo:
+        mock_repo_instance = MockRepo.return_value
+
+        # Simular error en la query
+        mock_repo_instance.session.query.side_effect = Exception("Import/DB error")
+
+        service = FoodDatasetService()
+        result = service.total_food_model_downloads()
+
+        assert result == 0
+
+
+def test_total_food_model_views(test_client):
+    """Test total_food_model_views"""
+    from app.modules.fooddataset.services import FoodDatasetService
+
+    with patch("app.modules.fooddataset.services.FoodDatasetRepository") as MockRepo:
+        mock_repo_instance = MockRepo.return_value
+
+        mock_query = MagicMock()
+        mock_repo_instance.session.query.return_value = mock_query
+        # Mock the chain: query.join.join.scalar
+        mock_query.join.return_value.join.return_value.scalar.return_value = 120
+
+        service = FoodDatasetService()
+
+        result = service.total_food_model_views()
+
+        assert result == 120
+
+        called_arg = mock_repo_instance.session.query.call_args[0][0]
+        assert "count" in str(called_arg).lower()
+
+
+def test_count_food_models(test_client):
+    """Test count_food_models"""
+    from app.modules.fooddataset.services import FoodDatasetService
+
+    with patch("app.modules.fooddataset.services.FoodDatasetRepository") as MockRepo:
+        mock_repo_instance = MockRepo.return_value
+
+        mock_query = MagicMock()
+        mock_repo_instance.session.query.return_value = mock_query
+        mock_query.count.return_value = 25
+
+        service = FoodDatasetService()
+
+        result = service.count_food_models()
+
+        assert result == 25
+
+        called_arg = mock_repo_instance.session.query.call_args[0][0]
+        assert "foodmodel" in str(called_arg).lower()
+
+
+def test_get_all_statistics(test_client):
+    """Test get_all_statistics completo"""
+    from app.modules.fooddataset.services import FoodDatasetService
+
+    service = FoodDatasetService()
+
+    with (
+        patch.object(service, "count_synchronized_datasets", return_value=10) as mock_count_synced,
+        patch.object(service, "count_food_models", return_value=25) as mock_count_food,
+        patch.object(service, "total_dataset_downloads", return_value=150) as mock_total_ds_dl,
+        patch.object(service, "total_dataset_views", return_value=300) as mock_total_ds_views,
+        patch.object(service, "total_food_model_downloads", return_value=75) as mock_total_food_dl,
+        patch.object(service, "total_food_model_views", return_value=120) as mock_total_food_views,
+        patch.object(
+            service,
+            "get_trending_weekly",
+            return_value=[
+                {"id": 1, "title": "Weekly 1"},
+                {"id": 2, "title": "Weekly 2"},
+                {"id": 3, "title": "Weekly 3"},
+            ],
+        ) as mock_trending_weekly,
+        patch.object(
+            service,
+            "get_trending_monthly",
+            return_value=[
+                {"id": 4, "title": "Monthly 1"},
+                {"id": 5, "title": "Monthly 2"},
+                {"id": 6, "title": "Monthly 3"},
+            ],
+        ) as mock_trending_monthly,
+        patch.object(
+            service,
+            "get_most_viewed_datasets",
+            return_value=[{"id": 7, "title": "Most Viewed 1"}, {"id": 8, "title": "Most Viewed 2"}],
+        ) as mock_most_viewed,
+        patch.object(
+            service,
+            "get_most_downloaded_datasets",
+            return_value=[{"id": 9, "title": "Most Downloaded 1"}, {"id": 10, "title": "Most Downloaded 2"}],
+        ) as mock_most_downloaded,
+        patch("app.modules.fooddataset.services.os.getenv", return_value="2023-12-15 10:30:00") as mock_getenv,
+    ):
+
+        result = service.get_all_statistics()
+
+        # Verificar estructura del resultado
+        assert isinstance(result, dict)
+        assert result["datasets_counter"] == 10
+        assert result["food_models_counter"] == 25
+        assert result["total_dataset_downloads"] == 150
+        assert result["total_dataset_views"] == 300
+        assert result["total_food_model_downloads"] == 75
+        assert result["total_food_model_views"] == 120
+        assert len(result["trending_weekly"]) == 3
+        assert len(result["trending_monthly"]) == 3
+        assert len(result["most_viewed"]) == 2
+        assert len(result["most_downloaded"]) == 2
+        assert result["timestamp"] == "2023-12-15 10:30:00"
+
+        # Verificar que se llamaron los métodos con los parámetros correctos
+        mock_count_synced.assert_called_once()
+        mock_count_food.assert_called_once()
+        mock_total_ds_dl.assert_called_once()
+        mock_total_ds_views.assert_called_once()
+        mock_total_food_dl.assert_called_once()
+        mock_total_food_views.assert_called_once()
+        mock_trending_weekly.assert_called_once_with(limit=3)
+        mock_trending_monthly.assert_called_once_with(limit=3)
+        mock_most_viewed.assert_called_once_with(limit=5)
+        mock_most_downloaded.assert_called_once_with(limit=5)
+        mock_getenv.assert_called_once_with("SERVER_TIMESTAMP", "N/A")
+
+
+def test_get_all_statistics_env_var_missing(test_client):
+    """Test get_all_statistics cuando falta la variable de entorno"""
+    from app.modules.fooddataset.services import FoodDatasetService
+
+    service = FoodDatasetService()
+
+    with (
+        patch.object(service, "count_synchronized_datasets", return_value=5),
+        patch.object(service, "count_food_models", return_value=10),
+        patch.object(service, "total_dataset_downloads", return_value=100),
+        patch.object(service, "total_dataset_views", return_value=200),
+        patch.object(service, "total_food_model_downloads", return_value=50),
+        patch.object(service, "total_food_model_views", return_value=80),
+        patch.object(service, "get_trending_weekly", return_value=[]),
+        patch.object(service, "get_trending_monthly", return_value=[]),
+        patch.object(service, "get_most_viewed_datasets", return_value=[]),
+        patch.object(service, "get_most_downloaded_datasets", return_value=[]),
+        patch("app.modules.fooddataset.services.os.getenv", return_value="N/A") as mock_getenv,
+    ):
+
+        result = service.get_all_statistics()
+
+        assert result["timestamp"] == "N/A"
+        mock_getenv.assert_called_once_with("SERVER_TIMESTAMP", "N/A")
+
+
+def test_get_all_statistics_with_real_data(test_client):
+    """Test get_all_statistics integrado con datos reales"""
+    from app.modules.basedataset.models import BasePublicationType
+    from app.modules.fooddataset.services import FoodDatasetService
+
+    with test_client.application.app_context():
+        # Crear datos de prueba en la base de datos
+        from app import db
+        from app.modules.auth.models import User
+        from app.modules.fooddataset.models import FoodDataset, FoodDSMetaData
+
+        # Crear usuario
+        user = User(email="stats_test@example.com", is_email_verified=True)
+        user.set_password("test1234")
+        db.session.add(user)
+        db.session.flush()  # Para obtener el ID
+
+        # Crear datasets
+        for i in range(3):
+            ds_meta = FoodDSMetaData(
+                title=f"Stats Dataset {i}",
+                description="Test for statistics",
+                publication_type=BasePublicationType.JOURNAL_ARTICLE,
+                calories="500",
+                type="Recipe",
+                community="Testers",
+            )
+            dataset = FoodDataset(user_id=user.id, ds_meta_data=ds_meta, view_count=i * 10, download_count=i * 5)
+            db.session.add(dataset)
+
+        # Crear food models (simulado, ya que FoodModel puede no existir en el módulo)
+        # Esto es solo un ejemplo, ajusta según tu modelo real
+
+        db.session.commit()
+
+        # Ejecutar el método
+        service = FoodDatasetService()
+        stats = service.get_all_statistics()
+
+        # Verificar que tenemos datos
+        assert "datasets_counter" in stats
+        assert "food_models_counter" in stats
+        assert "total_dataset_downloads" in stats
+        assert "total_dataset_views" in stats
+        assert isinstance(stats, dict)
